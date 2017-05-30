@@ -158,7 +158,7 @@ func (backend *Backend) SendMetrics(metrics []Point) {
                                 tags["cluster"] = point.Cluster
                                 tags["instance"] = point.Instance
 				fields := make(map[string]interface{})
-				fields["Value"] =  point.Value
+				fields[backend.ValueField] =  point.Value
 				pt, err := influxclient.NewPoint(key, tags, fields, time.Unix(point.Timestamp, 0))
 				if err != nil {
 					errlog.Println("Could not create influxdb point")
