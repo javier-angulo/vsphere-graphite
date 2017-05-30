@@ -31,15 +31,16 @@ type Point struct {
 
 //Storage backend
 type Backend struct {
-        Hostname string
-        Port     int
-        Database string
-        Username string
-        Password string
-        Type     string
-        NoArray  bool
-        carbon   *graphite.Graphite
-        influx   influxclient.Client
+        Hostname 	string
+        Port     	int
+        Database 	string
+        Username 	string
+        Password 	string
+        Type     	string
+        NoArray  	bool
+        carbon   	*graphite.Graphite
+        influx   	influxclient.Client
+	ValueField	string
 }
 
 var	stdlog, errlog *log.Logger
@@ -48,6 +49,13 @@ var	carbon graphite.Graphite
 func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger)  error {
         stdlog := standardLogs
         errlog := errorLogs
+	if backend.ValueField == nil {
+		// for compatibility reason with previous version
+		// can now be changed in the config file.
+		// the default can later be changed to another value.
+		// most probably "value" (lower case) 
+		backend.ValueField = "Value" 
+	}
         switch backendType := strings.ToLower(backend.Type); backendType {
                 case "graphite":
         	        // Initialize Graphite
