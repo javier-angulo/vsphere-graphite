@@ -49,7 +49,7 @@ var	carbon graphite.Graphite
 func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger)  error {
         stdlog := standardLogs
         errlog := errorLogs
-	if backend.ValueField == nil {
+	if len(backend.ValueField) == 0 {
 		// for compatibility reason with previous version
 		// can now be changed in the config file.
 		// the default can later be changed to another value.
