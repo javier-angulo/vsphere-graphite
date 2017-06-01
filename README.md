@@ -8,6 +8,13 @@ Written in go as the integration collectd and python plugin posed too much probl
 
 [![Build Status](https://travis-ci.org/cblomart/vsphere-graphite.svg?branch=master)](https://travis-ci.org/cblomart/vsphere-graphite)
 
+# Example result
+
+Bellow a dashboard realize with grafana.
+The backend used in this case is influxdb.
+
+![Example Dashboard](vsphere-graphite-influxdb-grafana-dashboard.png)
+
 # Extenal dependencies
 
 Naturaly heavilly based on [govmomi](https://github.com/vmware/govmomi).
