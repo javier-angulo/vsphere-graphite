@@ -3,6 +3,10 @@ go:
 - 1.8
 sudo: required
 env:
+  - BUILD_JOB=dist-windows-amd64
+  - BUILD_JOB=dist-darwin-amd64
+  - BUILD_JOB=dist-linux-amd64
+  - BUILD_JOB=dist-linux-arm
   global:
   - MAKEFLAGS="-j 4"
   - COMMIT=${TRAVIS_COMMIT::8}
@@ -21,7 +25,7 @@ cache:
 install:
 - make deps
 script:
-- make all
+- make $BUILD_JOB
 before_deploy:
 - echo branch $TRAVIS_BRANCH / tag $TRAVIS_TAG / commit $COMMIT
 - for file in $(ls release/*.tgz); do name=$(echo $file | sed s/\.tgz//g); move $file $name_$TRAVIS_TAG.tgz; done;
@@ -35,21 +39,17 @@ deploy:
   on:
     tags: true
 after_success:
+- if [ $BUILD_JOB = "dist-darwin-amd64" ]; then exit 0; fi
+- if [ $BUILD_JOB = "dist-windows-amd64" ]; then exit 0; fi
+- if [ $BUILD_JOB = "dist-linux-amd64" ]; then BIN_PATH="releases/linux/amd64/vsphere-graphite"; DOCKERFILE="docker/linux/Dockerfile"; NAME="vsphere-graphite"; fi
+- if [ $BUILD_JOB = "dist-linux-amd64" ]; then BIN_PATH="releases/linux/arm/vsphere-graphite"; DOCKERFILE="docker/rpi/Dockerfile"; NAME="rpi-vsphere-graphite"; fi
 - echo branch $TRAVIS_BRANCH / tag $TRAVIS_TAG / commit $COMMIT
 - docker login -e $DOCKER_EMAIL -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-- cp releases/linux/amd64/vsphere-graphite docker/linux/
+- cp $BIN_PATH docker/linux/
 - cp vsphere-graphite.json docker/linux/
-- docker build -f docker/linux/Dockerfile -t $DOCKER_USERNAME/vsphere-graphite docker/linux/
-- docker tag -f $DOCKER_USERNAME/vsphere-graphite $DOCKER_USERNAME/vsphere-graphite:$COMMIT
-- docker tag -f $DOCKER_USERNAME/vsphere-graphite $DOCKER_USERNAME/vsphere-graphite:$TRAVIS_BRANCH
-- if [ "$TRAVIS_TAG" != "" ]; then docker tag $DOCKER_USERNAME/vsphere-graphite $DOCKER_USERNAME/vsphere-graphite:$TRAVIS_TAG; fi
-- if [ "$TRAVIS_TAG" != "" ]; then docker tag $DOCKER_USERNAME/vsphere-graphite $DOCKER_USERNAME/vsphere-graphite:latest; fi
-- docker push $DOCKER_USERNAME/vsphere-graphite
-- cp releases/linux/arm/vsphere-graphite docker/rpi/
-- cp vsphere-graphite.json docker/linux/
-- docker build -f docker/rpi/Dockerfile -t $DOCKER_USERNAME/rpi-vsphere-graphite docker/rpi/
-- docker tag -f $DOCKER_USERNAME/rpi-vsphere-graphite $DOCKER_USERNAME/rpi-vsphere-graphite:$COMMIT
-- docker tag -f $DOCKER_USERNAME/rpi-vsphere-graphite $DOCKER_USERNAME/rpi-vsphere-graphite:$TRAVIS_BRANCH
-- if [ "$TRAVIS_TAG" != "" ]; then docker tag $DOCKER_USERNAME/rpi-vsphere-graphite $DOCKER_USERNAME/rpi-vsphere-graphite:$TRAVIS_TAG; fi
-- if [ "$TRAVIS_TAG" != "" ]; then docker tag  $DOCKER_USERNAME/rpi-vsphere-graphite $DOCKER_USERNAME/rpi-vsphere-graphite:latest; fi
-- docker push $DOCKER_USERNAME/rpi-vsphere-graphite
+- docker build -f $DOCKERFILE -t $DOCKER_USERNAME/$NAME docker/linux/
+- docker tag -f $DOCKER_USERNAME/vsphere-graphite $DOCKER_USERNAME/$NAME:$COMMIT
+- docker tag -f $DOCKER_USERNAME/vsphere-graphite $DOCKER_USERNAME/$NAME:$TRAVIS_BRANCH
+- if [ "$TRAVIS_TAG" != "" ]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_TAG; fi
+- if [ "$TRAVIS_TAG" != "" ]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:latest; fi
+- docker push $DOCKER_USERNAME/$NAME
