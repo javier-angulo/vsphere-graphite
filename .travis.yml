@@ -11,6 +11,9 @@ env:
   - secure: HdeMVcGgMn5eqQmlKfKY/BVKzsbn/vwAN/KozEG1zW4yI4TKR9slksPZf7Vc+zZllQbTkbc6LlV1OUFOPTxElOOLOAzpqvJ8wNhpMixrSfPEko+aDZEUArKgRDoJwpUgGvT4H5xcWEA530ugu15cpuu3OMoGX5BubZKzgQedS3I7XcxpmfpNMgfbYWhIzXCmETbdQ9rnihZc95rjiVx1CEen2T9JG8DeLJe1ek9cS5gBo5c4+vM6K0x6NNNpEgI3ux/zR1Akg35seoHIvRB51SkpwJgF9fwvAmVE0UbqN/HGSLjKGO/wA81QCzdSzKc+mdcmFnqoPzuPZT5iiOGvQCIrM1ORqjE5Wj6wZHeJC1dudjPoC8Xel2AVuhrlp4GwRsl7j6q+G2NPN6V2Rjqq3ts1gXNrDxRZcEoZvR72e8xkKHkNKsQDsD4DORYFV4y6fwXYyXkdPZIN5iYZnDIfBce4rguNWveAEprhdF25MUAr1m3u9O8U0mAuiBNIBH0cVsA0e0qMwvThBPdpA3xepkbD78v41Uoz7KT4hgeZPGxLN98N/8F+ilpcr2VLe0HMATaI0hX1LrlPITK5h5Gnz3sva931WbTQPfEhAiGcZKlrg6mVi9b6vjf8Rku5Z+PSmbKZo8B9SKMJduUwmH9N+0Q4+Cgiv0MQFfZh3z3Xq2Q=
 services:
 - docker
+before_cache:
+- rm -rf $GOPATH/src/github.com/cblomart/vsphere-graphite/*
+- rm -rf $GOPATH/pkg/**/github.com/cblomart/vsphere-graphite
 cache:
   directories:
     - $GOPATH/src
