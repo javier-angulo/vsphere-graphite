@@ -29,26 +29,27 @@ type VCenter struct {
 	MetricGroups []*MetricGroup
 }
 
-// Metric Definition
+// MetricDef Definition
 type MetricDef struct {
 	Metric    string
 	Instances string
 	Key       int32
 }
 
-// Metric Grouping for retrieval
+// MetricGroup Grouping for retrieval
 type MetricGroup struct {
 	ObjectType string
 	Metrics    []MetricDef
 	Mor        []types.ManagedObjectReference
 }
 
-// Metrics description in config
+// Metric description in config
 type Metric struct {
 	ObjectType []string
 	Definition []MetricDef
 }
 
+// Connect : Conncet to vcenter
 func (vcenter *VCenter) Connect() (*govmomi.Client, error) {
 	// Prepare vCenter Connections
 	ctx, cancel := context.WithCancel(context.Background())
@@ -71,7 +72,7 @@ func (vcenter *VCenter) Connect() (*govmomi.Client, error) {
 	return client, nil
 }
 
-// Initialise vcenter
+// Init : initialize vcenter
 func (vcenter *VCenter) Init(metrics []Metric, standardLogs *log.Logger, errorLogs *log.Logger) {
 	stdlog = standardLogs
 	errlog = errorLogs
@@ -121,7 +122,7 @@ func (vcenter *VCenter) Init(metrics []Metric, standardLogs *log.Logger, errorLo
 	}
 }
 
-// Query a vcenter
+// Query : Query a vcenter
 func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backend.Point) {
 	stdlog.Println("Setting up query inventory of vcenter: ", vcenter.Hostname)
 
@@ -300,7 +301,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 	queries := []types.PerfQuerySpec{}
 
 	// Common parameters
-	intervalId := int32(20)
+	intervalID := int32(20)
 	endTime := time.Now().Add(time.Duration(-1) * time.Second)
 	startTime := endTime.Add(time.Duration(-interval-1) * time.Second)
 
@@ -315,7 +316,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			}
 		}
 		if len(metricIds) > 0 {
-			queries = append(queries, types.PerfQuerySpec{Entity: mor, StartTime: &startTime, EndTime: &endTime, MetricId: metricIds, IntervalId: intervalId})
+			queries = append(queries, types.PerfQuerySpec{Entity: mor, StartTime: &startTime, EndTime: &endTime, MetricId: metricIds, IntervalId: intervalID})
 		}
 	}
 
