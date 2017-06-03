@@ -27,7 +27,8 @@ install:
 script:
 - make $BUILD_JOB
 - mkdir -p /tmp/vsphere-graphite
-- cp $GOPATH/src/github.com/cblomart/vsphere-graphite/releases/*.tgz /tmp/vsphere-graphite
+- cp $GOPATH/src/github.com/cblomart/vsphere-graphite/releases/*.tgz /tmp/vsphere-graphite/
+- ls /tmp/vsphere-graphite/
 before_deploy:
 - echo branch $TRAVIS_BRANCH / tag $TRAVIS_TAG / commit $COMMIT
 - for file in $(ls release/*.tgz); do name=$(echo $file | sed s/\.tgz//g); move $file $name_$TRAVIS_TAG.tgz; done;
@@ -43,6 +44,7 @@ deploy:
 after_success:
 - if [ $BUILD_JOB = "dist-darwin-amd64" ]; then exit 0; elif [ $BUILD_JOB = "dist-windows-amd64" ]; then exit 0; elif [ $BUILD_JOB = "dist-linux-amd64" ]; then DOCKERFILE="docker/linux/Dockerfile"; NAME="vsphere-graphite"; elif [ $BUILD_JOB = "dist-linux-arm" ]; then DOCKERFILE="docker/rpi/Dockerfile"; NAME="rpi-vsphere-graphite"; fi
 - echo branch $TRAVIS_BRANCH / tag $TRAVIS_TAG / commit $COMMIT
+- ls /tmp/vsphere-graphite/
 - tar -zxf /tmp/vsphere-graphite/*.tgz
 - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
 - cp /tmp/vsphere-graphite/vsphere-graphite docker/linux/
