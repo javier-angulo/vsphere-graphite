@@ -363,7 +363,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 				if parmor.Type == "ClusterComputeResource" {
 					cluster = morToName[parmor]
 				} else {
-					errlog.Println("Parent of host " + vmhost + " was " + parmor.Type + "(" + parmor.Value + ")")
+					errlog.Println("Parent of host " + name + " was " + parmor.Type + "(" + parmor.Value + ")")
 				}
 			}
 		}
