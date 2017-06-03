@@ -40,14 +40,12 @@ deploy:
   on:
     tags: true
 after_success:
-- if [ $BUILD_JOB = "dist-darwin-amd64" ]; then exit 0; fi
-- if [ $BUILD_JOB = "dist-windows-amd64" ]; then exit 0; fi
-- if [ $BUILD_JOB = "dist-linux-amd64" ]; then BIN_PATH="releases/linux/amd64/vsphere-graphite"; DOCKERFILE="docker/linux/Dockerfile"; NAME="vsphere-graphite"; fi
-- if [ $BUILD_JOB = "dist-linux-arm" ]; then BIN_PATH="releases/linux/arm/vsphere-graphite"; DOCKERFILE="docker/rpi/Dockerfile"; NAME="rpi-vsphere-graphite"; fi
+- if [ $BUILD_JOB = "dist-darwin-amd64" ]; then exit 0; elif [ $BUILD_JOB = "dist-windows-amd64" ]; then exit 0; elif [ $BUILD_JOB = "dist-linux-amd64" ]; then DOCKERFILE="docker/linux/Dockerfile"; NAME="vsphere-graphite"; elif [ $BUILD_JOB = "dist-linux-arm" ]; then DOCKERFILE="docker/rpi/Dockerfile"; NAME="rpi-vsphere-graphite"; fi
 - echo branch $TRAVIS_BRANCH / tag $TRAVIS_TAG / commit $COMMIT
+- tar -zxf releases/*.tgz
 - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-- cp $BIN_PATH docker/linux/
-- cp vsphere-graphite-example.json docker/linux/vsphere-graphite.json
+- cp releases/vsphere-graphite docker/linux/
+- cp releases/vsphere-graphite-example.json docker/linux/vsphere-graphite.json
 - docker build -f $DOCKERFILE -t $DOCKER_USERNAME/$NAME docker/linux/
 - docker tag -f $DOCKER_USERNAME/vsphere-graphite $DOCKER_USERNAME/$NAME:$COMMIT
 - docker tag -f $DOCKER_USERNAME/vsphere-graphite $DOCKER_USERNAME/$NAME:$TRAVIS_BRANCH
