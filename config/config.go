@@ -5,7 +5,7 @@ import (
 	"github.com/cblomart/vsphere-graphite/vsphere"
 )
 
-// Configuration
+// Configuration : configurarion base
 type Configuration struct {
 	VCenters []*vsphere.VCenter
 	Metrics  []vsphere.Metric

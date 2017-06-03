@@ -37,7 +37,7 @@ type Service struct {
 	daemon.Daemon
 }
 
-// Informations to query about an entity
+// EntityQuery : Informations to query about an entity
 type EntityQuery struct {
 	Name    string
 	Entity  types.ManagedObjectReference
