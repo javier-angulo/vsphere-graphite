@@ -79,12 +79,12 @@ func (vcenter *VCenter) Init(metrics []Metric, standardLogs *log.Logger, errorLo
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	client, err := vcenter.Connect()
-	defer client.Logout(ctx)
 	if err != nil {
 		errlog.Println("Could not connect to vcenter: ", vcenter.Hostname)
 		errlog.Println("Error: ", err)
 		return
 	}
+	defer client.Logout(ctx)
 	var perfmanager mo.PerformanceManager
 	err = client.RetrieveOne(ctx, *client.ServiceContent.PerfManager, nil, &perfmanager)
 	if err != nil {
@@ -167,7 +167,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 	}
 
 	// Get intresting object types from specified queries
-	objectTypes := []string{"ClusterComputeResource", "Datastore", "HostSystem", "DistributedVirtualPortgroup", "Network"}
+	objectTypes := []string{"ClusterComputeResource", "Datastore", "HostSystem", "DistributedVirtualPortgroup", "Network", "ResourcePool"}
 	for _, group := range vcenter.MetricGroups {
 		found := false
 		for _, tmp := range objectTypes {
@@ -212,9 +212,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 
 	//properties specifications
 	propSet := []types.PropertySpec{}
-	propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name"}})
+	propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent"}})
 	propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host"}})
-	propSet = append(propSet, types.PropertySpec{Type: "HostSystem", PathSet: []string{"parent"}})
+	propSet = append(propSet, types.PropertySpec{Type: "ResourcePool", PathSet: []string{"vm"}})
 
 	//retrieve properties
 	propreq := types.RetrieveProperties{SpecSet: []types.PropertyFilterSpec{{ObjectSet: objectSet, PropSet: propSet}}}
@@ -238,7 +238,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 	vmToHost := make(map[types.ManagedObjectReference]types.ManagedObjectReference)
 
 	//create a map to resolve host to parent - in a cluster the parent should be a cluster
-	hostToParent := make(map[types.ManagedObjectReference]types.ManagedObjectReference)
+	morToParent := make(map[types.ManagedObjectReference]types.ManagedObjectReference)
+
+	//create a map to resolve mor to vms - object that contains multiple vms as child objects
+	morToVms := make(map[types.ManagedObjectReference][]types.ManagedObjectReference)
 
 	for _, objectContent := range propres.Returnval {
 		for _, Property := range objectContent.PropSet {
@@ -257,7 +260,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 						vmToDatastore[objectContent.Obj] = mors.ManagedObjectReference
 					}
 				} else {
-					errlog.Println("Datastore property of " + objectContent.Obj.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", Property.Val))
+					errlog.Println("Datastore property of " + objectContent.Obj.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "network":
 				mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
@@ -266,7 +269,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 						vmToNetwork[objectContent.Obj] = mors.ManagedObjectReference
 					}
 				} else {
-					errlog.Println("Network property of " + objectContent.Obj.String() + " was not an array of  ManagedObjectReference, it was " + fmt.Sprintf("%T", Property.Val))
+					errlog.Println("Network property of " + objectContent.Obj.String() + " was not an array of  ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "runtime.host":
 				mor, ok := Property.Val.(types.ManagedObjectReference)
@@ -278,9 +281,18 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			case "parent":
 				mor, ok := Property.Val.(types.ManagedObjectReference)
 				if ok {
-					hostToParent[objectContent.Obj] = mor
+					morToParent[objectContent.Obj] = mor
 				} else {
 					errlog.Println("Parent property of " + objectContent.Obj.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", Property.Val))
+				}
+			case "vm":
+				mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
+				if ok {
+					if len(mors.ManagedObjectReference) > 0 {
+						morToVms[objectContent.Obj] = mors.ManagedObjectReference
+					}
+				} else {
+					errlog.Println("VM property of " + objectContent.Obj.String() + " was not an array of  ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			default:
 				errlog.Println("Unhandled property '" + propertyName + "' for " + objectContent.Obj.String() + " whose type is " + fmt.Sprintf("%T", Property.Val))
@@ -293,6 +305,42 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 	for _, metricgroup := range vcenter.MetricGroups {
 		for _, metricdef := range metricgroup.Metrics {
 			metricToName[metricdef.Key] = metricdef.Metric
+		}
+	}
+
+	//create a map to resolve vm to their ressourcepool
+	vmToResourcePoolPath := make(map[types.ManagedObjectReference]string)
+	for mor, vmmors := range morToVms {
+		// not doing case sensitive as this could be extensive
+		if mor.Type == "ResourcePool" {
+			// find the full path of the resource pool
+			poolpath := ""
+			poolmor := mor
+			ok := true
+			for ok {
+				poolname, ok := morToName[poolmor]
+				if !ok {
+					// could not find name
+					errlog.Println("Could not find name for resourcepool " + mor.String())
+					break
+				}
+				// add the name to the path
+				poolpath += poolname + "/" + poolpath
+				poolmor, ok := morToParent[poolmor]
+				if !ok {
+					// no parent pool found
+					errlog.Println("Could not find parent for resourcepool " + poolname)
+					break
+				}
+				if poolmor.Type != "ResourcePool" {
+					ok = false
+				}
+			}
+			for _, vmmor := range vmmors {
+				if vmmor.Type == "VirtualMachine" {
+					vmToResourcePoolPath[vmmor] = poolpath
+				}
+			}
 		}
 	}
 
@@ -334,7 +382,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 	vcName := strings.Replace(vcenter.Hostname, domain, "", -1)
 	for _, base := range perfres.Returnval {
 		pem := base.(*types.PerfEntityMetric)
-		entityName := strings.ToLower(pem.Entity.Type)
+		//entityName := strings.ToLower(pem.Entity.Type)
 		name := strings.ToLower(strings.Replace(morToName[pem.Entity], domain, "", -1))
 		//find datastore
 		datastore := []string{}
@@ -346,10 +394,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 		//find host and cluster
 		vmhost := ""
 		cluster := ""
-		if entityName == "virtualmachine" {
+		if pem.Entity.Type == "VirtualMachine" {
 			if esximor, ok := vmToHost[pem.Entity]; ok {
 				vmhost = strings.ToLower(strings.Replace(morToName[esximor], domain, "", -1))
-				if parmor, ok := hostToParent[esximor]; ok {
+				if parmor, ok := morToParent[esximor]; ok {
 					if parmor.Type == "ClusterComputeResource" {
 						cluster = morToName[parmor]
 					} else {
@@ -357,9 +405,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 					}
 				}
 			}
-		} else if entityName == "hostsystem" {
+		} else if pem.Entity.Type == "HostSystem" {
 			//find cluster if entity is a host
-			if parmor, ok := hostToParent[pem.Entity]; ok {
+			if parmor, ok := morToParent[pem.Entity]; ok {
 				if parmor.Type == "ClusterComputeResource" {
 					cluster = morToName[parmor]
 				} else {
@@ -374,11 +422,16 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 				network = append(network, morToName[mor])
 			}
 		}
+		//find resource pool path
+		resourcepool := ""
+		if rppath, ok := vmToResourcePoolPath[pem.Entity]; ok {
+			resourcepool = rppath
+		}
 		for _, baseserie := range pem.Value {
 			serie := baseserie.(*types.PerfMetricIntSeries)
 			metricName := strings.ToLower(metricToName[serie.Id.CounterId])
 			instanceName := serie.Id.Instance
-			key := "vsphere." + vcName + "." + entityName + "." + name + "." + metricName
+			key := "vsphere." + vcName + "." + strings.ToLower(pem.Entity.Type) + "." + name + "." + metricName
 			if len(instanceName) > 0 {
 				key += "." + strings.ToLower(strings.Replace(instanceName, ".", "_", -1))
 			}
@@ -396,19 +449,20 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			}
 			metricparts := strings.Split(metricName, ".")
 			point := backend.Point{
-				VCenter:    vcName,
-				ObjectType: entityName,
-				ObjectName: name,
-				Group:      metricparts[0],
-				Counter:    metricparts[1],
-				Instance:   instanceName,
-				Rollup:     metricparts[2],
-				Value:      value,
-				Datastore:  datastore,
-				ESXi:       vmhost,
-				Cluster:    cluster,
-				Network:    network,
-				Timestamp:  endTime.Unix(),
+				VCenter:      vcName,
+				ObjectType:   strings.ToLower(pem.Entity.Type),
+				ObjectName:   name,
+				Group:        metricparts[0],
+				Counter:      metricparts[1],
+				Instance:     instanceName,
+				Rollup:       metricparts[2],
+				Value:        value,
+				Datastore:    datastore,
+				ESXi:         vmhost,
+				Cluster:      cluster,
+				Network:      network,
+				ResourcePool: resourcepool,
+				Timestamp:    endTime.Unix(),
 			}
 			values = append(values, point)
 		}
