@@ -325,7 +325,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 					break
 				}
 				// add the name to the path
-				poolpath += poolname + "/" + poolpath
+				poolpath = poolname + "/" + poolpath
 				poolmor, ok := morToParent[poolmor]
 				if !ok {
 					// no parent pool found
