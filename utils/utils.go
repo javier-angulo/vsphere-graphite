@@ -2,8 +2,9 @@ package utils
 
 import (
 	"math"
-) 
+)
 
+// Min : get the minimum of values
 func Min(n ...int64) int64 {
 	var min int64 = -1
 	for _, i := range n {
@@ -20,6 +21,7 @@ func Min(n ...int64) int64 {
 	return min
 }
 
+// Max : get the maximum of the values
 func Max(n ...int64) int64 {
 	var max int64 = -1
 	for _, i := range n {
@@ -36,6 +38,7 @@ func Max(n ...int64) int64 {
 	return max
 }
 
+// Sum : Sum the values
 func Sum(n ...int64) int64 {
 	var total int64 = 0
 	for _, i := range n {
@@ -46,12 +49,13 @@ func Sum(n ...int64) int64 {
 	return total
 }
 
+// Average : average the values
 func Average(n ...int64) int64 {
-	var total int64 = 0
-	var count int64 = 0
+	var total int64
+	var count int64
 	for _, i := range n {
 		if i >= 0 {
-			count += 1
+			count++
 			total += i
 		}
 	}
