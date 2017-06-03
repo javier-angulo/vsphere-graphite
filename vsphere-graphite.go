@@ -51,7 +51,7 @@ func queryVCenter(vcenter vsphere.VCenter, config config.Configuration, channel 
 // Manage by daemon commands or run the daemon
 func (service *Service) Manage() (string, error) {
 
-	usage := "Usage: myservice install | remove | start | stop | status"
+	usage := "Usage: vsphere-graphite install | remove | start | stop | status"
 
 	// if received any kind of command, do it
 	if len(os.Args) > 1 {
@@ -156,9 +156,6 @@ func (service *Service) Manage() (string, error) {
 			return "Daemon was killed", nil
 		}
 	}
-
-	// never happen, but need to complete code
-	return usage, nil
 }
 
 func init() {
