@@ -312,6 +312,8 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 	vmToResourcePoolPath := make(map[types.ManagedObjectReference]string)
 	for mor, vmmors := range morToVms {
 		// not doing case sensitive as this could be extensive
+		stdlog.Println("Searching resourcepool path")
+		stdlog.Println("resourcepool " + mor.String() + " with " + strconv.Itoa(len(vmmors)) + " vms")
 		if mor.Type == "ResourcePool" {
 			// find the full path of the resource pool
 			poolpath := ""
@@ -326,6 +328,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 				}
 				// add the name to the path
 				poolpath = poolname + "/" + poolpath
+				stdlog.Println("updated pool path: " + poolpath)
 				poolmor, ok := morToParent[poolmor]
 				if !ok {
 					// no parent pool found
@@ -336,6 +339,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 					break
 				}
 			}
+			stdlog.Println("Found resourcepool path: " + poolpath)
 			for _, vmmor := range vmmors {
 				if vmmor.Type == "VirtualMachine" {
 					vmToResourcePoolPath[vmmor] = poolpath
