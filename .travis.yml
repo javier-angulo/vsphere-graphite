@@ -46,9 +46,9 @@ deploy:
 after_success:
 - if [ $BUILD_JOB = "darwin-amd64" ]; then exit 0; elif [ $BUILD_JOB = "windows-amd64" ]; then exit 0; elif [ $BUILD_JOB = "linux-amd64" ]; then NAME="vsphere-graphite"; elif [ $BUILD_JOB = "linux-arm" ]; then NAME="rpi-vsphere-graphite"; fi
 - echo branch $TRAVIS_BRANCH / tag $TRAVIS_TAG / commit $COMMIT
-- echo SETTING STANDARD TAGS (branch-commit)
-- docker tag -f $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_BRANCH-$COMMIT
-- echo SETTING EXTRA TAGS IF PRESENT (version tag and latest)
+- echo "SETTING STANDARD TAGS (branch-commit)"
+- docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_BRANCH-$COMMIT
+- echo "SETTING EXTRA TAGS IF RELEASE AND MASTER (version tag and latest)"
 - if [ "$TRAVIS_TAG" != "" -a "$TRAVIS_BRANCH" == "master"]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_TAG; fi
 - if [ "$TRAVIS_TAG" != "" -a "$TRAVIS_BRANCH" == "master"]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:latest; fi
 - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
