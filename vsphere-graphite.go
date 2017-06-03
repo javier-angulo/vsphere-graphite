@@ -7,15 +7,15 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"reflect"
+	"strconv"
+	"strings"
 	"syscall"
 	"time"
-	"reflect"
-	"strings"
-	"strconv"
 
-        "github.com/cblomart/vsphere-graphite/vsphere"
-        "github.com/cblomart/vsphere-graphite/config"
-        "github.com/cblomart/vsphere-graphite/backend"
+	"github.com/cblomart/vsphere-graphite/backend"
+	"github.com/cblomart/vsphere-graphite/config"
+	"github.com/cblomart/vsphere-graphite/vsphere"
 
 	"github.com/takama/daemon"
 
@@ -98,13 +98,13 @@ func (service *Service) Manage() (string, error) {
 			if len(envval) > 0 {
 				//environment variable set with name
 				switch ftype := f.Type().Name(); ftype {
-					case "string":
-						f.SetString(envval)
-					case "int":
-						val, err := strconv.ParseInt(envval,10,64)
-						if err == nil {
-							f.SetInt(val)
-						}
+				case "string":
+					f.SetString(envval)
+				case "int":
+					val, err := strconv.ParseInt(envval, 10, 64)
+					if err == nil {
+						f.SetInt(val)
+					}
 				}
 			}
 		}
@@ -115,10 +115,10 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	err = config.Backend.Init(stdlog, errlog)
-        if err != nil {
+	if err != nil {
 		return "Could not initialize backend", err
-        }
-        defer config.Backend.Disconnect()
+	}
+	defer config.Backend.Disconnect()
 
 	// Set up channel on which to send signal notifications.
 	// We must use a buffered channel or risk missing the signal

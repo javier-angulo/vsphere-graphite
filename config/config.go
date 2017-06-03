@@ -1,8 +1,8 @@
 package config
 
 import (
-        "github.com/cblomart/vsphere-graphite/vsphere"
-        "github.com/cblomart/vsphere-graphite/backend"
+	"github.com/cblomart/vsphere-graphite/backend"
+	"github.com/cblomart/vsphere-graphite/vsphere"
 )
 
 // Configuration
@@ -11,5 +11,5 @@ type Configuration struct {
 	Metrics  []vsphere.Metric
 	Interval int
 	Domain   string
-        Backend  backend.Backend
+	Backend  backend.Backend
 }
