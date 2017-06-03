@@ -333,7 +333,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 					break
 				}
 				if poolmor.Type != "ResourcePool" {
-					ok = false
+					break
 				}
 			}
 			for _, vmmor := range vmmors {
@@ -431,10 +431,6 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			serie := baseserie.(*types.PerfMetricIntSeries)
 			metricName := strings.ToLower(metricToName[serie.Id.CounterId])
 			instanceName := serie.Id.Instance
-			key := "vsphere." + vcName + "." + strings.ToLower(pem.Entity.Type) + "." + name + "." + metricName
-			if len(instanceName) > 0 {
-				key += "." + strings.ToLower(strings.Replace(instanceName, ".", "_", -1))
-			}
 			var value int64 = -1
 			if strings.HasSuffix(metricName, ".average") {
 				value = utils.Average(serie.Value...)
