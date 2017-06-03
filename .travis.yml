@@ -30,7 +30,7 @@ install:
 - make deps
 script:
 - make dist-$BUILD_JOB
-- make docker-$BULD_JOB
+- make docker-$BUILD_JOB
 before_deploy:
 - echo branch $TRAVIS_BRANCH / tag $TRAVIS_TAG / commit $COMMIT
 - for file in $(ls release/*.tgz); do name=$(echo $file | sed s/\.tgz//g); move $file $name_$TRAVIS_TAG.tgz; done;
