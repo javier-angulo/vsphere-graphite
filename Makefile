@@ -36,8 +36,24 @@ build-linux-arm:
 dist-linux-arm:
 	@$(MAKE) dist GOOS=linux GOARCH=arm GOARM=5
 
+docker: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite
+	cp $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/* docker/
+	cp vsphere-graphite-example.json docker/etc/vsphere-graphite.json
+	docker build -f docker/Dockerfile -t cblomart/$(PREFIX)vsphere-graphite docker
+
+docker-linux-amd64:
+	@$(MAKE) docker GOOS=linux GOARCH=amd64
+
+docker-linux-arm:
+	@$(MAKE) docker GOOS=linux GOARCH=arm PREFIX=rpi-
+
+docker-darwin-amd64: ;
+
+docker-windows-amd64: ;
+
 $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX): $(SRC_FILES)
 	go build $(BUILD_FLAGS) -o $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX) .
+	upx -q -9 $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX)
 	cp vsphere-graphite-example.json $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite.json
 
 $(RELEASE_DIR)/vsphere-graphite_$(GOOS)_$(GOARCH).tgz: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX)

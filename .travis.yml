@@ -1,7 +1,11 @@
 language: go
 go:
-- 1.8
+- stable
 sudo: required
+addons:
+  apt:
+    packages:
+    - upx-ucl
 env:
   global:
   - MAKEFLAGS="-j 4"
@@ -9,10 +13,10 @@ env:
   - DOCKER_USERNAME=cblomart
   - secure: HdeMVcGgMn5eqQmlKfKY/BVKzsbn/vwAN/KozEG1zW4yI4TKR9slksPZf7Vc+zZllQbTkbc6LlV1OUFOPTxElOOLOAzpqvJ8wNhpMixrSfPEko+aDZEUArKgRDoJwpUgGvT4H5xcWEA530ugu15cpuu3OMoGX5BubZKzgQedS3I7XcxpmfpNMgfbYWhIzXCmETbdQ9rnihZc95rjiVx1CEen2T9JG8DeLJe1ek9cS5gBo5c4+vM6K0x6NNNpEgI3ux/zR1Akg35seoHIvRB51SkpwJgF9fwvAmVE0UbqN/HGSLjKGO/wA81QCzdSzKc+mdcmFnqoPzuPZT5iiOGvQCIrM1ORqjE5Wj6wZHeJC1dudjPoC8Xel2AVuhrlp4GwRsl7j6q+G2NPN6V2Rjqq3ts1gXNrDxRZcEoZvR72e8xkKHkNKsQDsD4DORYFV4y6fwXYyXkdPZIN5iYZnDIfBce4rguNWveAEprhdF25MUAr1m3u9O8U0mAuiBNIBH0cVsA0e0qMwvThBPdpA3xepkbD78v41Uoz7KT4hgeZPGxLN98N/8F+ilpcr2VLe0HMATaI0hX1LrlPITK5h5Gnz3sva931WbTQPfEhAiGcZKlrg6mVi9b6vjf8Rku5Z+PSmbKZo8B9SKMJduUwmH9N+0Q4+Cgiv0MQFfZh3z3Xq2Q=
   matrix:
-  - BUILD_JOB=dist-windows-amd64
-  - BUILD_JOB=dist-darwin-amd64
-  - BUILD_JOB=dist-linux-amd64
-  - BUILD_JOB=dist-linux-arm
+  - BUILD_JOB=windows-amd64
+  - BUILD_JOB=darwin-amd64
+  - BUILD_JOB=linux-amd64
+  - BUILD_JOB=linux-arm
 services:
 - docker
 before_cache:
@@ -25,10 +29,8 @@ cache:
 install:
 - make deps
 script:
-- make $BUILD_JOB
-- mkdir -p /tmp/vsphere-graphite
-- cp $GOPATH/src/github.com/cblomart/vsphere-graphite/releases/*.tgz /tmp/vsphere-graphite/
-- ls /tmp/vsphere-graphite/
+- make dist-$BUILD_JOB
+- make docker-$BULD_JOB
 before_deploy:
 - echo branch $TRAVIS_BRANCH / tag $TRAVIS_TAG / commit $COMMIT
 - for file in $(ls release/*.tgz); do name=$(echo $file | sed s/\.tgz//g); move $file $name_$TRAVIS_TAG.tgz; done;
@@ -42,16 +44,12 @@ deploy:
   on:
     tags: true
 after_success:
-- if [ $BUILD_JOB = "dist-darwin-amd64" ]; then exit 0; elif [ $BUILD_JOB = "dist-windows-amd64" ]; then exit 0; elif [ $BUILD_JOB = "dist-linux-amd64" ]; then DOCKERFILE="docker/linux/Dockerfile"; NAME="vsphere-graphite"; elif [ $BUILD_JOB = "dist-linux-arm" ]; then DOCKERFILE="docker/rpi/Dockerfile"; NAME="rpi-vsphere-graphite"; fi
+- if [ $BUILD_JOB = "darwin-amd64" ]; then exit 0; elif [ $BUILD_JOB = "windows-amd64" ]; then exit 0; elif [ $BUILD_JOB = "linux-amd64" ]; then NAME="vsphere-graphite"; elif [ $BUILD_JOB = "linux-arm" ]; then NAME="rpi-vsphere-graphite"; fi
 - echo branch $TRAVIS_BRANCH / tag $TRAVIS_TAG / commit $COMMIT
-- ls /tmp/vsphere-graphite/
-- tar -zxf /tmp/vsphere-graphite/*.tgz -C /tmp/vsphere-graphite/
+- echo SETTING STANDARD TAGS (branch-commit)
+- docker tag -f $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_BRANCH-$COMMIT
+- echo SETTING EXTRA TAGS IF PRESENT (version tag and latest)
+- if [ "$TRAVIS_TAG" != "" -a "$TRAVIS_BRANCH" == "master"]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_TAG; fi
+- if [ "$TRAVIS_TAG" != "" -a "$TRAVIS_BRANCH" == "master"]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:latest; fi
 - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-- cp /tmp/vsphere-graphite/vsphere-graphite docker/linux/
-- cp /tmp/vsphere-graphite/vsphere-graphite-example.json docker/linux/vsphere-graphite.json
-- docker build -f $DOCKERFILE -t $DOCKER_USERNAME/$NAME docker/linux/
-- docker tag -f $DOCKER_USERNAME/vsphere-graphite $DOCKER_USERNAME/$NAME:$COMMIT
-- docker tag -f $DOCKER_USERNAME/vsphere-graphite $DOCKER_USERNAME/$NAME:$TRAVIS_BRANCH
-- if [ "$TRAVIS_TAG" != "" ]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_TAG; fi
-- if [ "$TRAVIS_TAG" != "" ]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:latest; fi
 - docker push $DOCKER_USERNAME/$NAME
