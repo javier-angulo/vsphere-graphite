@@ -3,7 +3,7 @@ GOOS=$(word 1,$(subst /, ,$(lastword $(GOVERSION))))
 GOARCH=$(word 2,$(subst /, ,$(lastword $(GOVERSION))))
 RELEASE_DIR=releases
 SRC_FILES=$(wildcard *.go)
-BUILD_FLAGS=-ldflags '-s' -a 
+BUILD_FLAGS=-ldflags '-s -w' -a 
 
 deps:
 	go get github.com/takama/daemon
