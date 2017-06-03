@@ -40,7 +40,7 @@ func Max(n ...int64) int64 {
 
 // Sum : Sum the values
 func Sum(n ...int64) int64 {
-	var total int64 = 0
+	var total int64
 	for _, i := range n {
 		if i > 0 {
 			total += i

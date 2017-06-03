@@ -11,6 +11,7 @@ import (
 	"github.com/marpaia/graphite-golang"
 )
 
+// Point : Information collected for a point
 type Point struct {
 	VCenter      string
 	ObjectType   string
@@ -28,7 +29,7 @@ type Point struct {
 	Timestamp    int64
 }
 
-//Storage backend
+// Backend : storage backend
 type Backend struct {
 	Hostname   string
 	Port       int
@@ -45,6 +46,7 @@ type Backend struct {
 var stdlog, errlog *log.Logger
 var carbon graphite.Graphite
 
+// Init : initialize a backend
 func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
 	stdlog := standardLogs
 	errlog := errorLogs
@@ -86,6 +88,7 @@ func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) er
 	}
 }
 
+// Disconnect : disconnect from backend
 func (backend *Backend) Disconnect() {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case "graphite":
@@ -101,6 +104,7 @@ func (backend *Backend) Disconnect() {
 	}
 }
 
+// SendMetrics : send metrics to backend
 func (backend *Backend) SendMetrics(metrics []Point) {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case "graphite":
