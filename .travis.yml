@@ -49,7 +49,7 @@ after_success:
 - echo "SETTING STANDARD TAGS (branch-commit)"
 - docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_BRANCH-$COMMIT
 - echo "SETTING EXTRA TAGS IF RELEASE AND MASTER (version tag and latest)"
-- if [ "$TRAVIS_TAG" != "" -a "$TRAVIS_BRANCH" == "master"]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_TAG; fi
-- if [ "$TRAVIS_TAG" != "" -a "$TRAVIS_BRANCH" == "master"]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:latest; fi
+- if [ "$TRAVIS_TAG" != "" -a "$TRAVIS_BRANCH" == "master" ]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_TAG; fi
+- if [ "$TRAVIS_TAG" != "" -a "$TRAVIS_BRANCH" == "master" ]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:latest; fi
 - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
 - docker push $DOCKER_USERNAME/$NAME
