@@ -38,6 +38,7 @@ dist-linux-arm:
 
 docker: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite
 	cp $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/* docker/
+	mkdir -p docker/etc
 	cp vsphere-graphite-example.json docker/etc/vsphere-graphite.json
 	docker build -f docker/Dockerfile -t cblomart/$(PREFIX)vsphere-graphite docker
 
