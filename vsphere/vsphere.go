@@ -316,9 +316,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 		stdlog.Println("resourcepool " + mor.String() + " with " + strconv.Itoa(len(vmmors)) + " vms")
 		if mor.Type == "ResourcePool" {
 			// find the full path of the resource pool
-			poolpath := ""
-			poolmor := mor
-			ok := true
+			var poolpath = ""
+			var poolmor = mor
+			var ok = true
 			for ok {
 				poolname, ok := morToName[poolmor]
 				if !ok {
@@ -329,15 +329,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 				// add the name to the path
 				poolpath = poolname + "/" + poolpath
 				stdlog.Println("updated pool path: " + poolpath)
-				prevmor := poolmor
 				poolmor, ok := morToParent[poolmor]
 				if !ok {
 					// no parent pool found
 					errlog.Println("Could not find parent for resourcepool " + poolname)
-					break
-				}
-				if prevmor == poolmor {
-					errlog.Println("Parent is oneself")
 					break
 				}
 				if poolmor.Type != "ResourcePool" {
