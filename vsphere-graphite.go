@@ -126,7 +126,7 @@ func (service *Service) Manage() (string, error) {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 
-	// Set up a channel to recieve the metrics
+	// Set up a channel to receive the metrics
 	metrics := make(chan []backend.Point)
 
 	// Set up a ticker to collect metrics at givent interval
@@ -151,7 +151,7 @@ func (service *Service) Manage() (string, error) {
 		case killSignal := <-interrupt:
 			stdlog.Println("Got signal:", killSignal)
 			if killSignal == os.Interrupt {
-				return "Daemon was interruped by system signal", nil
+				return "Daemon was interrupted by system signal", nil
 			}
 			return "Daemon was killed", nil
 		}
