@@ -99,7 +99,7 @@ func (backend *Backend) Disconnect() {
 	case "influxdb":
 		// Disconnect from influxdb
 		stdlog.Println("Disconnecting from influxdb")
-		_, err := backend.influx.Ping(time.Second * 3)
+		_, _, err := backend.influx.Ping(3 * time.Second)
 		if err == nil {
 			backend.influx.Close()
 		}
