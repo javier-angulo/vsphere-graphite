@@ -165,6 +165,7 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 			tags["cluster"] = point.Cluster
 			tags["instance"] = point.Instance
 			tags["resourcepool"] = point.ResourcePool
+			tags["folder"] = point.Folder
 			fields := make(map[string]interface{})
 			fields[backend.ValueField] = point.Value
 			pt, err := influxclient.NewPoint(key, tags, fields, time.Unix(point.Timestamp, 0))
