@@ -4,28 +4,28 @@ Export vSphere stats to graphite.
 
 Written in go as the integration collectd and python plugin posed too much problems (cpu usage and pipe flood).
 
-# Build status
+## Build status
 
 [![Build Status](https://travis-ci.org/cblomart/vsphere-graphite.svg?branch=master)](https://travis-ci.org/cblomart/vsphere-graphite)
 
-# Code report
+## Code report
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cblomart/vsphere-graphite)](https://goreportcard.com/report/github.com/cblomart/vsphere-graphite)
 
-# Example result
+## Example result
 
 Bellow a dashboard realize with grafana.
 The backend used in this case is influxdb.
 
 ![Example Dashboard](vsphere-graphite-influxdb-grafana-dashboard.png)
 
-# Extenal dependencies
+## Extenal dependencies
 
 Naturaly heavilly based on [govmomi](https://github.com/vmware/govmomi).
 
 But also on [daemon](github.com/takama/daemon) which provides simple daemon/service integration.
 
-# Configure
+## Configure
 
 You need to know you vcenters, logins and password ;-)
 
@@ -44,69 +44,73 @@ For contoso it would simply be:
 
 Backend paramters can also be set via environement paramterers (see docker)
 
-## Backend parameters
+### Backend parameters
 
-  - Type (BACKEND_TYPE): Type of backend to use. Currently "graphite" or "influxdb"
+- Type (BACKEND_TYPE): Type of backend to use. Currently "graphite" or "influxdb"
 
-  - Hostname (BACKEND_HOSTNAME): hostname were the backend is running (graphite, influxdb)
- 
-  - Port (BACKEND_PORT): port to connect to for the backend (graphite, influxdb)
+- Hostname (BACKEND_HOSTNAME): hostname were the backend is running (graphite, influxdb)
 
-  - Username (BACKEND_USERNAME): username to connect to the backend (influxdb)
+- Port (BACKEND_PORT): port to connect to for the backend (graphite, influxdb)
 
-  - Password (BACKEND_PASSWORD): password to connect to the backend (influxdb)
+- Username (BACKEND_USERNAME): username to connect to the backend (influxdb)
 
-  - Database (BACKEND_DATABASE): database to use in the backend (influxdb)
+- Password (BACKEND_PASSWORD): password to connect to the backend (influxdb)
 
-  - NoArray (BACKEND_NOARRAY): don't use csv 'array' as tags, only the first element is used (influxdb)
+- Database (BACKEND_DATABASE): database to use in the backend (influxdb)
 
-# Docker
+- NoArray (BACKEND_NOARRAY): don't use csv 'array' as tags, only the first element is used (influxdb)
+
+## Docker
 
 All builds are pushed to docker:
-  - [cblomart/vsphere-graphite](https://hub.docker.com/r/cblomart/vsphere-graphite/)
-  - [cblomart/rpi-vsphere-graphite](https://hub.docker.com/r/cblomart/rpi-vsphere-graphite/)
+
+- [cblomart/vsphere-graphite](https://hub.docker.com/r/cblomart/vsphere-graphite/)
+
+- [cblomart/rpi-vsphere-graphite](https://hub.docker.com/r/cblomart/rpi-vsphere-graphite/)
 
 Default tags includes:
-  - branch (i.e.: master) for latest commit in the branch
-  - latest for latest release
+
+- branch (i.e.: master) for latest commit in the branch
+
+- latest for latest release
 
 Configration file can be passed by mounting /etc.
 
 Backend parameters can be set via environment variables to make docker user easier (having graphite or influx as another container).
 
-# Run it
+## Run it
 
-## Deploy
+### Deploy
 
 typical GO:
 
   > go get github.com/cblomart/vsphere-graphite
-    
+
 The executable should be in $GOPATH/bin/
 
 It can be copied on any "same system" (same: os and cpu platform).
 
-## Run on Commandline
+### Run on Commandline
 
   > vsphere-graphite
-  
-## Install as a service
+
+### Install as a service
 
   > vsphere-graphite install
-  
-## Run as a service
+
+### Run as a service
 
   > vsphere-graphite start
-  
+  >
   > vsphere-graphite status
-  
+  >
   > vsphere-graphite stop
-  
-## Remove service
+
+### Remove service
 
   > vsphere-graphite remove
-  
-# License
+
+## License
 
 The MIT License (MIT)
 
@@ -117,6 +121,3 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
- 
-
