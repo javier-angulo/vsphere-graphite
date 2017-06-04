@@ -94,12 +94,15 @@ func (backend *Backend) Disconnect() {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case "graphite":
 		// Disconnect from graphite
-		stdlog.Println("Disconnecting from " + backendType)
+		stdlog.Println("Disconnecting from graphite")
 		backend.carbon.Disconnect()
 	case "influxdb":
 		// Disconnect from influxdb
-		stdlog.Println("Disconnecting from " + backendType)
-		backend.influx.Close()
+		stdlog.Println("Disconnecting from influxdb")
+		_, err := backend.influx.Ping(time.Second * 3)
+		if err == nil {
+			backend.influx.Close()
+		}
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
