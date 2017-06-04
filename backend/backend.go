@@ -26,6 +26,7 @@ type Point struct {
 	Cluster      string
 	Network      []string
 	ResourcePool string
+	Folder       string
 	Timestamp    int64
 }
 

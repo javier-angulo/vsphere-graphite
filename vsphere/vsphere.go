@@ -167,7 +167,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 	}
 
 	// Get intresting object types from specified queries
-	objectTypes := []string{"ClusterComputeResource", "Datastore", "HostSystem", "DistributedVirtualPortgroup", "Network", "ResourcePool"}
+	objectTypes := []string{"ClusterComputeResource", "Datastore", "HostSystem", "DistributedVirtualPortgroup", "Network", "ResourcePool", "Folder"}
 	for _, group := range vcenter.MetricGroups {
 		found := false
 		for _, tmp := range objectTypes {
@@ -313,8 +313,6 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 	vmToResourcePoolPath := make(map[types.ManagedObjectReference]string)
 	for mor, vmmors := range morToVms {
 		// not doing case sensitive as this could be extensive
-		stdlog.Println("Searching resourcepool path")
-		stdlog.Println("resourcepool " + mor.String() + " with " + strconv.Itoa(len(vmmors)) + " vms")
 		if mor.Type == "ResourcePool" {
 			// find the full path of the resource pool
 			var poolpath = ""
@@ -344,7 +342,6 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 					break
 				}
 			}
-			stdlog.Println("Found resourcepool path: " + poolpath)
 			for _, vmmor := range vmmors {
 				if vmmor.Type == "VirtualMachine" {
 					vmToResourcePoolPath[vmmor] = poolpath
@@ -352,6 +349,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			}
 		}
 	}
+
+	// Create a map from folder to path
+	folderMorToPath := make(map[types.ManagedObjectReference]string)
 
 	// Create Queries from interesting objects and requested metrics
 
@@ -435,6 +435,35 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 		resourcepool := ""
 		if rppath, ok := vmToResourcePoolPath[pem.Entity]; ok {
 			resourcepool = rppath
+		}
+		//find folder path
+		folder, ok := folderMorToPath[pem.Entity]
+		if !ok {
+			folder = ""
+			current, ok := morToParent[pem.Entity]
+			for ok {
+				if current.Type != "Folder" {
+					errlog.Println("Parent is not a folder for " + current.String())
+					break
+				}
+				foldername, ok := morToName[current]
+				if !ok {
+					errlog.Println("Folder name not found for " + current.String())
+					break
+				}
+				if foldername == "vm" {
+					errlog.Println("VM should be the root folder")
+					break
+				}
+				folder = foldername + "/" + folder
+				newcurrent, ok := morToParent[current]
+				if !ok {
+					errlog.Println("No parent found for folder " + current.String())
+					break
+				}
+				current = newcurrent
+			}
+			folderMorToPath[pem.Entity] = folder
 		}
 		for _, baseserie := range pem.Value {
 			serie := baseserie.(*types.PerfMetricIntSeries)
