@@ -43,9 +43,9 @@ deploy:
   on:
     tags: true
 after_success:
-- if [ $BUILD_JOB = "darwin-amd64" ]; then exit 0; elif [ $BUILD_JOB = "windows-amd64" ]; then exit 0; elif [ $BUILD_JOB = "linux-amd64" ]; then NAME="vsphere-graphite"; elif [ $BUILD_JOB = "linux-arm" ]; then NAME="rpi-vsphere-graphite"; fi
-- if [ "$TRAVIS_TAG" == "" -a "$TRAVIS_BRANCH" == "master" ]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$COMMIT; fi
-- if [ "$TRAVIS_TAG" != "" ]; then docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:$TRAVIS_TAG; docker tag $DOCKER_USERNAME/$NAME $DOCKER_USERNAME/$NAME:latest; fi
-- docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-- if [ "$TRAVIS_TAG" == "" -a "$TRAVIS_BRANCH" == "master" ]; then docker push $DOCKER_USERNAME/$NAME:$COMMIT; fi
-- if [ "$TRAVIS_TAG" != "" ]; then docker push $DOCKER_USERNAME/$NAME:$TRAVIS_TAG; docker push $DOCKER_USERNAME/$NAME:latest; fi
+- if [ "$BUILD_JOB" == "linux-amd64" ]; then DNAME="vsphere-graphite"; elif [ "$BUILD_JOB" == "linux-arm" ]; then DNAME="rpi-vsphere-graphite"; fi
+- if [ "$TRAVIS_TAG" == "" -a "$TRAVIS_BRANCH" == "master" -a "$DNANE" != "" ]; then docker tag $DOCKER_USERNAME/$DNAME $DOCKER_USERNAME/$DNAME:$COMMIT; fi
+- if [ "$TRAVIS_TAG" != "" -a "$DNAME" != "" ]; then docker tag $DOCKER_USERNAME/$DNAME $DOCKER_USERNAME/$DNAME:$TRAVIS_TAG; docker tag $DOCKER_USERNAME/$DNAME $DOCKER_USERNAME/$DNAME:latest; fi
+- if [ "$DNAME" != "" ]; then docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD; fi
+- if [ "$TRAVIS_TAG" == "" -a "$TRAVIS_BRANCH" == "master" -a "$DNAME" != "" ]; then docker push $DOCKER_USERNAME/$DNAME:$COMMIT; fi
+- if [ "$TRAVIS_TAG" != "" -a "$DNAME" != "" ]; then docker push $DOCKER_USERNAME/$DNAME:$TRAVIS_TAG; docker push $DOCKER_USERNAME/$DNAME:latest; fi
