@@ -320,6 +320,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			var poolmor = mor
 			var ok = true
 			for ok {
+				errlog.Println("Got resourcepool " + poolmor.String())
 				poolname, ok := morToName[poolmor]
 				if !ok {
 					// could not find name
