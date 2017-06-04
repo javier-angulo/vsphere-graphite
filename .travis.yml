@@ -32,7 +32,7 @@ script:
 - make dist-$BUILD_JOB
 - make docker-$BUILD_JOB
 before_deploy:
-- for file in $(ls /tmp/*.tgz); do name=$(echo $file | sed s/\.tgz//g); move $file ${name}_${TRAVIS_TAG}.tgz; done;
+- for file in $(ls /tmp/*.tgz); do name=$(echo $file | sed s/\.tgz//g); mv $file ${name}_${TRAVIS_TAG}.tgz; done;
 deploy:
   skip_cleanup: true
   provider: releases
