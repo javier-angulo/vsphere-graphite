@@ -410,8 +410,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 				if parmor, ok := morToParent[esximor]; ok {
 					if parmor.Type == "ClusterComputeResource" {
 						cluster = morToName[parmor]
-					} else {
-						errlog.Println("Parent of host " + vmhost + " was " + parmor.Type + "(" + parmor.Value + ")")
+					} else if parmor.Type != "ComputeResource" {
+						// ComputeRessource parent denotes a standalong host
+						// Any other is weird
+						errlog.Println("Parent of host " + name + " was " + parmor.Type + "(" + parmor.Value + ")")
 					}
 				}
 			}
@@ -420,7 +422,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			if parmor, ok := morToParent[pem.Entity]; ok {
 				if parmor.Type == "ClusterComputeResource" {
 					cluster = morToName[parmor]
-				} else {
+				} else if parmor.Type != "ComputeResource" {
+					// ComputeRessource parent denotes a standalong host
+					// Any other is weird
 					errlog.Println("Parent of host " + name + " was " + parmor.Type + "(" + parmor.Value + ")")
 				}
 			}
@@ -441,29 +445,31 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 		folder, ok := folderMorToPath[pem.Entity]
 		if !ok {
 			folder = ""
-			current, ok := morToParent[pem.Entity]
-			for ok {
-				if current.Type != "Folder" {
-					errlog.Println("Parent is not a folder for " + current.String())
-					break
+			if pem.Entity.Type != "HostSystem" {
+				current, ok := morToParent[pem.Entity]
+				for ok {
+					if current.Type != "Folder" {
+						errlog.Println("Parent is not a folder for " + current.String())
+						break
+					}
+					foldername, ok := morToName[current]
+					if !ok {
+						errlog.Println("Folder name not found for " + current.String())
+						break
+					}
+					if foldername == "vm" {
+						break
+					}
+					folder = foldername + "/" + folder
+					newcurrent, ok := morToParent[current]
+					if !ok {
+						errlog.Println("No parent found for folder " + current.String())
+						break
+					}
+					current = newcurrent
 				}
-				foldername, ok := morToName[current]
-				if !ok {
-					errlog.Println("Folder name not found for " + current.String())
-					break
-				}
-				if foldername == "vm" {
-					break
-				}
-				folder = foldername + "/" + folder
-				newcurrent, ok := morToParent[current]
-				if !ok {
-					errlog.Println("No parent found for folder " + current.String())
-					break
-				}
-				current = newcurrent
+				folder = strings.Trim(folder, "/")
 			}
-			folder = strings.Trim(folder, "/")
 			folderMorToPath[pem.Entity] = folder
 		}
 		for _, baseserie := range pem.Value {
