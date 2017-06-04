@@ -453,7 +453,6 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 					break
 				}
 				if foldername == "vm" {
-					errlog.Println("VM should be the root folder")
 					break
 				}
 				folder = foldername + "/" + folder
