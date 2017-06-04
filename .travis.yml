@@ -44,7 +44,7 @@ deploy:
     tags: true
 after_success:
 - if [ "$BUILD_JOB" == "linux-amd64" ]; then DNAME="vsphere-graphite"; elif [ "$BUILD_JOB" == "linux-arm" ]; then DNAME="rpi-vsphere-graphite"; fi
-- if [ "$TRAVIS_TAG" == "" -a "$TRAVIS_BRANCH" == "master" -a "$DNANE" != "" ]; then docker tag $DOCKER_USERNAME/$DNAME $DOCKER_USERNAME/$DNAME:$COMMIT; fi
+- if [ "$TRAVIS_TAG" == "" -a "$TRAVIS_BRANCH" == "master" -a "$DNAME" != "" ]; then docker tag $DOCKER_USERNAME/$DNAME $DOCKER_USERNAME/$DNAME:$COMMIT; fi
 - if [ "$TRAVIS_TAG" != "" -a "$DNAME" != "" ]; then docker tag $DOCKER_USERNAME/$DNAME $DOCKER_USERNAME/$DNAME:$TRAVIS_TAG; docker tag $DOCKER_USERNAME/$DNAME $DOCKER_USERNAME/$DNAME:latest; fi
 - if [ "$DNAME" != "" ]; then docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD; fi
 - if [ "$TRAVIS_TAG" == "" -a "$TRAVIS_BRANCH" == "master" -a "$DNAME" != "" ]; then docker push $DOCKER_USERNAME/$DNAME:$COMMIT; fi
