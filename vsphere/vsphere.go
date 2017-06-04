@@ -342,6 +342,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 					break
 				}
 			}
+			poolpath = strings.Trim(poolpath, "/")
 			for _, vmmor := range vmmors {
 				if vmmor.Type == "VirtualMachine" {
 					vmToResourcePoolPath[vmmor] = poolpath
@@ -463,6 +464,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 				}
 				current = newcurrent
 			}
+			folder = strings.Trim(folder, "/")
 			folderMorToPath[pem.Entity] = folder
 		}
 		for _, baseserie := range pem.Value {
