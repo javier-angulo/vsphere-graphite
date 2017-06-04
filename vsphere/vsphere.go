@@ -331,6 +331,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 				poolpath = poolname + "/" + poolpath
 				stdlog.Println("updated pool path: " + poolpath)
 				poolmor, ok := morToParent[poolmor]
+				errlog.Println("Got new resourcepool " + poolmor.String())
 				if !ok {
 					// no parent pool found
 					errlog.Println("Could not find parent for resourcepool " + poolname)
