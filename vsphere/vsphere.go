@@ -289,6 +289,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 				mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
 				if ok {
 					if len(mors.ManagedObjectReference) > 0 {
+						// container without vms in it will be ignored (no meta container)
 						morToVms[objectContent.Obj] = mors.ManagedObjectReference
 					}
 				} else {
@@ -320,18 +321,19 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			var poolmor = mor
 			var ok = true
 			for ok {
-				errlog.Println("Got resourcepool " + poolmor.String())
 				poolname, ok := morToName[poolmor]
 				if !ok {
 					// could not find name
 					errlog.Println("Could not find name for resourcepool " + mor.String())
 					break
 				}
+				if poolname == "Resources" {
+					// ignore root resourcepool
+					break
+				}
 				// add the name to the path
 				poolpath = poolname + "/" + poolpath
-				stdlog.Println("updated pool path: " + poolpath)
 				newmor, ok := morToParent[poolmor]
-				errlog.Println("Got new resourcepool " + poolmor.String())
 				if !ok {
 					// no parent pool found
 					errlog.Println("Could not find parent for resourcepool " + poolname)
