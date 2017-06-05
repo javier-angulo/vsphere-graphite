@@ -6,7 +6,8 @@ pipeline:
   deps:
     image: golang:1.8
     commands:
-    - go get
+    - go get -u github.com/golang/dep/cmd/dep
+    - dep ensure 
   checkups:
     image: golang:1.8
     commands:
