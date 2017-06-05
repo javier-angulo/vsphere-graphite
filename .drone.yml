@@ -7,11 +7,17 @@ pipeline:
     image: golang:1.8
     commands:
     - go get
-  simplicity:
+  checkups:
     image: golang:1.8
     commands:
     - go get honnef.co/go/tools/cmd/gosimple
+    - go get -u github.com/golang/lint/golint
+    - go get -u github.com/gordonklaus/ineffassign
     - gosimple ./...
+    - gofmt -s -d .
+    - go vet ./...
+    - golint ./...
+    - ineffassign ./
   coverage:
     image: golang:1.8
     environment:
