@@ -7,9 +7,10 @@ import (
 
 // Configuration : configurarion base
 type Configuration struct {
-	VCenters []*vsphere.VCenter
-	Metrics  []vsphere.Metric
-	Interval int
-	Domain   string
-	Backend  backend.Backend
+	VCenters  []*vsphere.VCenter
+	Metrics   []vsphere.Metric
+	Interval  int
+	Domain    string
+	Backend   backend.Backend
+	Profiling bool
 }

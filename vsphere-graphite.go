@@ -20,6 +20,9 @@ import (
 	"github.com/takama/daemon"
 
 	"github.com/vmware/govmomi/vim25/types"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 const (
@@ -84,6 +87,12 @@ func (service *Service) Manage() (string, error) {
 	err = jsondec.Decode(&config)
 	if err != nil {
 		return "Could not decode configuration file", err
+	}
+
+	if config.Profiling {
+		go func() {
+			stdlog.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
 	}
 
 	//force backend values to environement varialbles if present
