@@ -18,13 +18,6 @@ pipeline:
     - go vet ./...
     - golint ./...
     - ineffassign ./
-  coverage:
-    image: golang:1.8
-    environment:
-    - COVERALLS_TOKEN=${COVERALLS_TOKEN}
-    commands:
-    - go get github.com/mattn/goveralls
-    - goveralls -service=drone.io
   buildlin:
     group: build
     image: golang:1.8
