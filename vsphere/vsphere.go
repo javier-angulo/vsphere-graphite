@@ -444,7 +444,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 		//find folder path
 		folder := ""
 		if folderpath, ok := folderMorToPath[pem.Entity]; ok {
-			folder = folderpath
+			if len(folderpath) > 0 {
+				folder = folderpath
+			}
 		} else {
 			if pem.Entity.Type != "HostSystem" {
 				current, ok := morToParent[pem.Entity]
