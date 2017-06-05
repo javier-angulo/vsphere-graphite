@@ -28,4 +28,15 @@ pipeline:
   build:
     image: golang:1.8
     commands:
-    - go build
+    - GOOS=${GOOS} GOARCH=${GOARCH} GOARM=5 go build -ldflags '-s -w' -a
+
+matrix:
+  include:
+  - GOOS: linux
+    GOARCH: amd64
+  - GOOS: darwin
+    GOARCH: amd64
+  - GOOS: windows
+    GOARCH: amd64
+  - GOOS: linux
+    GOARCH: arm
