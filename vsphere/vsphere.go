@@ -442,12 +442,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			resourcepool = rppath
 		}
 		//find folder path
-		folder := ""
-		if folderpath, ok := folderMorToPath[pem.Entity]; ok {
-			if len(folderpath) > 0 {
-				folder = folderpath
-			}
-		} else {
+		if folders, ok := folderMorToPath[pem.Entity]; !ok {
 			if pem.Entity.Type != "HostSystem" {
 				current, ok := morToParent[pem.Entity]
 				for ok {
@@ -463,7 +458,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 					if foldername == "vm" {
 						break
 					}
-					folder = foldername + "/" + folder
+					folders = foldername + "/" + folders
 					newcurrent, ok := morToParent[current]
 					if !ok {
 						errlog.Println("No parent found for folder " + current.String())
@@ -471,9 +466,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 					}
 					current = newcurrent
 				}
-				folder = strings.Trim(folder, "/")
+				folders = strings.Trim(folders, "/")
 			}
-			folderMorToPath[pem.Entity] = folder
+			folderMorToPath[pem.Entity] = folders
 		}
 		for _, baseserie := range pem.Value {
 			serie := baseserie.(*types.PerfMetricIntSeries)
