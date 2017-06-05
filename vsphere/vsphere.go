@@ -95,7 +95,7 @@ func (vcenter *VCenter) Init(metrics []Metric, standardLogs *log.Logger, errorLo
 	for _, perf := range perfmanager.PerfCounter {
 		groupinfo := perf.GroupInfo.GetElementDescription()
 		nameinfo := perf.NameInfo.GetElementDescription()
-		identifier := groupinfo.Key + "." + nameinfo.Key + "." + fmt.Sprint(perf.RollupType)
+		identifier := groupinfo.Key + "." + nameinfo.Key + "." + string(perf.RollupType)
 		for _, metric := range metrics {
 			for _, metricdef := range metric.Definition {
 				if metricdef.Metric == identifier {
