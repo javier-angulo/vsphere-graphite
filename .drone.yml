@@ -25,18 +25,23 @@ pipeline:
     commands:
     - go get github.com/mattn/goveralls
     - goveralls -service=drone.io
-  build:
+  buildlin:
+    group: build
     image: golang:1.8
     commands:
-    - GOOS=${GOOS} GOARCH=${GOARCH} GOARM=5 go build -ldflags '-s -w' -a
-
-matrix:
-  include:
-  - GOOS: linux
-    GOARCH: amd64
-  - GOOS: darwin
-    GOARCH: amd64
-  - GOOS: windows
-    GOARCH: amd64
-  - GOOS: linux
-    GOARCH: arm
+    - GOOS=linux GOARCH=amd64 go build -ldflags '-s -w' -a
+  buildwin:
+    group: build
+    image: golang:1.8
+    commands:
+    - GOOS=windows GOARCH=amd64 go build -ldflags '-s -w' -a
+  buildosx:
+    group: build
+    image: golang:1.8
+    commands:
+    - GOOS=darwin GOARCH=amd64 go build -ldflags '-s -w' -a
+  buildarm:
+    group: build
+    image: golang:1.8
+    commands:
+    - GOOS=linux GOARCH=arm GOARM=5 go build -ldflags '-s -w' -a
