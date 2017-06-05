@@ -442,9 +442,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			resourcepool = rppath
 		}
 		//find folder path
-		folder, ok := folderMorToPath[pem.Entity]
-		if !ok {
-			folder = ""
+		folder := ""
+		if folderpath, ok := folderMorToPath[pem.Entity]; ok {
+			folder = folderpath
+		} else {
 			if pem.Entity.Type != "HostSystem" {
 				current, ok := morToParent[pem.Entity]
 				for ok {
