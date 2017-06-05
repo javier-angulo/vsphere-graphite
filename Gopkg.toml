@@ -1,0 +1,19 @@
+[[constraint]]
+  branch = "master"
+  name = "github.com/influxdata/influxdb"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/marpaia/graphite-golang"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/takama/daemon"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/vmware/govmomi"
+
+[[constraint]]
+  branch = "master"
+  name = "golang.org/x/net"

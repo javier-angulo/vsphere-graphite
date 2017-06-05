@@ -6,3 +6,9 @@ vsphere-graphite
 
 #ignore saved files (i.e. nano)
 *.save
+
+#ignore file locks
+*.lock
+
+#vendor folder
+vendor/
