@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"path"
 	"reflect"
+	"runtime/pprof"
 	"strconv"
 	"strings"
 	"syscall"
@@ -20,9 +21,6 @@ import (
 	"github.com/takama/daemon"
 
 	"github.com/vmware/govmomi/vim25/types"
-
-	"net/http"
-	_ "net/http/pprof"
 )
 
 const (
@@ -90,9 +88,14 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	if config.Profiling {
-		go func() {
-			stdlog.Println(http.ListenAndServe("localhost:6060", nil))
-		}()
+		f, err := os.Create("/tmp/vsphere-graphite-cpu.profile")
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
 	}
 
 	//force backend values to environement varialbles if present
@@ -181,7 +184,7 @@ func main() {
 	service := &Service{srv}
 	status, err := service.Manage()
 	if err != nil {
-		errlog.Println(status, "\nError: ", err)
+		errlog.Println(status, "Error: ", err)
 		os.Exit(1)
 	}
 	fmt.Println(status)
