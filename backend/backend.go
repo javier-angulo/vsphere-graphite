@@ -147,20 +147,20 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 			if backend.NoArray {
 				if len(point.Datastore) > 0 {
 					tags["datastore"] = point.Datastore[0]
-				} else {
-					tags["datastore"] = ""
 				}
 			} else {
-				tags["datastore"] = strings.Join(point.Datastore, "\\,")
+				if len(point.Datastore) > 0 {
+					tags["datastore"] = strings.Join(point.Datastore, "\\,")
+				}
 			}
 			if backend.NoArray {
 				if len(point.Network) > 0 {
 					tags["network"] = point.Network[0]
-				} else {
-					tags["network"] = ""
 				}
 			} else {
-				tags["network"] = strings.Join(point.Network, "\\,")
+				if len(point.Network) > 0 {
+					tags["network"] = strings.Join(point.Network, "\\,")
+				}
 			}
 			tags["host"] = point.ESXi
 			tags["cluster"] = point.Cluster
@@ -170,11 +170,11 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 			if backend.NoArray {
 				if len(point.ViTags) > 0 {
 					tags["vitags"] = point.ViTags[0]
-				} else {
-					tags["vitags"] = ""
 				}
 			} else {
-				tags["vitags"] = strings.Join(point.ViTags, "\\,")
+				if len(point.ViTags) > 0 {
+					tags["vitags"] = strings.Join(point.ViTags, "\\,")
+				}
 			}
 			fields := make(map[string]interface{})
 			fields[backend.ValueField] = point.Value
