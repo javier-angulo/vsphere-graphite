@@ -162,11 +162,21 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 					tags["network"] = strings.Join(point.Network, "\\,")
 				}
 			}
-			tags["host"] = point.ESXi
-			tags["cluster"] = point.Cluster
-			tags["instance"] = point.Instance
-			tags["resourcepool"] = point.ResourcePool
-			tags["folder"] = point.Folder
+			if len(point.ESXi) > 0 {
+				tags["host"] = point.ESXi
+			}
+			if len(point.Cluster) > 0 {
+				tags["cluster"] = point.Cluster
+			}
+			if len(point.Instance) > 0 {
+				tags["instance"] = point.Instance
+			}
+			if len(point.ResourcePool) > 0 {
+				tags["resourcepool"] = point.ResourcePool
+			}
+			if len(point.Folder) > 0 {
+				tags["folder"] = point.Folder
+			}
 			if backend.NoArray {
 				if len(point.ViTags) > 0 {
 					tags["vitags"] = point.ViTags[0]
