@@ -212,7 +212,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 
 	//properties specifications
 	propSet := []types.PropertySpec{}
-	propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent"}})
+	propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent", "tag"}})
 	propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host"}})
 	propSet = append(propSet, types.PropertySpec{Type: "ResourcePool", PathSet: []string{"vm"}})
 
@@ -242,6 +242,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 
 	//create a map to resolve mor to vms - object that contains multiple vms as child objects
 	morToVms := make(map[types.ManagedObjectReference][]types.ManagedObjectReference)
+
+	//create a map to resolve mor to tags
+	morToTags := make(map[types.ManagedObjectReference][]types.Tag)
 
 	for _, objectContent := range propres.Returnval {
 		for _, Property := range objectContent.PropSet {
@@ -293,7 +296,16 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 						morToVms[objectContent.Obj] = mors.ManagedObjectReference
 					}
 				} else {
-					errlog.Println("VM property of " + objectContent.Obj.String() + " was not an array of  ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
+					errlog.Println("VM property of " + objectContent.Obj.String() + " was not an array of ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
+				}
+			case "tag":
+				tags, ok := Property.Val.(types.ArrayOfTag)
+				if ok {
+					if len(tags.Tag) > 0 {
+						morToTags[objectContent.Obj] = tags.Tag
+					}
+				} else {
+					errlog.Println("Tag property of " + objectContent.Obj.String() + " was not an array of Tag, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			default:
 				errlog.Println("Unhandled property '" + propertyName + "' for " + objectContent.Obj.String() + " whose type is " + fmt.Sprintf("%T", Property.Val))
@@ -470,6 +482,13 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			}
 			folderMorToPath[pem.Entity] = folders
 		}
+		//find tags
+		vitags := []string{}
+		if tags, ok := morToTags[pem.Entity]; ok {
+			for _, tag := range tags {
+				vitags = append(network, tag.Key)
+			}
+		}
 		for _, baseserie := range pem.Value {
 			serie := baseserie.(*types.PerfMetricIntSeries)
 			metricName := strings.ToLower(metricToName[serie.Id.CounterId])
@@ -501,6 +520,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 				Cluster:      cluster,
 				Network:      network,
 				ResourcePool: resourcepool,
+				ViTags:       vitags,
 				Timestamp:    endTime.Unix(),
 			}
 			values = append(values, point)

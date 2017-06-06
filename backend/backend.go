@@ -27,6 +27,7 @@ type Point struct {
 	Network      []string
 	ResourcePool string
 	Folder       string
+	ViTags       []string
 	Timestamp    int64
 }
 
@@ -166,6 +167,15 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 			tags["instance"] = point.Instance
 			tags["resourcepool"] = point.ResourcePool
 			tags["folder"] = point.Folder
+			if backend.NoArray {
+				if len(point.ViTags) > 0 {
+					tags["vitags"] = point.ViTags[0]
+				} else {
+					tags["vitags"] = ""
+				}
+			} else {
+				tags["vitags"] = strings.Join(point.ViTags, "\\,")
+			}
 			fields := make(map[string]interface{})
 			fields[backend.ValueField] = point.Value
 			pt, err := influxclient.NewPoint(key, tags, fields, time.Unix(point.Timestamp, 0))
