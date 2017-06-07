@@ -13,4 +13,5 @@ type Configuration struct {
 	Domain    string
 	Backend   backend.Backend
 	Profiling bool
+	FlushSize int
 }
