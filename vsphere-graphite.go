@@ -166,7 +166,7 @@ func (service *Service) Manage() (string, error) {
 			for i := 0; i <= len(values); i += config.FlushSize {
 				end := i + config.FlushSize
 				if end > len(values) {
-					end = len(value)
+					end = len(values)
 				}
 				flush := values[i:end]
 				config.Backend.SendMetrics(flush)
