@@ -160,8 +160,18 @@ func (service *Service) Manage() (string, error) {
 	for {
 		select {
 		case values := <-metrics:
-			config.Backend.SendMetrics(values)
-			stdlog.Printf("Sent %d logs to backend", len(values))
+			if config.FlushSize == nil {
+				config.FlushSize = 1000
+			}
+			for i = 0; i <= len(values); i += config.FlushSize {
+				end := i + config.FlushSize
+				if end > len(values) {
+					end = len(value)
+				}
+				flush := values[i:end]
+				config.Backend.SendMetrics(flush)
+				stdlog.Printf("Sent %d logs to backend", len(flush))
+			}
 		case <-ticker.C:
 			stdlog.Println("Retrieving metrics")
 			for _, vcenter := range config.VCenters {
