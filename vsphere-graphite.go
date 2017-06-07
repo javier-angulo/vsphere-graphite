@@ -160,10 +160,10 @@ func (service *Service) Manage() (string, error) {
 	for {
 		select {
 		case values := <-metrics:
-			if config.FlushSize == nil {
+			if config.FlushSize == 0 {
 				config.FlushSize = 1000
 			}
-			for i = 0; i <= len(values); i += config.FlushSize {
+			for i := 0; i <= len(values); i += config.FlushSize {
 				end := i + config.FlushSize
 				if end > len(values) {
 					end = len(value)
