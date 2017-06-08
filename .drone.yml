@@ -4,37 +4,30 @@ workspace:
 
 pipeline:
   deps:
-    image: golang:1.8
+    image: cblomart/gobasebuild
     commands:
     - make deps
   checkups:
-    image: golang:1.8
+    image: cblomart/gobasebuild
     commands:
-    - go get honnef.co/go/tools/cmd/gosimple
-    - go get -u github.com/golang/lint/golint
-    - go get -u github.com/gordonklaus/ineffassign
-    - gosimple ./...
-    - gofmt -s -d .
-    - go vet ./...
-    - golint ./...
-    - ineffassign ./
+    - make checks
   buildlin:
     group: build
-    image: golang:1.8
+    image: cblomart/gobasebuild
     commands:
-    - GOOS=linux GOARCH=amd64 go build -ldflags '-s -w' -a
+    - make build-linux-amd64
   buildwin:
     group: build
-    image: golang:1.8
+    image: cblomart/gobasebuild
     commands:
-    - GOOS=windows GOARCH=amd64 go build -ldflags '-s -w' -a
+    - make build-windows-amd64
   buildosx:
     group: build
-    image: golang:1.8
+    image: cblomart/gobasebuild
     commands:
-    - GOOS=darwin GOARCH=amd64 go build -ldflags '-s -w' -a
+    - make build-darwin-amd64
   buildarm:
     group: build
-    image: golang:1.8
+    image: cblomart/gobasebuild
     commands:
-    - GOOS=linux GOARCH=arm GOARM=5 go build -ldflags '-s -w' -a
+    - make build-linux-arm

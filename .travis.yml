@@ -6,6 +6,7 @@ addons:
   apt:
     packages:
     - upx-ucl
+    - musl
 env:
   global:
   - MAKEFLAGS="-j 4"
@@ -28,6 +29,7 @@ cache:
     - $GOPATH/pkg
 install:
 - make deps
+- make checks
 script:
 - make dist-$BUILD_JOB
 - make docker-$BUILD_JOB

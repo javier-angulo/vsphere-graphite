@@ -3,7 +3,9 @@ GOOS=$(word 1,$(subst /, ,$(lastword $(GOVERSION))))
 GOARCH=$(word 2,$(subst /, ,$(lastword $(GOVERSION))))
 RELEASE_DIR=releases
 SRC_FILES=$(wildcard *.go)
-BUILD_FLAGS=-ldflags '-s -w' -a 
+BUILD_FLAGS=-ldflags '-linkmode external -s -w -extldflags "-static"' -a
+CC=musl-gcc
+CCGLAGS="-static"
 
 deps:
 	go get github.com/takama/daemon
@@ -51,6 +53,16 @@ docker-linux-arm:
 docker-darwin-amd64: ;
 
 docker-windows-amd64: ;
+
+checks:
+	go get honnef.co/go/tools/cmd/gosimple
+	go get -u github.com/golang/lint/golint
+	go get -u github.com/gordonklaus/ineffassign
+	gosimple ./...
+	gofmt -s -d .
+	go vet ./...
+	golint ./...
+	ineffassign ./
 
 $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX): $(SRC_FILES)
 	go build $(BUILD_FLAGS) -o $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX) .

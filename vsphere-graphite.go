@@ -157,6 +157,7 @@ func (service *Service) Manage() (string, error) {
 	for _, vcenter := range config.VCenters {
 		go queryVCenter(*vcenter, config, &metrics)
 	}
+
 	for {
 		select {
 		case values := <-metrics:
