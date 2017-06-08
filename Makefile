@@ -4,7 +4,7 @@ GOARCH=$(word 2,$(subst /, ,$(lastword $(GOVERSION))))
 RELEASE_DIR=releases
 SRC_FILES=$(wildcard *.go)
 MUSL_BUILD_FLAGS=-ldflags '-linkmode external -s -w -extldflags "-static"' -a
-BUILD_FLAGS=-ldflags -s -w -a
+BUILD_FLAGS=-ldflags -s -a
 MUSL_CC=musl-gcc
 MUSL_CCGLAGS="-static"
 
