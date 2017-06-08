@@ -80,7 +80,15 @@ Backend parameters can be set via environment variables to make docker user easi
 
 ## Run it
 
-### Deploy
+### the container way
+
+Edit the configuration file and set it in the place you like here $(pwd)
+
+  > docker run -t -v $(pwd)/vsphere-graphite.json:/etc/vsphere-graphite.json cblomart/vsphere-graphite:latest
+
+### The old way
+
+#### Deploy
 
 typical GO:
 
@@ -90,15 +98,15 @@ The executable should be in $GOPATH/bin/
 
 It can be copied on any "same system" (same: os and cpu platform).
 
-### Run on Commandline
+#### Run on Commandline
 
   > vsphere-graphite
 
-### Install as a service
+#### Install as a service
 
   > vsphere-graphite install
 
-### Run as a service
+#### Run as a service
 
   > vsphere-graphite start
   >
@@ -106,7 +114,7 @@ It can be copied on any "same system" (same: os and cpu platform).
   >
   > vsphere-graphite stop
 
-### Remove service
+#### Remove service
 
   > vsphere-graphite remove
 
