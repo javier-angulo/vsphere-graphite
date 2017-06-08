@@ -3,9 +3,10 @@ GOOS=$(word 1,$(subst /, ,$(lastword $(GOVERSION))))
 GOARCH=$(word 2,$(subst /, ,$(lastword $(GOVERSION))))
 RELEASE_DIR=releases
 SRC_FILES=$(wildcard *.go)
-BUILD_FLAGS=-ldflags '-linkmode external -s -w -extldflags "-static"' -a
-CC=musl-gcc
-CCGLAGS="-static"
+MUSL_BUILD_FLAGS=-ldflags '-linkmode external -s -w -extldflags "-static"' -a
+BUILD_FLAGS=-ldflags -s -w -a
+MUSL_CC=musl-gcc
+MUSL_CCGLAGS="-static"
 
 deps:
 	go get github.com/takama/daemon
@@ -21,7 +22,9 @@ dist-windows-amd64:
 	@$(MAKE) dist GOOS=windows GOARCH=amd64 SUFFIX=.exe
 
 build-linux-amd64:
-	@$(MAKE) build GOOS=linux GOARCH=amd64
+	CC=$(MUSL_CC) CCGLAGS=$(MUSL_CCGLAGS) go build $(MUSL_BUILD_FLAGS) -o $(RELEASE_DIR)/linux/amd64//vsphere-graphite .
+	upx -qq --best $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite
+	cp vsphere-graphite-example.json $(RELEASE_DIR)/linux/amd64/vsphere-graphite.json
 
 dist-linux-amd64:
 	@$(MAKE) dist GOOS=linux GOARCH=amd64
