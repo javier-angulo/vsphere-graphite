@@ -100,10 +100,6 @@ func (backend *Backend) Disconnect() {
 	case "influxdb":
 		// Disconnect from influxdb
 		stdlog.Println("Disconnecting from influxdb")
-		_, _, err := backend.influx.Ping(3 * time.Second)
-		if err == nil {
-			backend.influx.Close()
-		}
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
