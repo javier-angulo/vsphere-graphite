@@ -97,7 +97,7 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 	}
 	req.SetBasicAuth(client.Username, client.password)
 	req.Header.Set("Content-Type", "text/plain")
-	req.Header.Set("Content-Encoding", "gzip")
+	req.Header.Set("Accept-Encoding", "gzip")
 	clt := &http.Client{}
 	resp, err := clt.Do(req)
 	if err != nil {
