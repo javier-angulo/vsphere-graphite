@@ -28,8 +28,8 @@ type ThinInfluxClient struct {
 	password string
 }
 
-// Init the thin influx client
-func (client *ThinInfluxClient) Init(server string, port int, database, username, password, precision string, ssl bool) (ThinInfluxClient, error) {
+// NewThinInlfuxClient creates a new thin influx client
+func NewThinInlfuxClient(server string, port int, database, username, password, precision string, ssl bool) (ThinInfluxClient, error) {
 	if len(server) == 0 {
 		return ThinInfluxClient{}, errors.New("No url indicated")
 	}

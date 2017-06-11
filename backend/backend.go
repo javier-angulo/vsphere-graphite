@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cblomart/vsphere-graphite/backend/ThinInfluxClient"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
-	"github.com/cblomart/vsphere-graphite/backend/ThinInfluxClient"
 )
 
 // Point : Information collected for a point
@@ -43,7 +43,7 @@ type Backend struct {
 	NoArray      bool
 	carbon       *graphite.Graphite
 	influx       influxclient.Client
-	thininfluxdb ThinInfluxClient
+	thininfluxdb ThinInfluxClient.ThinInfluxClient
 	ValueField   string
 	Encrypted    bool
 }
@@ -150,6 +150,16 @@ func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) er
 		}
 		backend.influx = influxclt
 		return nil
+	case "thininfluxdb":
+		//Initialize thin Influx DB client
+		stdlog.Println("Initializing " + backendType + " backend")
+		thininfluxclt, err := ThinInfluxClient.NewThinInlfuxClient(backend.Hostname, backend.Port, backend.Database, backend.Username, backend.Password, "s", backend.Encrypted)
+		if err != nil {
+			errlog.Println("Error creating thin InfluxDB client")
+			return err
+		}
+		backend.thininfluxdb = thininfluxclt
+		return nil
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 		return errors.New("Backend " + backendType + " unknown.")
@@ -166,6 +176,9 @@ func (backend *Backend) Disconnect() {
 	case "influxdb":
 		// Disconnect from influxdb
 		stdlog.Println("Disconnecting from influxdb")
+	case "thininfluxdb":
+		// Disconnect from thin influx db
+		stdlog.Println("Disconnecting from thininfluxdb")
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
@@ -263,7 +276,14 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 			errlog.Println("Error sending metrics: ", err)
 		}
 	case "thininfluxdb":
-
+		lines := []string{}
+		for _, point := range metrics {
+			lines = append(lines, point.ToInflux(backend.NoArray, backend.ValueField))
+		}
+		err := backend.thininfluxdb.Send(lines)
+		if err != nil {
+			errlog.Print("Error sendg metrics: ", err)
+		}
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
