@@ -83,7 +83,7 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 	var buf bytes.Buffer
 	g := gzip.NewWriter(&buf)
 	for _, l := range lines {
-		if _, err := g.Write([]byte(l)); err != nil {
+		if _, err := g.Write([]byte(l + "\n")); err != nil {
 			return err
 		}
 	}

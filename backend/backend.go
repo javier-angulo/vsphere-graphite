@@ -49,6 +49,69 @@ type Backend struct {
 var stdlog, errlog *log.Logger
 var carbon graphite.Graphite
 
+// ToInflux serialises the data to be consumed by influx line protocol
+// see https://docs.influxdata.com/influxdb/v1.2/write_protocols/line_protocol_tutorial/
+func (point *Point) ToInflux(noarray bool, valuefield string) string {
+	// measurement name
+	line := point.Group + "_" + point.Counter + "_" + point.Rollup
+	// tags name=value
+	line += ",vcenter=" + point.VCenter
+	line += ",type=" + point.ObjectType
+	line += ",name=" + point.ObjectName
+	// these value could have multiple values
+	datastore := ""
+	network := ""
+	vitags := ""
+	if noarray {
+		if len(point.Datastore) > 0 {
+			datastore = point.Datastore[0]
+		}
+		if len(point.Network) > 0 {
+			network = point.Network[0]
+		}
+		if len(point.ViTags) > 0 {
+			vitags = point.ViTags[0]
+		}
+	} else {
+		if len(point.Datastore) > 0 {
+			datastore = strings.Join(point.Datastore, "\\,")
+		}
+		if len(point.Network) > 0 {
+			network = strings.Join(point.Network, "\\,")
+		}
+		if len(point.ViTags) > 0 {
+			vitags = strings.Join(point.ViTags, "\\,")
+		}
+	}
+	if len(datastore) > 0 {
+		line += ",datastore=" + datastore
+	}
+	if len(network) > 0 {
+		line += ",network=" + network
+	}
+	if len(vitags) > 0 {
+		line += ",vitags=" + vitags
+	}
+	if len(point.ESXi) > 0 {
+		line += ",host=" + point.ESXi
+	}
+	if len(point.Cluster) > 0 {
+		line += ",cluster=" + point.Cluster
+	}
+	if len(point.Instance) > 0 {
+		line += ",instance=" + point.Instance
+	}
+	if len(point.ResourcePool) > 0 {
+		line += ",resourcepool=" + point.ResourcePool
+	}
+	if len(point.Folder) > 0 {
+		line += ",folder=" + point.Folder
+	}
+	line += " " + valuefield + "=" + strconv.FormatInt(point.Value, 10)
+	line += " " + strconv.FormatInt(point.Timestamp, 10)
+	return line
+}
+
 // Init : initialize a backend
 func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
 	stdlog := standardLogs
