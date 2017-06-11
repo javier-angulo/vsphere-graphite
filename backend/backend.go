@@ -109,7 +109,7 @@ func (point *Point) ToInflux(noarray bool, valuefield string) string {
 	if len(point.Folder) > 0 {
 		line += ",folder=" + point.Folder
 	}
-	line += " " + valuefield + "=" + strconv.FormatInt(point.Value, 10)
+	line += " " + valuefield + "=" + strconv.FormatInt(point.Value, 10) + "i"
 	line += " " + strconv.FormatInt(point.Timestamp, 10)
 	return line
 }

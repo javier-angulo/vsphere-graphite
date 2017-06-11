@@ -81,24 +81,26 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 		return nil
 	}
 	// prepare the content
+        push := strings.Join(lines,"\n")
 	var buf bytes.Buffer
 	g := gzip.NewWriter(&buf)
-	for _, l := range lines {
-		if _, err := g.Write([]byte(strconv.Quote(l + "\n"))); err != nil {
-			return err
-		}
+	if _, err := g.Write([]byte(push)); err != nil {
+        	return err
 	}
-	if err := g.Close(); err != nil {
-		return err
-	}
+    	if err := g.Flush(); err != nil {
+         	return err
+    	}
+    	if err := g.Close(); err != nil {
+        	return err
+    	}
 	// prepare the request
 	req, err := http.NewRequest("POST", client.URL, &buf)
 	if err != nil {
 		return err
 	}
 	req.SetBasicAuth(client.Username, client.password)
-	req.Header.Set("Content-Type", "text/plain")
-	req.Header.Set("Accept-Encoding", "gzip")
+	req.Header.Set("Content-Type", "text/plain; charset=utf-8")
+	req.Header.Set("Content-Encoding", "gzip")
 	clt := &http.Client{}
 	resp, err := clt.Do(req)
 	if err != nil {
