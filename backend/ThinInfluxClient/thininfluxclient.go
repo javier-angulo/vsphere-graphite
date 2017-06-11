@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -108,6 +109,16 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 	}
 	jsonerr := InfluxError{}
 	if resp.StatusCode == 400 || resp.StatusCode == 404 || resp.StatusCode == 500 {
+		defer resp.Body.Close()
+		// Check that the server actually sent compressed data
+		var reader io.ReadCloser
+		switch resp.Header.Get("Content-Encoding") {
+		case "gzip":
+			reader, err = gzip.NewReader(resp.Body)
+			defer reader.Close()
+		default:
+			reader = resp.Body
+		}
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return err
