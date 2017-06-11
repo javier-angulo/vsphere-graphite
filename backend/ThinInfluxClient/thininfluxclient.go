@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
@@ -99,20 +100,31 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 	req.Header.Set("Content-Encoding", "gzip")
 	clt := &http.Client{}
 	resp, err := clt.Do(req)
-	if err == nil {
+	if err != nil {
 		return err
 	}
+	if resp.StatusCode == 204 {
+		return nil
+	}
+	jsonerr := InfluxError{}
+	if resp.StatusCode == 400 || resp.StatusCode == 404 || resp.StatusCode == 500 {
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		jsonerr.UnmarshalJSON(body)
+	}
 	if resp.StatusCode == 400 {
-		return errors.New("Influxdb Unacceptable request")
+		return errors.New("Influxdb Unacceptable request: " + jsonerr.Error)
 	}
 	if resp.StatusCode == 401 {
 		return errors.New("Unauthorized access: check credentials and db")
 	}
 	if resp.StatusCode == 404 {
-		return errors.New("Database not found")
+		return errors.New("Database not found: " + jsonerr.Error)
 	}
 	if resp.StatusCode == 500 {
-		return errors.New("Server Busy")
+		return errors.New("Server Busy: " + jsonerr.Error)
 	}
 	return nil
 }
