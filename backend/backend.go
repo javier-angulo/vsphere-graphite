@@ -43,6 +43,7 @@ type Backend struct {
 	carbon     *graphite.Graphite
 	influx     influxclient.Client
 	ValueField string
+	Encrypted  bool
 }
 
 var stdlog, errlog *log.Logger
