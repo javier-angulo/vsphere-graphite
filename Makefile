@@ -14,6 +14,7 @@ deps:
 	go get github.com/vmware/govmomi
 	go get github.com/marpaia/graphite-golang
 	go get github.com/influxdata/influxdb/client/v2
+	go get github.com/pquerna/ffjson/fflib/v1
 
 build-windows-amd64:
 	@$(MAKE) build GOOS=windows GOARCH=amd64 SUFFIX=.exe
