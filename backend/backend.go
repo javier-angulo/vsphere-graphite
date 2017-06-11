@@ -116,8 +116,8 @@ func (point *Point) ToInflux(noarray bool, valuefield string) string {
 
 // Init : initialize a backend
 func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
-	stdlog := standardLogs
-	errlog := errorLogs
+	stdlog = standardLogs
+	errlog = errorLogs
 	if len(backend.ValueField) == 0 {
 		// for compatibility reason with previous version
 		// can now be changed in the config file.
@@ -282,7 +282,7 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 		}
 		err := backend.thininfluxdb.Send(lines)
 		if err != nil {
-			errlog.Print("Error sendg metrics: ", err)
+			errlog.Println("Error sendg metrics: ", err)
 		}
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
