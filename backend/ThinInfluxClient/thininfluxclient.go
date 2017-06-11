@@ -119,7 +119,7 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 		default:
 			reader = resp.Body
 		}
-		body, err := ioutil.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(reader)
 		if err != nil {
 			return err
 		}
