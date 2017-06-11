@@ -81,18 +81,18 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 		return nil
 	}
 	// prepare the content
-        push := strings.Join(lines,"\n")
+	push := strings.Join(lines, "\n")
 	var buf bytes.Buffer
 	g := gzip.NewWriter(&buf)
 	if _, err := g.Write([]byte(push)); err != nil {
-        	return err
+		return err
 	}
-    	if err := g.Flush(); err != nil {
-         	return err
-    	}
-    	if err := g.Close(); err != nil {
-        	return err
-    	}
+	if err := g.Flush(); err != nil {
+		return err
+	}
+	if err := g.Close(); err != nil {
+		return err
+	}
 	// prepare the request
 	req, err := http.NewRequest("POST", client.URL, &buf)
 	if err != nil {
