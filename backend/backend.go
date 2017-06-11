@@ -33,17 +33,18 @@ type Point struct {
 
 // Backend : storage backend
 type Backend struct {
-	Hostname   string
-	Port       int
-	Database   string
-	Username   string
-	Password   string
-	Type       string
-	NoArray    bool
-	carbon     *graphite.Graphite
-	influx     influxclient.Client
-	ValueField string
-	Encrypted  bool
+	Hostname     string
+	Port         int
+	Database     string
+	Username     string
+	Password     string
+	Type         string
+	NoArray      bool
+	carbon       *graphite.Graphite
+	influx       influxclient.Client
+	thininfluxdb ThinInfluxClient
+	ValueField   string
+	Encrypted    bool
 }
 
 var stdlog, errlog *log.Logger
@@ -260,6 +261,8 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 		if err != nil {
 			errlog.Println("Error sending metrics: ", err)
 		}
+	case "thininfluxdb":
+
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
