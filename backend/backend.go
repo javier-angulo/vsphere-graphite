@@ -9,6 +9,7 @@ import (
 
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
+	"github.com/cblomart/vsphere-graphite/backend/ThinInfluxClient"
 )
 
 // Point : Information collected for a point
