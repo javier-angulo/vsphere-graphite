@@ -8,26 +8,29 @@ package ThinInfluxClient
 import (
 	"bytes"
 	"fmt"
+
 	fflib "github.com/pquerna/ffjson/fflib/v1"
 )
 
 const (
-	ffj_t_InfluxErrorbase = iota
-	ffj_t_InfluxErrorno_such_key
+	ffjtInfluxErrorbase = iota
+	ffjtInfluxErrornosuchkey
 
-	ffj_t_InfluxError_Error
+	ffjtInfluxErrorError
 )
 
-var ffj_key_InfluxError_Error = []byte("Error")
+var ffjkeyInfluxErrorError = []byte("Error")
 
+// UnmarshalJSON umarshall json
 func (uj *InfluxError) UnmarshalJSON(input []byte) error {
 	fs := fflib.NewFFLexer(input)
 	return uj.UnmarshalJSONFFLexer(fs, fflib.FFParse_map_start)
 }
 
+// UnmarshalJSONFFLexer fast json unmarshall
 func (uj *InfluxError) UnmarshalJSONFFLexer(fs *fflib.FFLexer, state fflib.FFParseState) error {
-	var err error = nil
-	currentKey := ffj_t_InfluxErrorbase
+	var err error
+	currentKey := ffjtInfluxErrorbase
 	_ = currentKey
 	tok := fflib.FFTok_init
 	wantedTok := fflib.FFTok_init
@@ -73,7 +76,7 @@ mainparse:
 			kn := fs.Output.Bytes()
 			if len(kn) <= 0 {
 				// "" case. hrm.
-				currentKey = ffj_t_InfluxErrorno_such_key
+				currentKey = ffjtInfluxErrornosuchkey
 				state = fflib.FFParse_want_colon
 				goto mainparse
 			} else {
@@ -81,21 +84,21 @@ mainparse:
 
 				case 'E':
 
-					if bytes.Equal(ffj_key_InfluxError_Error, kn) {
-						currentKey = ffj_t_InfluxError_Error
+					if bytes.Equal(ffjkeyInfluxErrorError, kn) {
+						currentKey = ffjtInfluxErrorError
 						state = fflib.FFParse_want_colon
 						goto mainparse
 					}
 
 				}
 
-				if fflib.SimpleLetterEqualFold(ffj_key_InfluxError_Error, kn) {
-					currentKey = ffj_t_InfluxError_Error
+				if fflib.SimpleLetterEqualFold(ffjkeyInfluxErrorError, kn) {
+					currentKey = ffjtInfluxErrorError
 					state = fflib.FFParse_want_colon
 					goto mainparse
 				}
 
-				currentKey = ffj_t_InfluxErrorno_such_key
+				currentKey = ffjtInfluxErrornosuchkey
 				state = fflib.FFParse_want_colon
 				goto mainparse
 			}
@@ -112,10 +115,10 @@ mainparse:
 			if tok == fflib.FFTok_left_brace || tok == fflib.FFTok_left_bracket || tok == fflib.FFTok_integer || tok == fflib.FFTok_double || tok == fflib.FFTok_string || tok == fflib.FFTok_bool || tok == fflib.FFTok_null {
 				switch currentKey {
 
-				case ffj_t_InfluxError_Error:
+				case ffjtInfluxErrorError:
 					goto handle_Error
 
-				case ffj_t_InfluxErrorno_such_key:
+				case ffjtInfluxErrornosuchkey:
 					err = fs.SkipField(tok)
 					if err != nil {
 						return fs.WrapErr(err)
