@@ -284,16 +284,16 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 		for count > 0 {
 			err := backend.thininfluxdb.Send(lines)
 			if err != nil {
-				errlog.Println("Error sendg metrics: ", err)
+				errlog.Println("Error sending metrics: ", err)
 				if err.Error() == "Server Busy: timeout" {
 					errlog.Println("waiting .5 second to continue")
 					time.Sleep(500 * time.Millisecond)
 					count--
 				} else {
-					count = 0
+					break
 				}
 			} else {
-				count = 0
+				break
 			}
 		}
 		err := backend.thininfluxdb.Send(lines)
