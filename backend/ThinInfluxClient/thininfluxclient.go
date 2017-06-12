@@ -117,6 +117,9 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 		switch resp.Header.Get("Content-Encoding") {
 		case "gzip":
 			reader, err = gzip.NewReader(resp.Body)
+			if err != nil {
+				return err
+			}
 			defer reader.Close()
 		default:
 			reader = resp.Body
