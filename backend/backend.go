@@ -280,6 +280,22 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 		for _, point := range metrics {
 			lines = append(lines, point.ToInflux(backend.NoArray, backend.ValueField))
 		}
+		count := 3
+		for count > 0 {
+			err := backend.thininfluxdb.Send(lines)
+			if err != nil {
+				errlog.Println("Error sendg metrics: ", err)
+				if err.Error() == "Server Busy: timeout" {
+					errlog.Println("waiting .5 second to continue")
+					time.Sleep(500 * time.Millisecond)
+					count--
+				} else {
+					count = 0
+				}
+			} else {
+				count = 0
+			}
+		}
 		err := backend.thininfluxdb.Send(lines)
 		if err != nil {
 			errlog.Println("Error sendg metrics: ", err)

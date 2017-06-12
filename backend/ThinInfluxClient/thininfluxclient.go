@@ -128,16 +128,16 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 		jsonerr.UnmarshalJSON(body)
 	}
 	if resp.StatusCode == 400 {
-		return errors.New("Influxdb Unacceptable request: " + jsonerr.Error)
+		return errors.New("Influxdb Unacceptable request: " + strings.Trim(jsonerr.Error, " "))
 	}
 	if resp.StatusCode == 401 {
 		return errors.New("Unauthorized access: check credentials and db")
 	}
 	if resp.StatusCode == 404 {
-		return errors.New("Database not found: " + jsonerr.Error)
+		return errors.New("Database not found: " + strings.Trim(jsonerr.Error, " "))
 	}
 	if resp.StatusCode == 500 {
-		return errors.New("Server Busy: " + jsonerr.Error)
+		return errors.New("Server Busy: " + strings.Trim(jsonerr.Error, " "))
 	}
 	return nil
 }
