@@ -172,13 +172,16 @@ func (backend *Backend) Disconnect() {
 	case "graphite":
 		// Disconnect from graphite
 		stdlog.Println("Disconnecting from graphite")
-		backend.carbon.Disconnect()
+		err := backend.carbon.Disconnect()
+		if err != nil {
+			errlog.Println("Error disconnecting from graphite: ", err)
+		}
 	case "influxdb":
 		// Disconnect from influxdb
 		stdlog.Println("Disconnecting from influxdb")
 	case "thininfluxdb":
 		// Disconnect from thin influx db
-		stdlog.Println("Disconnecting from thininfluxdb")
+		errlog.Println("Disconnecting from thininfluxdb")
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
@@ -200,7 +203,10 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 		err := backend.carbon.SendMetrics(graphiteMetrics)
 		if err != nil {
 			errlog.Println("Error sending metrics (trying to reconnect): ", err)
-			backend.carbon.Connect()
+			err := backend.carbon.Connect()
+			if err != nil {
+				errlog.Println("could not connect to graphite: ", err)
+			}
 		}
 	case "influxdb":
 		//Influx batch points

@@ -60,13 +60,16 @@ docker-windows-amd64: ;
 
 checks:
 	go get honnef.co/go/tools/cmd/gosimple
-	go get -u github.com/golang/lint/golint
-	go get -u github.com/gordonklaus/ineffassign
+	go get github.com/golang/lint/golint
+	go get github.com/gordonklaus/ineffassign
+	go get github.com/GoASTScanner/gas
 	gosimple ./...
 	gofmt -s -d .
 	go vet ./...
 	golint ./...
 	ineffassign ./
+	gas ./...
+	go tool vet ./..
 
 $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX): $(SRC_FILES)
 	go build $(BUILD_FLAGS) -o $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX) .

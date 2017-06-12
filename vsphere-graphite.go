@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -88,7 +89,8 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	if config.Profiling {
-		f, err := os.Create("/tmp/vsphere-graphite-cpu.profile")
+		f, err := ioutil.TempFile("/tmp", "vsphere-graphite-cpu.profile")
+		stdlog.Println("Will write cpu profiling to: ", f.Name())
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
