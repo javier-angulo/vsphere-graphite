@@ -168,7 +168,7 @@ func (service *Service) Manage() (string, error) {
 			if bufferindex == len(pointbuffer) {
 				config.Backend.SendMetrics(pointbuffer)
 				stdlog.Printf("Sent %d logs to backend", len(pointbuffer))
-				for i := 0; i <= len(pointbuffer); i++ {
+				for i := 0; i < len(pointbuffer); i++ {
 					pointbuffer[i] = backend.Point{}
 				}
 				bufferindex = 0
