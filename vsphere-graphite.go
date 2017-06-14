@@ -180,6 +180,10 @@ func (service *Service) Manage() (string, error) {
 			}
 		case killSignal := <-interrupt:
 			stdlog.Println("Got signal:", killSignal)
+			if bufferindex > 0 {
+				config.Backend.SendMetrics(pointbuffer[:bufferindex])
+				stdlog.Printf("Sent %d logs to backend", bufferindex)
+			}
 			if killSignal == os.Interrupt {
 				return "Daemon was interrupted by system signal", nil
 			}
