@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"bytes"
 	"errors"
 	"log"
 	"strconv"
@@ -54,12 +55,21 @@ var carbon graphite.Graphite
 // ToInflux serialises the data to be consumed by influx line protocol
 // see https://docs.influxdata.com/influxdb/v1.2/write_protocols/line_protocol_tutorial/
 func (point *Point) ToInflux(noarray bool, valuefield string) string {
+	// buffer containing the resulting line
+	buff := bytes.NewBuffer(nil)
 	// measurement name
-	line := point.Group + "_" + point.Counter + "_" + point.Rollup
+	buff.WriteString(point.Group)
+	buff.WriteString("_")
+	buff.WriteString(point.Counter)
+	buff.WriteString("_")
+	buff.WriteString(point.Rollup)
 	// tags name=value
-	line += ",vcenter=" + point.VCenter
-	line += ",type=" + point.ObjectType
-	line += ",name=" + point.ObjectName
+	buff.WriteString(",vcenter=")
+	buff.WriteString(point.VCenter)
+	buff.WriteString(",type=")
+	buff.WriteString(point.ObjectType)
+	buff.WriteString(",name=")
+	buff.WriteString(point.ObjectName)
 	// these value could have multiple values
 	datastore := ""
 	network := ""
@@ -86,32 +96,45 @@ func (point *Point) ToInflux(noarray bool, valuefield string) string {
 		}
 	}
 	if len(datastore) > 0 {
-		line += ",datastore=" + datastore
+		buff.WriteString(",datastore=")
+		buff.WriteString(datastore)
 	}
 	if len(network) > 0 {
-		line += ",network=" + network
+		buff.WriteString(",network=")
+		buff.WriteString(network)
 	}
 	if len(vitags) > 0 {
-		line += ",vitags=" + vitags
+		buff.WriteString(",vitags=")
+		buff.WriteString(vitags)
 	}
 	if len(point.ESXi) > 0 {
-		line += ",host=" + point.ESXi
+		buff.WriteString(",host=")
+		buff.WriteString(point.ESXi)
 	}
 	if len(point.Cluster) > 0 {
-		line += ",cluster=" + point.Cluster
+		buff.WriteString(",cluster=")
+		buff.WriteString(point.Cluster)
 	}
 	if len(point.Instance) > 0 {
-		line += ",instance=" + point.Instance
+		buff.WriteString(",instance=")
+		buff.WriteString(point.Instance)
 	}
 	if len(point.ResourcePool) > 0 {
-		line += ",resourcepool=" + point.ResourcePool
+		buff.WriteString(",resourcepool=")
+		buff.WriteString(point.ResourcePool)
 	}
 	if len(point.Folder) > 0 {
-		line += ",folder=" + point.Folder
+		buff.WriteString(",folder=")
+		buff.WriteString(point.Folder)
 	}
-	line += " " + valuefield + "=" + strconv.FormatInt(point.Value, 10) + "i"
-	line += " " + strconv.FormatInt(point.Timestamp, 10)
-	return line
+	buff.WriteString(" ")
+	buff.WriteString(valuefield)
+	buff.WriteString("=")
+	buff.WriteString(strconv.FormatInt(point.Value, 10))
+	buff.WriteString("i")
+	buff.WriteString(" ")
+	buff.WriteString(strconv.FormatInt(point.Timestamp, 10))
+	return buff.String()
 }
 
 // Init : initialize a backend
