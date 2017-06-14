@@ -88,6 +88,10 @@ func (service *Service) Manage() (string, error) {
 		return "Could not decode configuration file", err
 	}
 
+	if config.FlushSize == 0 {
+		config.FlushSize = 1000
+	}
+
 	if config.Profiling {
 		f, err := ioutil.TempFile("/tmp", "vsphere-graphite-cpu.profile")
 		stdlog.Println("Will write cpu profiling to: ", f.Name())
@@ -141,7 +145,7 @@ func (service *Service) Manage() (string, error) {
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	// Set up a channel to receive the metrics
-	metrics := make(chan []backend.Point)
+	metrics := make(chan backend.Point, 2*config.FlushSize)
 
 	// Recover from panic
 	defer func() {
@@ -160,20 +164,21 @@ func (service *Service) Manage() (string, error) {
 		go queryVCenter(*vcenter, config, &metrics)
 	}
 
+	pointbuffer := make([]backend.Point, config.FlushSize)
+	bufferindex := 0
+
 	for {
 		select {
-		case values := <-metrics:
-			if config.FlushSize == 0 {
-				config.FlushSize = 1000
-			}
-			for i := 0; i <= len(values); i += config.FlushSize {
-				end := i + config.FlushSize
-				if end > len(values) {
-					end = len(values)
+		case value := <-metrics:
+			pointbuffer[bufferindex] = value
+			bufferindex++
+			if bufferindex == len(pointbuffer) {
+				config.Backend.SendMetrics(pointbuffer)
+				stdlog.Printf("Sent %d logs to backend", len(pointbuffer))
+				for i := 0; i <= len(pointbuffer); i++ {
+					pointbuffer[i] = backend.Point{}
 				}
-				flush := values[i:end]
-				config.Backend.SendMetrics(flush)
-				stdlog.Printf("Sent %d logs to backend", len(flush))
+				bufferindex = 0
 			}
 		case <-ticker.C:
 			stdlog.Println("Retrieving metrics")
