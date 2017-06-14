@@ -203,6 +203,8 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 		// Add found object to object list
 		mors = append(mors, containerView.View...)
 	}
+	// set objectTypes to nil
+	objectTypes = nil
 
 	//object for propery collection
 	var objectSet []types.ObjectSpec
@@ -224,6 +226,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 		errlog.Println("Error: ", err)
 		return
 	}
+
+	//set propset to nil
+	propSet = nil
 
 	//create a map to resolve object names
 	morToName := make(map[types.ManagedObjectReference]string)
@@ -526,5 +531,29 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan []backe
 			values = append(values, point)
 		}
 	}
+	// set mors to nil
+	mors = nil
+
+	// set mor to name to nil
+	morToName = nil
+
+	// set vm to datastore to nil
+	vmToDatastore = nil
+
+	// set vm to network to nil
+	vmToNetwork = nil
+
+	// set vm to host to nil
+	vmToHost = nil
+
+	// set mor to parent to nil
+	morToParent = nil
+
+	// set mor to vms to nil
+	morToVms = nil
+
+	// set mor to tags to nil
+	morToTags = nil
+
 	*channel <- values
 }
