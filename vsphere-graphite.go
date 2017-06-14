@@ -147,13 +147,6 @@ func (service *Service) Manage() (string, error) {
 	// Set up a channel to receive the metrics
 	metrics := make(chan backend.Point, 2*config.FlushSize)
 
-	// Recover from panic
-	defer func() {
-		if r := recover(); r != nil {
-			fmt.Println("Critical - recovered from panic ", r)
-		}
-	}()
-
 	// Set up a ticker to collect metrics at givent interval
 	ticker := time.NewTicker(time.Second * time.Duration(config.Interval))
 	defer ticker.Stop()
