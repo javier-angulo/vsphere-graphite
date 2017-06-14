@@ -46,7 +46,7 @@ type EntityQuery struct {
 	Metrics []int
 }
 
-func queryVCenter(vcenter vsphere.VCenter, config config.Configuration, channel *chan []backend.Point) {
+func queryVCenter(vcenter vsphere.VCenter, config config.Configuration, channel *chan backend.Point) {
 	vcenter.Query(config.Interval, config.Domain, channel)
 }
 
