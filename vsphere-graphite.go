@@ -10,6 +10,7 @@ import (
 	"path"
 	"reflect"
 	"runtime"
+	"runtime/debug"
 	"runtime/pprof"
 	"strconv"
 	"strings"
@@ -197,8 +198,9 @@ func (service *Service) Manage() (string, error) {
 			}
 		case <-memtimer.C:
 			runtime.GC()
+			debug.FreeOSMemory()
 			runtime.ReadMemStats(&memstats)
-			stdlog.Println("Memory usage :", bytefmt.ByteSize(memstats.Sys))
+			stdlog.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
 		case killSignal := <-interrupt:
 			stdlog.Println("Got signal:", killSignal)
 			if bufferindex > 0 {
