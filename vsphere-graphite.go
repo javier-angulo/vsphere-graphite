@@ -96,12 +96,12 @@ func (service *Service) Manage() (string, error) {
 		config.FlushSize = 1000
 	}
 
-	if config.Profiling {
+	if config.CPUProfiling {
 		f, err := ioutil.TempFile("/tmp", "vsphere-graphite-cpu.profile")
-		stdlog.Println("Will write cpu profiling to: ", f.Name())
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
+		stdlog.Println("Will write cpu profiling to: ", f.Name())
 		if err := pprof.StartCPUProfile(f); err != nil {
 			log.Fatal("could not start CPU profile: ", err)
 		}
@@ -201,6 +201,15 @@ func (service *Service) Manage() (string, error) {
 			debug.FreeOSMemory()
 			runtime.ReadMemStats(&memstats)
 			stdlog.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
+			if config.MEMProfiling {
+				f, err := ioutil.TempFile("/tmp", "vsphere-graphite-mem.profile")
+				if err != nil {
+					log.Fatal("could not create MEM profile: ", err)
+				}
+				stdlog.Println("Writing mem profiling to: ", f.Name())
+				debug.WriteHeapDump(f.Fd())
+				f.Close()
+			}
 		case killSignal := <-interrupt:
 			stdlog.Println("Got signal:", killSignal)
 			if bufferindex > 0 {
