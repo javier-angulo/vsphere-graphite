@@ -165,7 +165,15 @@ func (service *Service) Manage() (string, error) {
 	var memstats runtime.MemStats
 	// timer to execute memory collection
 	memtimer := time.NewTimer(time.Second * time.Duration(10))
-
+	// Memory profiling
+	var mf os.File
+	if config.MEMProfiling {
+		mf, err := ioutil.TempFile("/tmp", "vsphere-graphite-mem.profile")
+		if err != nil {
+			log.Fatal("could not create MEM profile: ", err)
+		}
+		defer mf.Close()
+	}
 	// buffer for points to send
 	pointbuffer := make([]backend.Point, config.FlushSize)
 	bufferindex := 0
@@ -202,13 +210,8 @@ func (service *Service) Manage() (string, error) {
 			runtime.ReadMemStats(&memstats)
 			stdlog.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
 			if config.MEMProfiling {
-				f, err := ioutil.TempFile("/tmp", "vsphere-graphite-mem.profile")
-				if err != nil {
-					log.Fatal("could not create MEM profile: ", err)
-				}
-				stdlog.Println("Writing mem profiling to: ", f.Name())
-				debug.WriteHeapDump(f.Fd())
-				f.Close()
+				stdlog.Println("Writing mem profiling to: ", mf.Name())
+				debug.WriteHeapDump(mf.Fd())
 			}
 		case killSignal := <-interrupt:
 			stdlog.Println("Got signal:", killSignal)
