@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"path"
 	"reflect"
+	"runtime"
 	"runtime/pprof"
 	"strconv"
 	"strings"
@@ -20,6 +21,8 @@ import (
 	"github.com/cblomart/vsphere-graphite/vsphere"
 
 	"github.com/takama/daemon"
+
+	"code.cloudfoundry.org/bytefmt"
 
 	"github.com/vmware/govmomi/vim25/types"
 )
@@ -145,11 +148,15 @@ func (service *Service) Manage() (string, error) {
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	// Set up a channel to receive the metrics
-	metrics := make(chan backend.Point, 2*config.FlushSize)
+	metrics := make(chan backend.Point, config.FlushSize)
 
 	// Set up a ticker to collect metrics at givent interval
 	ticker := time.NewTicker(time.Second * time.Duration(config.Interval))
 	defer ticker.Stop()
+
+	// Set up a ticker to collect metrics at givent interval
+	memtimer := time.NewTicker(time.Second * time.Duration(10))
+	defer memtimer.Stop()
 
 	// Start retriveing and sending metrics
 	stdlog.Println("Retrieving metrics")
@@ -157,6 +164,10 @@ func (service *Service) Manage() (string, error) {
 		go queryVCenter(*vcenter, config, &metrics)
 	}
 
+	// Memory statisctics
+	var memstats runtime.MemStats
+
+	// buffer for points to send
 	pointbuffer := make([]backend.Point, config.FlushSize)
 	bufferindex := 0
 
@@ -178,6 +189,9 @@ func (service *Service) Manage() (string, error) {
 			for _, vcenter := range config.VCenters {
 				go queryVCenter(*vcenter, config, &metrics)
 			}
+		case <-memtimer.C:
+			runtime.ReadMemStats(&memstats)
+			stdlog.Println("Memory usage :", bytefmt.ByteSize(memstats.Alloc))
 		case killSignal := <-interrupt:
 			stdlog.Println("Got signal:", killSignal)
 			if bufferindex > 0 {
