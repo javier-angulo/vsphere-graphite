@@ -154,10 +154,6 @@ func (service *Service) Manage() (string, error) {
 	ticker := time.NewTicker(time.Second * time.Duration(config.Interval))
 	defer ticker.Stop()
 
-	// Set up a ticker to garbadge collect
-	memtimer := time.NewTicker(time.Second * time.Duration(config.Interval))
-	defer memtimer.Stop()
-
 	// Start retriveing and sending metrics
 	stdlog.Println("Retrieving metrics")
 	for _, vcenter := range config.VCenters {
@@ -166,6 +162,8 @@ func (service *Service) Manage() (string, error) {
 
 	// Memory statisctics
 	var memstats runtime.MemStats
+	// timer to execute memory collection
+	memtimer := time.NewTimer(time.Second * time.Duration(10))
 
 	// buffer for points to send
 	pointbuffer := make([]backend.Point, config.FlushSize)
@@ -183,6 +181,14 @@ func (service *Service) Manage() (string, error) {
 					pointbuffer[i] = backend.Point{}
 				}
 				bufferindex = 0
+				// reset timer as data has been set
+				if !memtimer.Stop() {
+					select {
+					case <-memtimer.C:
+					default:
+					}
+				}
+				memtimer.Reset(time.Second * time.Duration(10))
 			}
 		case <-ticker.C:
 			stdlog.Println("Retrieving metrics")
