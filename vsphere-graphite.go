@@ -166,9 +166,9 @@ func (service *Service) Manage() (string, error) {
 	// timer to execute memory collection
 	memtimer := time.NewTimer(time.Second * time.Duration(10))
 	// Memory profiling
-	var mf os.File
+	var mf *os.File
 	if config.MEMProfiling {
-		mf, err := ioutil.TempFile("/tmp", "vsphere-graphite-mem.profile")
+		mf, err = ioutil.TempFile("/tmp", "vsphere-graphite-mem.profile")
 		if err != nil {
 			log.Fatal("could not create MEM profile: ", err)
 		}
