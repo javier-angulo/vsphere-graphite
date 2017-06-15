@@ -154,8 +154,8 @@ func (service *Service) Manage() (string, error) {
 	ticker := time.NewTicker(time.Second * time.Duration(config.Interval))
 	defer ticker.Stop()
 
-	// Set up a ticker to collect metrics at givent interval
-	memtimer := time.NewTicker(time.Second * time.Duration(10))
+	// Set up a ticker to garbadge collect
+	memtimer := time.NewTicker(time.Second * time.Duration(config.Interval))
 	defer memtimer.Stop()
 
 	// Start retriveing and sending metrics
@@ -190,8 +190,9 @@ func (service *Service) Manage() (string, error) {
 				go queryVCenter(*vcenter, config, &metrics)
 			}
 		case <-memtimer.C:
+			runtime.GC()
 			runtime.ReadMemStats(&memstats)
-			stdlog.Println("Memory usage :", bytefmt.ByteSize(memstats.Alloc))
+			stdlog.Println("Memory usage :", bytefmt.ByteSize(memstats.Sys))
 		case killSignal := <-interrupt:
 			stdlog.Println("Got signal:", killSignal)
 			if bufferindex > 0 {
