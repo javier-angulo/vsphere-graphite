@@ -140,7 +140,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 
 	// wait to be properly connected to defer logout
 	defer func() {
-		stdlog.Println("disconnecting from vcenter")
+		stdlog.Println("disconnecting from vcenter:", vcenter.Hostname)
 		client.Logout(ctx)
 	}()
 
