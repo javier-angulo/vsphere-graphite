@@ -9,6 +9,8 @@ import (
 	"os/signal"
 	"path"
 	"reflect"
+	"runtime"
+	"runtime/debug"
 	"runtime/pprof"
 	"strconv"
 	"strings"
@@ -20,6 +22,8 @@ import (
 	"github.com/cblomart/vsphere-graphite/vsphere"
 
 	"github.com/takama/daemon"
+
+	"code.cloudfoundry.org/bytefmt"
 
 	"github.com/vmware/govmomi/vim25/types"
 )
@@ -92,12 +96,12 @@ func (service *Service) Manage() (string, error) {
 		config.FlushSize = 1000
 	}
 
-	if config.Profiling {
+	if config.CPUProfiling {
 		f, err := ioutil.TempFile("/tmp", "vsphere-graphite-cpu.profile")
-		stdlog.Println("Will write cpu profiling to: ", f.Name())
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
+		stdlog.Println("Will write cpu profiling to: ", f.Name())
 		if err := pprof.StartCPUProfile(f); err != nil {
 			log.Fatal("could not start CPU profile: ", err)
 		}
@@ -145,7 +149,7 @@ func (service *Service) Manage() (string, error) {
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	// Set up a channel to receive the metrics
-	metrics := make(chan backend.Point, 2*config.FlushSize)
+	metrics := make(chan backend.Point, config.FlushSize)
 
 	// Set up a ticker to collect metrics at givent interval
 	ticker := time.NewTicker(time.Second * time.Duration(config.Interval))
@@ -157,6 +161,20 @@ func (service *Service) Manage() (string, error) {
 		go queryVCenter(*vcenter, config, &metrics)
 	}
 
+	// Memory statisctics
+	var memstats runtime.MemStats
+	// timer to execute memory collection
+	memtimer := time.NewTimer(time.Second * time.Duration(10))
+	// Memory profiling
+	var mf *os.File
+	if config.MEMProfiling {
+		mf, err = ioutil.TempFile("/tmp", "vsphere-graphite-mem.profile")
+		if err != nil {
+			log.Fatal("could not create MEM profile: ", err)
+		}
+		defer mf.Close()
+	}
+	// buffer for points to send
 	pointbuffer := make([]backend.Point, config.FlushSize)
 	bufferindex := 0
 
@@ -172,11 +190,28 @@ func (service *Service) Manage() (string, error) {
 					pointbuffer[i] = backend.Point{}
 				}
 				bufferindex = 0
+				// reset timer as data has been set
+				if !memtimer.Stop() {
+					select {
+					case <-memtimer.C:
+					default:
+					}
+				}
+				memtimer.Reset(time.Second * time.Duration(10))
 			}
 		case <-ticker.C:
 			stdlog.Println("Retrieving metrics")
 			for _, vcenter := range config.VCenters {
 				go queryVCenter(*vcenter, config, &metrics)
+			}
+		case <-memtimer.C:
+			runtime.GC()
+			debug.FreeOSMemory()
+			runtime.ReadMemStats(&memstats)
+			stdlog.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
+			if config.MEMProfiling {
+				stdlog.Println("Writing mem profiling to: ", mf.Name())
+				debug.WriteHeapDump(mf.Fd())
 			}
 		case killSignal := <-interrupt:
 			stdlog.Println("Got signal:", killSignal)
