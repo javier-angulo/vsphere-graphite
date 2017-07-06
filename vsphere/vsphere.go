@@ -213,7 +213,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	//properties specifications
 	propSet := []types.PropertySpec{}
 	propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent", "tag"}})
-	propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host"}})
+	propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host", "summary.config.numcpu", "summary.config.memorysizemb"}})
 	propSet = append(propSet, types.PropertySpec{Type: "ResourcePool", PathSet: []string{"vm"}})
 
 	//retrieve properties
@@ -245,6 +245,12 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 
 	//create a map to resolve mor to tags
 	morToTags := make(map[types.ManagedObjectReference][]types.Tag)
+
+	//create a map to resolve mor to numcpu
+	morToNumCPU := make(map[types.ManagedObjectReference]int)
+
+	//create a map to resolve mor to memorysizemb
+	morToMemorySizeMB := make(map[types.ManagedObjectReference]int)
 
 	for _, objectContent := range propres.Returnval {
 		for _, Property := range objectContent.PropSet {
@@ -306,6 +312,20 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					}
 				} else {
 					errlog.Println("Tag property of " + objectContent.Obj.String() + " was not an array of Tag, it was " + fmt.Sprintf("%T", Property.Val))
+				}
+			case "summary.config.numcpu":
+				numcpu, ok := Property.Val.(int)
+				if ok {
+					morToNumCPU[objectContent.Obj] := numcpu
+				} else {
+					errlog.Println("Numpcpu property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
+				}
+			case "summary.config.memorysizemb":
+				memorysizemb, ok := Property.Val.(int)
+				if ok {
+					morToMemorySizeMB[objectContent.Obj] := memorysizemb
+				} else {
+					errlog.Println("MemorySizeMB property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			default:
 				errlog.Println("Unhandled property '" + propertyName + "' for " + objectContent.Obj.String() + " whose type is " + fmt.Sprintf("%T", Property.Val))
@@ -488,6 +508,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 				vitags = append(network, tag.Key)
 			}
 		}
+		//find numcpu
+		numcpu := morToNumCPU[pem.Entity]
+		//find memorysizemb
+		memorysizemb := morToMemorySizeMB[pem.Entity]
 		for _, baseserie := range pem.Value {
 			serie := baseserie.(*types.PerfMetricIntSeries)
 			metricName := strings.ToLower(metricToName[serie.Id.CounterId])
@@ -520,6 +544,8 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 				Network:      network,
 				ResourcePool: resourcepool,
 				ViTags:       vitags,
+				NumCPU:		  numcpu,
+				MemorySizeMB: memorysizemb,
 				Timestamp:    endTime.Unix(),
 			}
 			*channel <- point

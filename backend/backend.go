@@ -30,6 +30,8 @@ type Point struct {
 	ResourcePool string
 	Folder       string
 	ViTags       []string
+	NumCPU       int
+	MemorySizeMB int
 	Timestamp    int64
 }
 

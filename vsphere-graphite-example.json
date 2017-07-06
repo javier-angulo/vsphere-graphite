@@ -39,6 +39,7 @@
         { "Metric": "virtualDisk.totalReadLatency.maximum", "Instances": "*" },
         { "Metric": "virtualDisk.numberReadAveraged.average", "Instances": "*" },
         { "Metric": "virtualDisk.numberWriteAveraged.average", "Instances": "*" }
+        { "Metric": "cpu.read.summation", "Instance": ""}
       ]
     },
     { 
