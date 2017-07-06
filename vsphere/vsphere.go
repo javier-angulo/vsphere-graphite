@@ -324,14 +324,14 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 			case "summary.config.numcpu":
 				numcpu, ok := Property.Val.(int)
 				if ok {
-					morToNumCPU[objectContent.Obj] := numcpu
+					morToNumCPU[objectContent.Obj] = numcpu
 				} else {
 					errlog.Println("Numpcpu property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "summary.config.memorysizemb":
 				memorysizemb, ok := Property.Val.(int)
 				if ok {
-					morToMemorySizeMB[objectContent.Obj] := memorysizemb
+					morToMemorySizeMB[objectContent.Obj] = memorysizemb
 				} else {
 					errlog.Println("MemorySizeMB property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
 				}
@@ -558,7 +558,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 				Network:      network,
 				ResourcePool: resourcepool,
 				ViTags:       vitags,
-				NumCPU:		  numcpu,
+				NumCPU:       numcpu,
 				MemorySizeMB: memorysizemb,
 				Timestamp:    endTime.Unix(),
 			}

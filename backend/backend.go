@@ -292,6 +292,12 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 					tags["vitags"] = strings.Join(point.ViTags, "\\,")
 				}
 			}
+			if point.NumCPU != 0 {
+				tags["numcpu"] = strconv.Itoa(point.NumCPU)
+			}
+			if point.MemorySizeMB != 0 {
+				tags["memorysizemb"] = strconv.Itoa(point.MemorySizeMB)
+			}
 			fields := make(map[string]interface{})
 			fields[backend.ValueField] = point.Value
 			pt, err := influxclient.NewPoint(key, tags, fields, time.Unix(point.Timestamp, 0))
