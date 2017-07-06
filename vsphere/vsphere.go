@@ -139,7 +139,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	}
 
 	// wait to be properly connected to defer logout
-	defer client.Logout(ctx)
+	defer func() {
+		stdlog.Println("disconnecting from vcenter:", vcenter.Hostname)
+		client.Logout(ctx)
+	}()
 
 	// Create the view manager
 	var viewManager mo.ViewManager
@@ -202,6 +205,11 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		}
 		// Add found object to object list
 		mors = append(mors, containerView.View...)
+	}
+
+	if len(mors) == 0 {
+		errlog.Printf("No object of intereset in types %s\n", strings.Join(objectTypes, ", "))
+		return
 	}
 
 	//object for propery collection
@@ -408,6 +416,12 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		if len(metricIds) > 0 {
 			queries = append(queries, types.PerfQuerySpec{Entity: mor, StartTime: &startTime, EndTime: &endTime, MetricId: metricIds, IntervalId: intervalID})
 		}
+	}
+
+	// Check that there is somethong to query
+	if len(queries) == 0 {
+		errlog.Println("No queries created!")
+		return
 	}
 
 	// Query the performances
