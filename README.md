@@ -34,6 +34,10 @@ If you set a domain, it will be automaticaly removed from found objects.
 Metrics collected are defined by associating ObjectType groups with Metric groups.
 They are expressed via the vsphere scheme: *group*.*metric*.*rollup*
 
+ObjectTypes are explained in [this](https://www.vmware.com/support/developer/vc-sdk/visdk25pubs/ReferenceGuide/vim.ManagedEntity.html) vSphere doc
+
+Performance metrics are explained in [this](https://pubs.vmware.com/vsphere-4-esx-vcenter/index.jsp#com.vmware.vsphere.bsa.doc_40/vc_admin_guide/performance_metrics/c_performance_metrics.html) vSphere doc
+
 An example of configuration file of contoso.com is [there](./vsphere-graphite-example.json).
 
 You need to place it at /etc/*binaryname*.json (/etc/vsphere-graphite.json per default)
@@ -90,13 +94,17 @@ Edit the configuration file and set it in the place you like here $(pwd)
 
 #### Deploy
 
-typical GO:
+Of course `golang` is needed. Install and set `$GOPATH` such as:
+```
+mkdir /etc/golang
+export GOPATH=/etc/golang
+```
+
+Then install with GO:
 
   > go get github.com/cblomart/vsphere-graphite
 
-The executable should be in $GOPATH/bin/
-
-It can be copied on any "same system" (same: os and cpu platform).
+The executable should be `$GOPATH/bin/vsphere-graphite` and is now a binary for your architecture/OS
 
 #### Run on Commandline
 
