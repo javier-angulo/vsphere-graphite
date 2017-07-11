@@ -34,9 +34,9 @@ If you set a domain, it will be automaticaly removed from found objects.
 Metrics collected are defined by associating ObjectType groups with Metric groups.
 They are expressed via the vsphere scheme: *group*.*metric*.*rollup*
 
-ObjectTypes are explained in [this](https://www.vmware.com/support/developer/vc-sdk/visdk25pubs/ReferenceGuide/vim.ManagedEntity.html) vSphere doc
+ObjectTypes are explained in [this](https://code.vmware.com/web/dp/explorer-apis?id=196) vSphere doc
 
-Performance metrics are explained in [this](https://pubs.vmware.com/vsphere-4-esx-vcenter/index.jsp#com.vmware.vsphere.bsa.doc_40/vc_admin_guide/performance_metrics/c_performance_metrics.html) vSphere doc
+Performance metrics are explained in [this](https://docs.vmware.com/en/VMware-vSphere/6.5/com.vmware.vsphere.monitoring.doc/GUID-E95BD7F2-72CF-4A1B-93DA-E4ABE20DD1CC.html) vSphere doc
 
 An example of configuration file of contoso.com is [there](./vsphere-graphite-example.json).
 
