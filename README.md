@@ -125,6 +125,17 @@ The executable should be `$GOPATH/bin/vsphere-graphite` and is now a binary for 
 #### Remove service
 
   > vsphere-graphite remove
+  
+## Contributors
+
+No open source projects would live and thrive without common effort. Here is the section were the ones that help are thanked:
+
+- [sofixa](https://github.com/sofixa)
+- [BlueAceTS](https://github.com/BlueAceTS)
+- [NoMotion](https://github.com/NoMotion)
+
+Also keep in mind that if you can't contribute code, issues and imporvement request are also a key part of a project evolution!
+So don't hesitate and tell us what doens't work or what you miss.
 
 ## License
 
