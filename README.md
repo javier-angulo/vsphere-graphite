@@ -8,6 +8,10 @@ Written in go as the integration collectd and python plugin posed too much probl
 
 [![Build Status](https://travis-ci.org/cblomart/vsphere-graphite.svg?branch=master)](https://travis-ci.org/cblomart/vsphere-graphite)
 
+[![Build Status](https://bot.blomart.net/api/badges/cblomart/vsphere-graphite/status.svg)](https://bot.blomart.net/cblomart/vsphere-graphite)
+
+
+
 ## Code report
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cblomart/vsphere-graphite)](https://goreportcard.com/report/github.com/cblomart/vsphere-graphite)
