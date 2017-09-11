@@ -30,8 +30,8 @@ type Point struct {
 	ResourcePool string
 	Folder       string
 	ViTags       []string
-	NumCPU       int
-	MemorySizeMB int
+	NumCPU       int32
+	MemorySizeMB int32
 	Timestamp    int64
 }
 
@@ -293,10 +293,10 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 				}
 			}
 			if point.NumCPU != 0 {
-				tags["numcpu"] = strconv.Itoa(point.NumCPU)
+				tags["numcpu"] = strconv.FormatInt(int64(point.NumCPU),10)
 			}
 			if point.MemorySizeMB != 0 {
-				tags["memorysizemb"] = strconv.Itoa(point.MemorySizeMB)
+				tags["memorysizemb"] = strconv.FormatInt(int64(point.MemorySizeMB),10)
 			}
 			fields := make(map[string]interface{})
 			fields[backend.ValueField] = point.Value

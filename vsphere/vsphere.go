@@ -220,8 +220,8 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 
 	//properties specifications
 	propSet := []types.PropertySpec{}
-	propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent", "tag"}})
-	propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host", "summary.config.numcpu", "summary.config.memorysizemb"}})
+        propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent", "tag"}})
+	propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host", "summary.config.numCpu", "summary.config.memorySizeMB"}})
 	propSet = append(propSet, types.PropertySpec{Type: "ResourcePool", PathSet: []string{"vm"}})
 
 	//retrieve properties
@@ -255,10 +255,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	morToTags := make(map[types.ManagedObjectReference][]types.Tag)
 
 	//create a map to resolve mor to numcpu
-	morToNumCPU := make(map[types.ManagedObjectReference]int)
+	morToNumCPU := make(map[types.ManagedObjectReference]int32)
 
 	//create a map to resolve mor to memorysizemb
-	morToMemorySizeMB := make(map[types.ManagedObjectReference]int)
+	morToMemorySizeMB := make(map[types.ManagedObjectReference]int32)
 
 	for _, objectContent := range propres.Returnval {
 		for _, Property := range objectContent.PropSet {
@@ -321,15 +321,15 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 				} else {
 					errlog.Println("Tag property of " + objectContent.Obj.String() + " was not an array of Tag, it was " + fmt.Sprintf("%T", Property.Val))
 				}
-			case "summary.config.numcpu":
-				numcpu, ok := Property.Val.(int)
+			case "summary.config.numCpu":
+				numcpu, ok := Property.Val.(int32)
 				if ok {
 					morToNumCPU[objectContent.Obj] = numcpu
 				} else {
 					errlog.Println("Numpcpu property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
 				}
-			case "summary.config.memorysizemb":
-				memorysizemb, ok := Property.Val.(int)
+			case "summary.config.memorySizeMB":
+				memorysizemb, ok := Property.Val.(int32)
 				if ok {
 					morToMemorySizeMB[objectContent.Obj] = memorysizemb
 				} else {
