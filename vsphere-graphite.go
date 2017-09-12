@@ -100,7 +100,7 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	//force backend values to environement varialbles if present
-	s := reflect.ValueOf(&conf.Backend).Elem()
+	s := reflect.ValueOf(conf.Backend).Elem()
 	numfields := s.NumField()
 	for i := 0; i < numfields; i++ {
 		f := s.Field(i)
