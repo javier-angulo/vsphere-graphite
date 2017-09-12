@@ -65,10 +65,9 @@ func (vcenter *VCenter) AddMetric(metric *MetricDef, mtype string) {
 		vcenter.MetricGroups = append(vcenter.MetricGroups, metricGroup)
 	}
 	// check if Metric already present
-	found := false
 	for _, tmp := range metricGroup.Metrics {
-		found = tmp.Metric == metric.Metric && tmp.Instances == metric.Instances
-		if found {
+		if tmp.Metric == metric.Metric && tmp.Instances == metric.Instances {
+			// metric already in metric group
 			return
 		}
 	}
