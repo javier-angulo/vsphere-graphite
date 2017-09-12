@@ -98,7 +98,7 @@ func (vcenter *VCenter) Connect() (*govmomi.Client, error) {
 }
 
 // Init : initialize vcenter
-func (vcenter *VCenter) Init(metrics []Metric, standardLogs *log.Logger, errorLogs *log.Logger) {
+func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorLogs *log.Logger) {
 	stdlog = standardLogs
 	errlog = errorLogs
 	// connect to vcenter
