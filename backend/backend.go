@@ -61,7 +61,6 @@ const (
 )
 
 var stdlog, errlog *log.Logger
-var carbon graphite.Graphite
 
 // ToInflux serialises the data to be consumed by influx line protocol
 // see https://docs.influxdata.com/influxdb/v1.2/write_protocols/line_protocol_tutorial/

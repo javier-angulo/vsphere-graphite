@@ -137,7 +137,7 @@ func (service *Service) Manage() (string, error) {
 	// We must use a buffered channel or risk missing the signal
 	// if we're not ready to receive when the signal is sent.
 	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
+	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM) // nolint: megacheck
 
 	// Set up a channel to receive the metrics
 	metrics := make(chan backend.Point, conf.FlushSize)
