@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+
+        "github.com/cblomart/vsphere-graphite/utils"
 )
 
 // constants
@@ -98,7 +100,9 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 	if err != nil {
 		return err
 	}
-	req.SetBasicAuth(client.Username, client.password)
+        if len(client.Username)>=0 && len(client.password)>=0 {
+  		req.SetBasicAuth(client.Username, client.password)
+        } 
 	req.Header.Set("Content-Type", "text/plain; charset=utf-8")
 	req.Header.Set("Content-Encoding", "gzip")
 	clt := &http.Client{}
@@ -111,7 +115,7 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 	}
 	jsonerr := InfluxError{}
 	if resp.StatusCode == 400 || resp.StatusCode == 404 || resp.StatusCode == 500 {
-		defer resp.Body.Close()
+		defer utils.Close(resp.Body)
 		// Check that the server actually sent compressed data
 		var reader io.ReadCloser
 		switch resp.Header.Get("Content-Encoding") {
@@ -120,7 +124,7 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 			if err != nil {
 				return err
 			}
-			defer reader.Close()
+			defer utils.Close(reader)
 		default:
 			reader = resp.Body
 		}

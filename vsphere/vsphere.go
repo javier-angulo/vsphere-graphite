@@ -84,7 +84,13 @@ func (vcenter *VCenter) Init(metrics []Metric, standardLogs *log.Logger, errorLo
 		errlog.Println("Error: ", err)
 		return
 	}
-	defer client.Logout(ctx)
+	defer func(){ 
+        	err := client.Logout(ctx) 
+	        if err != nil {
+                        errlog.Println("Error login out of vcenter: ", vcenter.Hostname)
+        		errlog.Println("Error: ", err)
+                }
+        }()
 	var perfmanager mo.PerformanceManager
 	err = client.RetrieveOne(ctx, *client.ServiceContent.PerfManager, nil, &perfmanager)
 	if err != nil {
@@ -141,7 +147,11 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	// wait to be properly connected to defer logout
 	defer func() {
 		stdlog.Println("disconnecting from vcenter:", vcenter.Hostname)
-		client.Logout(ctx)
+		err := client.Logout(ctx)
+	        if err != nil {
+                        errlog.Println("Error login out of vcenter: ", vcenter.Hostname)
+        		errlog.Println("Error: ", err)
+                }
 	}()
 
 	// Create the view manager

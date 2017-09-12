@@ -20,6 +20,7 @@ import (
 	"github.com/cblomart/vsphere-graphite/backend"
 	"github.com/cblomart/vsphere-graphite/config"
 	"github.com/cblomart/vsphere-graphite/vsphere"
+	"github.com/cblomart/vsphere-graphite/utils"
 
 	"github.com/takama/daemon"
 
@@ -172,7 +173,7 @@ func (service *Service) Manage() (string, error) {
 		if err != nil {
 			log.Fatal("could not create MEM profile: ", err)
 		}
-		defer mf.Close()
+		defer utils.Close(mf)
 	}
 	// buffer for points to send
 	pointbuffer := make([]backend.Point, config.FlushSize)

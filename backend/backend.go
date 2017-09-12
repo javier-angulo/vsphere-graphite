@@ -51,6 +51,12 @@ type Backend struct {
 	Encrypted    bool
 }
 
+const(
+  Graphite = "graphite"
+  InfluxDB = "influxdb"
+  ThinInfluxDB = "thininfluxdb"
+)
+
 var stdlog, errlog *log.Logger
 var carbon graphite.Graphite
 
@@ -151,7 +157,7 @@ func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) er
 		backend.ValueField = "Value"
 	}
 	switch backendType := strings.ToLower(backend.Type); backendType {
-	case "graphite":
+	case Graphite:
 		// Initialize Graphite
 		stdlog.Println("Intializing " + backendType + " backend")
 		carbon, err := graphite.NewGraphite(backend.Hostname, backend.Port)
@@ -161,7 +167,7 @@ func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) er
 		}
 		backend.carbon = carbon
 		return nil
-	case "influxdb":
+	case InfluxDB:
 		//Initialize Influx DB
 		stdlog.Println("Intializing " + backendType + " backend")
 		influxclt, err := influxclient.NewHTTPClient(influxclient.HTTPConfig{
@@ -175,7 +181,7 @@ func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) er
 		}
 		backend.influx = influxclt
 		return nil
-	case "thininfluxdb":
+	case ThinInfluxDB:
 		//Initialize thin Influx DB client
 		stdlog.Println("Initializing " + backendType + " backend")
 		thininfluxclt, err := ThinInfluxClient.NewThinInlfuxClient(backend.Hostname, backend.Port, backend.Database, backend.Username, backend.Password, "s", backend.Encrypted)
@@ -194,17 +200,17 @@ func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) er
 // Disconnect : disconnect from backend
 func (backend *Backend) Disconnect() {
 	switch backendType := strings.ToLower(backend.Type); backendType {
-	case "graphite":
+	case Graphite:
 		// Disconnect from graphite
 		stdlog.Println("Disconnecting from graphite")
 		err := backend.carbon.Disconnect()
 		if err != nil {
 			errlog.Println("Error disconnecting from graphite: ", err)
 		}
-	case "influxdb":
+	case InfluxDB:
 		// Disconnect from influxdb
 		stdlog.Println("Disconnecting from influxdb")
-	case "thininfluxdb":
+	case ThinInfluxDB:
 		// Disconnect from thin influx db
 		errlog.Println("Disconnecting from thininfluxdb")
 	default:
@@ -215,7 +221,7 @@ func (backend *Backend) Disconnect() {
 // SendMetrics : send metrics to backend
 func (backend *Backend) SendMetrics(metrics []Point) {
 	switch backendType := strings.ToLower(backend.Type); backendType {
-	case "graphite":
+	case Graphite:
 		var graphiteMetrics []graphite.Metric
 		for _, point := range metrics {
 			//key := "vsphere." + vcName + "." + entityName + "." + name + "." + metricName
@@ -233,7 +239,7 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 				errlog.Println("could not connect to graphite: ", err)
 			}
 		}
-	case "influxdb":
+	case InfluxDB:
 		//Influx batch points
 		bp, err := influxclient.NewBatchPoints(influxclient.BatchPointsConfig{
 			Database:  backend.Database,
@@ -312,7 +318,7 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 		if err != nil {
 			errlog.Println("Error sending metrics: ", err)
 		}
-	case "thininfluxdb":
+	case ThinInfluxDB:
 		lines := []string{}
 		for _, point := range metrics {
 			lines = append(lines, point.ToInflux(backend.NoArray, backend.ValueField))
