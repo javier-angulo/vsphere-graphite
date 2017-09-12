@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
@@ -67,7 +66,7 @@ func (vcenter *VCenter) AddMetric(metric *MetricDef, mtype string) {
 	}
 	// check if Metric already present
 	for _, tmp := range metricGroup.Metrics {
-		if tmp.Metric == metric.Metric && tmp.Instances == metric.Instances {
+		if tmp.Key == metric.Key {
 			// metric already in metric group
 			return
 		}
@@ -450,7 +449,6 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		for _, metricgroup := range vcenter.MetricGroups {
 			if metricgroup.ObjectType == mor.Type {
 				for _, metricdef := range metricgroup.Metrics {
-					stdlog.Println("Adding metric id to query for " + vcenter.Hostname + " : " + strconv.FormatInt(int64(metricdef.Key), 10))
 					metricIds = append(metricIds, types.PerfMetricId{CounterId: metricdef.Key, Instance: metricdef.Instances})
 				}
 			}
