@@ -73,10 +73,6 @@ func (vcenter *VCenter) AddMetric(metric *MetricDef, mtype string) {
 		}
 	}
 	metricGroup.Metrics = append(metricGroup.Metrics, metric)
-	stdlog.Println("Metrics in group")
-	for _, metric := range metricGroup.Metrics {
-		stdlog.Println(strconv.FormatInt(int64(metric.Key), 10))
-	}
 }
 
 // Connect : Conncet to vcenter
@@ -159,6 +155,11 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 			for _, mtype := range metric.ObjectType {
 				vcenter.AddMetric(metricdef, mtype)
 			}
+		}
+	}
+	for i, mgroups := range vcenter.MetricGroups {
+		for _, metricdef := range mgroups.Metrics {
+			stdlog.Println("group " + vcenter.Hostname + " index " + strconv.Itoa(i) + " : " + strconv.FormatInt(int64(metricdef.Key), 10))
 		}
 	}
 }
