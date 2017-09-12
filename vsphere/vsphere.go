@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -72,6 +73,10 @@ func (vcenter *VCenter) AddMetric(metric *MetricDef, mtype string) {
 		}
 	}
 	metricGroup.Metrics = append(metricGroup.Metrics, metric)
+	stdlog.Println("Metrics in group")
+	for _, metric := range metricGroup.Metrics {
+		stdlog.Println(strconv.FormatInt(int64(metric.Key), 10))
+	}
 }
 
 // Connect : Conncet to vcenter
