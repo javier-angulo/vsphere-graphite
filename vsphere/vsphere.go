@@ -1,13 +1,12 @@
 package vsphere
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
-        "bytes"
 
 	"github.com/cblomart/vsphere-graphite/backend"
 	"github.com/cblomart/vsphere-graphite/utils"
@@ -30,6 +29,13 @@ type VCenter struct {
 	MetricGroups []*MetricGroup
 }
 
+// MetricGroup Grouping for retrieval
+type MetricGroup struct {
+	ObjectType string
+	Metrics    []*MetricDef
+	Mor        []*types.ManagedObjectReference
+}
+
 // MetricDef Definition
 type MetricDef struct {
 	Metric    string
@@ -37,17 +43,36 @@ type MetricDef struct {
 	Key       int32
 }
 
-// MetricGroup Grouping for retrieval
-type MetricGroup struct {
-	ObjectType string
-	Metrics    []MetricDef
-	Mor        []types.ManagedObjectReference
-}
-
 // Metric description in config
 type Metric struct {
 	ObjectType []string
-	Definition []MetricDef
+	Definition []*MetricDef
+}
+
+// AddMetric : add a metric definition to a metric group
+func (vcenter *VCenter) AddMetric(metric *MetricDef, mtype string) {
+	// find the metric group for the type
+	var metricGroup *MetricGroup
+	for _, tmp := range vcenter.MetricGroups {
+		if tmp.ObjectType == mtype {
+			metricGroup = tmp
+			break
+		}
+	}
+	// create a new group if needed
+	if metricGroup == nil {
+		metricGroup = &MetricGroup{ObjectType: mtype}
+		vcenter.MetricGroups = append(vcenter.MetricGroups, metricGroup)
+	}
+	// check if Metric already present
+	found := false
+	for _, tmp := range metricGroup.Metrics {
+		found = tmp.Metric == metric.Metric && tmp.Instances == metric.Instances
+		if found {
+			return
+		}
+	}
+	metricGroup.Metrics = append(metricGroup.Metrics, metric)
 }
 
 // Connect : Conncet to vcenter
@@ -77,6 +102,7 @@ func (vcenter *VCenter) Connect() (*govmomi.Client, error) {
 func (vcenter *VCenter) Init(metrics []Metric, standardLogs *log.Logger, errorLogs *log.Logger) {
 	stdlog = standardLogs
 	errlog = errorLogs
+	// connect to vcenter
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	client, err := vcenter.Connect()
@@ -85,13 +111,14 @@ func (vcenter *VCenter) Init(metrics []Metric, standardLogs *log.Logger, errorLo
 		errlog.Println("Error: ", err)
 		return
 	}
-	defer func(){ 
-        	err := client.Logout(ctx) // nolint: vetshadow
-	        if err != nil {
-                        errlog.Println("Error login out of vcenter: ", vcenter.Hostname)
-        		errlog.Println("Error: ", err)
-                }
-        }()
+	defer func() {
+		err := client.Logout(ctx) // nolint: vetshadow
+		if err != nil {
+			errlog.Println("Error loging out of vcenter: ", vcenter.Hostname)
+			errlog.Println("Error: ", err)
+		}
+	}()
+	// get the performance manager
 	var perfmanager mo.PerformanceManager
 	err = client.RetrieveOne(ctx, *client.ServiceContent.PerfManager, nil, &perfmanager)
 	if err != nil {
@@ -99,42 +126,37 @@ func (vcenter *VCenter) Init(metrics []Metric, standardLogs *log.Logger, errorLo
 		errlog.Println("Error: ", err)
 		return
 	}
-        // build a map of perf key per metric string id
-        metricToPerf := make(map[string]int32)
-        for _, perf := range perfmanager.PerfCounter {
-                var buf bytes.Buffer
-                buf.WriteString(perf.GroupInfo.GetElementDescription().Key)
-                buf.WriteString(".")
-                buf.WriteString(perf.NameInfo.GetElementDescription().Key)
-                buf.WriteString(".")
-                buf.WriteString(string(perf.RollupType))
-                metricToPerf[buf.String()] = perf.Key
-        }
+	// build a map of perf key per metric string id
+	metricToPerf := make(map[string]int32)
+	for _, perf := range perfmanager.PerfCounter {
+		var buf bytes.Buffer
+		buf.WriteString(perf.GroupInfo.GetElementDescription().Key)
+		buf.WriteString(".")
+		buf.WriteString(perf.NameInfo.GetElementDescription().Key)
+		buf.WriteString(".")
+		buf.WriteString(string(perf.RollupType))
+		metricToPerf[buf.String()] = perf.Key
+	}
+	// fill in the metric key
 	for _, metric := range metrics {
 		for _, metricdef := range metric.Definition {
 			if key, ok := metricToPerf[metricdef.Metric]; ok {
-				metricd :=  MetricDef{Metric: metricdef.Metric, Instances: metricdef.Instances, Key: key}
-                                for _, mtype := range metric.ObjectType {
-                                	added := false
-                                        for _, metricgroup := range vcenter.MetricGroups {
-                                        	if metricgroup.ObjectType == mtype {
-                                                	metricgroup.Metrics = append(metricgroup.Metrics, metricd)
-                                                        stdlog.Println("Appended metric " + metricd.Metric + " identified by " + strconv.Itoa(int(metricd.Key)) + " to vcenter " + vcenter.Hostname + " for " + mtype)
-                                                        added = true
-                                                        break
-                                                }
-                                        }
-                                        if !added {
-                                                metricgroup := MetricGroup{ObjectType: mtype, Metrics: []MetricDef{metricd}}
-                                                vcenter.MetricGroups = append(vcenter.MetricGroups, &metricgroup)
-                                                stdlog.Println("Appended metric group with " + metricd.Metric + " identified by " + strconv.Itoa(int(metricd.Key)) + " to vcenter " + vcenter.Hostname + " for " + mtype)
-                                        }
-                                }
-                        } else {
-				stdlog.Println("metric key not found for " + metricdef.Metric)
-                        }
-                }
-        }
+				metricdef.Key = key
+			}
+		}
+	}
+	// add the metric to be collected in vcenter
+	for _, metric := range metrics {
+		for _, metricdef := range metric.Definition {
+			if metricdef.Key == 0 {
+				stdlog.Println("Metric key was not found for " + metricdef.Metric)
+				continue
+			}
+			for _, mtype := range metric.ObjectType {
+				vcenter.AddMetric(metricdef, mtype)
+			}
+		}
+	}
 }
 
 // Query : Query a vcenter
@@ -157,10 +179,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	defer func() {
 		stdlog.Println("disconnecting from vcenter:", vcenter.Hostname)
 		err := client.Logout(ctx) // nolint: vetshadow
-	        if err != nil {
-                        errlog.Println("Error login out of vcenter: ", vcenter.Hostname)
-        		errlog.Println("Error: ", err)
-                }
+		if err != nil {
+			errlog.Println("Error loging out of vcenter: ", vcenter.Hostname)
+			errlog.Println("Error: ", err)
+		}
 	}()
 
 	// Create the view manager
@@ -239,7 +261,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 
 	//properties specifications
 	propSet := []types.PropertySpec{}
-        propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent", "tag"}})
+	propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent", "tag"}})
 	propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host", "summary.config.numCpu", "summary.config.memorySizeMB"}})
 	propSet = append(propSet, types.PropertySpec{Type: "ResourcePool", PathSet: []string{"vm"}})
 
