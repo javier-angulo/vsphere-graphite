@@ -150,7 +150,7 @@ handle_Error:
 
 			outBuf := fs.Output.Bytes()
 
-			uj.Error = string(string(outBuf))
+			uj.Error = string(outBuf)
 
 		}
 	}
