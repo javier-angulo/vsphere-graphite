@@ -8,10 +8,10 @@ import (
 // Configuration : configurarion base
 type Configuration struct {
 	VCenters     []*vsphere.VCenter
-	Metrics      []vsphere.Metric
+	Metrics      []*vsphere.Metric
 	Interval     int
 	Domain       string
-	Backend      backend.Backend
+	Backend      *backend.Backend
 	CPUProfiling bool
 	MEMProfiling bool
 	FlushSize    int
