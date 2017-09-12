@@ -157,11 +157,6 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 			}
 		}
 	}
-	for i, mgroups := range vcenter.MetricGroups {
-		for _, metricdef := range mgroups.Metrics {
-			stdlog.Println("group " + vcenter.Hostname + " index " + strconv.Itoa(i) + " : " + strconv.FormatInt(int64(metricdef.Key), 10))
-		}
-	}
 }
 
 // Query : Query a vcenter
@@ -476,6 +471,11 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	if err != nil {
 		errlog.Println("Could not request perfs from vcenter: " + vcenter.Hostname)
 		errlog.Println("Error: ", err)
+		for i, query := range queries {
+			for _, id := range query.MetricId {
+				stdlog.Println("query " + strconv.Itoa(i) + " metric id " + strconv.FormatInt(int64(id.CounterId), 10))
+			}
+		}
 		return
 	}
 
