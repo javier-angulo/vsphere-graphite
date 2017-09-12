@@ -38,22 +38,25 @@ type Point struct {
 // Backend : storage backend
 type Backend struct {
 	Hostname     string
-	Port         int
+	ValueField   string
 	Database     string
 	Username     string
 	Password     string
 	Type         string
+	Port         int
 	NoArray      bool
-	carbon       *graphite.Graphite
-	influx       influxclient.Client
-	thininfluxdb ThinInfluxClient.ThinInfluxClient
-	ValueField   string
 	Encrypted    bool
+	carbon       *graphite.Graphite
+	influx       *influxclient.Client
+	thininfluxdb *ThinInfluxClient.ThinInfluxClient
 }
 
 const(
+  // Graphite name of the graphite backend
   Graphite = "graphite"
+  // InfluxDB name of the influx db backend
   InfluxDB = "influxdb"
+  // ThinInfluxDB name of the thin influx db backend
   ThinInfluxDB = "thininfluxdb"
 )
 
@@ -179,7 +182,7 @@ func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) er
 			errlog.Println("Error connecting to InfluxDB")
 			return err
 		}
-		backend.influx = influxclt
+		backend.influx = &influxclt
 		return nil
 	case ThinInfluxDB:
 		//Initialize thin Influx DB client
@@ -189,7 +192,7 @@ func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) er
 			errlog.Println("Error creating thin InfluxDB client")
 			return err
 		}
-		backend.thininfluxdb = thininfluxclt
+		backend.thininfluxdb = &thininfluxclt
 		return nil
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
@@ -306,7 +309,7 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 			}
 			fields := make(map[string]interface{})
 			fields[backend.ValueField] = point.Value
-			pt, err := influxclient.NewPoint(key, tags, fields, time.Unix(point.Timestamp, 0))
+			pt, err := influxclient.NewPoint(key, tags, fields, time.Unix(point.Timestamp, 0)) // nolint: vetshadow
 			if err != nil {
 				errlog.Println("Could not create influxdb point")
 				errlog.Println(err)
@@ -314,7 +317,7 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 			}
 			bp.AddPoint(pt)
 		}
-		err = backend.influx.Write(bp)
+		err = (*backend.influx).Write(bp)
 		if err != nil {
 			errlog.Println("Error sending metrics: ", err)
 		}

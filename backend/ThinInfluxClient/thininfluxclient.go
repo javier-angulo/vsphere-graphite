@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-        "github.com/cblomart/vsphere-graphite/utils"
 )
 
 // constants
@@ -115,7 +113,7 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 	}
 	jsonerr := InfluxError{}
 	if resp.StatusCode == 400 || resp.StatusCode == 404 || resp.StatusCode == 500 {
-		defer utils.Close(resp.Body)
+		defer resp.Body.Close() // nolint: errcheck
 		// Check that the server actually sent compressed data
 		var reader io.ReadCloser
 		switch resp.Header.Get("Content-Encoding") {
@@ -124,7 +122,7 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 			if err != nil {
 				return err
 			}
-			defer utils.Close(reader)
+			defer reader.Close() // nolint: errcheck
 		default:
 			reader = resp.Body
 		}
@@ -132,7 +130,10 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 		if err != nil {
 			return err
 		}
-		jsonerr.UnmarshalJSON(body)
+		err = jsonerr.UnmarshalJSON(body)
+		if err != nil {
+			return err
+		}
 	}
 	if resp.StatusCode == 400 {
 		return errors.New("Influxdb Unacceptable request: " + strings.Trim(jsonerr.Error, " "))

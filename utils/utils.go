@@ -1,16 +1,8 @@
 package utils
 
 import (
-        "io"
 	"math"
 )
-
-// Close: close an io closer with fake error checking
-func Close(v interface{}) {
-    if d, ok := v.(io.Closer); ok {
-        _ = d.Close()
-    }
-}
 
 // Min : get the minimum of values
 func Min(n ...int64) int64 {

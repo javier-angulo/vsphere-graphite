@@ -20,13 +20,10 @@ import (
 	"github.com/cblomart/vsphere-graphite/backend"
 	"github.com/cblomart/vsphere-graphite/config"
 	"github.com/cblomart/vsphere-graphite/vsphere"
-	"github.com/cblomart/vsphere-graphite/utils"
 
 	"github.com/takama/daemon"
 
 	"code.cloudfoundry.org/bytefmt"
-
-	"github.com/vmware/govmomi/vim25/types"
 )
 
 const (
@@ -44,15 +41,8 @@ type Service struct {
 	daemon.Daemon
 }
 
-// EntityQuery : Informations to query about an entity
-type EntityQuery struct {
-	Name    string
-	Entity  types.ManagedObjectReference
-	Metrics []int
-}
-
-func queryVCenter(vcenter vsphere.VCenter, config config.Configuration, channel *chan backend.Point) {
-	vcenter.Query(config.Interval, config.Domain, channel)
+func queryVCenter(vcenter vsphere.VCenter, conf config.Configuration, channel *chan backend.Point) {
+	vcenter.Query(conf.Interval, conf.Domain, channel)
 }
 
 // Manage by daemon commands or run the daemon
@@ -87,18 +77,18 @@ func (service *Service) Manage() (string, error) {
 		return "Could not open configuration file", err
 	}
 	jsondec := json.NewDecoder(file)
-	config := config.Configuration{}
-	err = jsondec.Decode(&config)
+	conf := config.Configuration{}
+	err = jsondec.Decode(&conf)
 	if err != nil {
 		return "Could not decode configuration file", err
 	}
 
-	if config.FlushSize == 0 {
-		config.FlushSize = 1000
+	if conf.FlushSize == 0 {
+		conf.FlushSize = 1000
 	}
 
-	if config.CPUProfiling {
-		f, err := ioutil.TempFile("/tmp", "vsphere-graphite-cpu.profile")
+	if conf.CPUProfiling {
+		f, err := ioutil.TempFile("/tmp", "vsphere-graphite-cpu.profile") // nolint: vetshadow
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
@@ -110,7 +100,7 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	//force backend values to environement varialbles if present
-	s := reflect.ValueOf(&config.Backend).Elem()
+	s := reflect.ValueOf(&conf.Backend).Elem()
 	numfields := s.NumField()
 	for i := 0; i < numfields; i++ {
 		f := s.Field(i)
@@ -124,7 +114,7 @@ func (service *Service) Manage() (string, error) {
 				case "string":
 					f.SetString(envval)
 				case "int":
-					val, err := strconv.ParseInt(envval, 10, 64)
+					val, err := strconv.ParseInt(envval, 10, 64) // nolint: vetshadow
 					if err == nil {
 						f.SetInt(val)
 					}
@@ -133,15 +123,15 @@ func (service *Service) Manage() (string, error) {
 		}
 	}
 
-	for _, vcenter := range config.VCenters {
-		vcenter.Init(config.Metrics, stdlog, errlog)
+	for _, vcenter := range conf.VCenters {
+		vcenter.Init(conf.Metrics, stdlog, errlog)
 	}
 
-	err = config.Backend.Init(stdlog, errlog)
+	err = conf.Backend.Init(stdlog, errlog)
 	if err != nil {
 		return "Could not initialize backend", err
 	}
-	defer config.Backend.Disconnect()
+	defer conf.Backend.Disconnect()
 
 	// Set up channel on which to send signal notifications.
 	// We must use a buffered channel or risk missing the signal
@@ -150,16 +140,16 @@ func (service *Service) Manage() (string, error) {
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM)
 
 	// Set up a channel to receive the metrics
-	metrics := make(chan backend.Point, config.FlushSize)
+	metrics := make(chan backend.Point, conf.FlushSize)
 
 	// Set up a ticker to collect metrics at givent interval
-	ticker := time.NewTicker(time.Second * time.Duration(config.Interval))
+	ticker := time.NewTicker(time.Second * time.Duration(conf.Interval))
 	defer ticker.Stop()
 
 	// Start retriveing and sending metrics
 	stdlog.Println("Retrieving metrics")
-	for _, vcenter := range config.VCenters {
-		go queryVCenter(*vcenter, config, &metrics)
+	for _, vcenter := range conf.VCenters {
+		go queryVCenter(*vcenter, conf, &metrics)
 	}
 
 	// Memory statisctics
@@ -168,15 +158,15 @@ func (service *Service) Manage() (string, error) {
 	memtimer := time.NewTimer(time.Second * time.Duration(10))
 	// Memory profiling
 	var mf *os.File
-	if config.MEMProfiling {
+	if conf.MEMProfiling {
 		mf, err = ioutil.TempFile("/tmp", "vsphere-graphite-mem.profile")
 		if err != nil {
 			log.Fatal("could not create MEM profile: ", err)
 		}
-		defer utils.Close(mf)
+		defer mf.Close() // nolint: errcheck
 	}
 	// buffer for points to send
-	pointbuffer := make([]backend.Point, config.FlushSize)
+	pointbuffer := make([]backend.Point, conf.FlushSize)
 	bufferindex := 0
 
 	for {
@@ -185,7 +175,7 @@ func (service *Service) Manage() (string, error) {
 			pointbuffer[bufferindex] = value
 			bufferindex++
 			if bufferindex == len(pointbuffer) {
-				config.Backend.SendMetrics(pointbuffer)
+				conf.Backend.SendMetrics(pointbuffer)
 				stdlog.Printf("Sent %d logs to backend", len(pointbuffer))
 				for i := 0; i < len(pointbuffer); i++ {
 					pointbuffer[i] = backend.Point{}
@@ -202,22 +192,22 @@ func (service *Service) Manage() (string, error) {
 			}
 		case <-ticker.C:
 			stdlog.Println("Retrieving metrics")
-			for _, vcenter := range config.VCenters {
-				go queryVCenter(*vcenter, config, &metrics)
+			for _, vcenter := range conf.VCenters {
+				go queryVCenter(*vcenter, conf, &metrics)
 			}
 		case <-memtimer.C:
 			runtime.GC()
 			debug.FreeOSMemory()
 			runtime.ReadMemStats(&memstats)
 			stdlog.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
-			if config.MEMProfiling {
+			if conf.MEMProfiling {
 				stdlog.Println("Writing mem profiling to: ", mf.Name())
 				debug.WriteHeapDump(mf.Fd())
 			}
 		case killSignal := <-interrupt:
 			stdlog.Println("Got signal:", killSignal)
 			if bufferindex > 0 {
-				config.Backend.SendMetrics(pointbuffer[:bufferindex])
+				conf.Backend.SendMetrics(pointbuffer[:bufferindex])
 				stdlog.Printf("Sent %d logs to backend", bufferindex)
 			}
 			if killSignal == os.Interrupt {
