@@ -221,7 +221,7 @@ func (backend *Backend) Disconnect() {
 }
 
 // SendMetrics : send metrics to backend
-func (backend *Backend) SendMetrics(metrics []Point) {
+func (backend *Backend) SendMetrics(metrics []*Point) {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		var graphiteMetrics []graphite.Metric

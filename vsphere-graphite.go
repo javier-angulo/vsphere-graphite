@@ -166,29 +166,27 @@ func (service *Service) Manage() (string, error) {
 		defer mf.Close() // nolint: errcheck
 	}
 	// buffer for points to send
-	pointbuffer := make([]backend.Point, conf.FlushSize)
+	pointbuffer := make([]*backend.Point, conf.FlushSize)
 	bufferindex := 0
 
 	for {
 		select {
 		case value := <-metrics:
-			pointbuffer[bufferindex] = value
+			// reset timer as a point has been revieved
+			if !memtimer.Stop() {
+				select {
+				case <-memtimer.C:
+				default:
+				}
+			}
+			memtimer.Reset(time.Second * time.Duration(5))
+			pointbuffer[bufferindex] = &value
 			bufferindex++
 			if bufferindex == len(pointbuffer) {
 				conf.Backend.SendMetrics(pointbuffer)
-				stdlog.Printf("Sent %d logs to backend", len(pointbuffer))
-				for i := 0; i < len(pointbuffer); i++ {
-					pointbuffer[i] = backend.Point{}
-				}
+				stdlog.Printf("Sent %d logs to backend", bufferindex)
+				ClearBuffer(pointbuffer)
 				bufferindex = 0
-				// reset timer as data has been set
-				if !memtimer.Stop() {
-					select {
-					case <-memtimer.C:
-					default:
-					}
-				}
-				memtimer.Reset(time.Second * time.Duration(10))
 			}
 		case <-ticker.C:
 			stdlog.Println("Retrieving metrics")
@@ -196,6 +194,11 @@ func (service *Service) Manage() (string, error) {
 				go queryVCenter(*vcenter, conf, &metrics)
 			}
 		case <-memtimer.C:
+			// sent remaining values
+			conf.Backend.SendMetrics(pointbuffer)
+			stdlog.Printf("Sent %d logs to backend", bufferindex)
+			bufferindex = 0
+			ClearBuffer(pointbuffer)
 			runtime.GC()
 			debug.FreeOSMemory()
 			runtime.ReadMemStats(&memstats)
@@ -215,6 +218,13 @@ func (service *Service) Manage() (string, error) {
 			}
 			return "Daemon was killed", nil
 		}
+	}
+}
+
+// ClearBuffer : set all values in pointer array to nil
+func ClearBuffer(buffer []*backend.Point) {
+	for i := 0; i < len(buffer); i++ {
+		buffer[i] = nil
 	}
 }
 
