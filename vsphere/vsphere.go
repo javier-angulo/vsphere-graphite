@@ -450,7 +450,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		for _, metricgroup := range vcenter.MetricGroups {
 			if metricgroup.ObjectType == mor.Type {
 				for _, metricdef := range metricgroup.Metrics {
-					stdlog.Println("Adding metric id to query: " + strconv.FormatInt(int64(metricdef.Key), 10))
+					stdlog.Println("Adding metric id to query for " + vcenter.Hostname + " : " + strconv.FormatInt(int64(metricdef.Key), 10))
 					metricIds = append(metricIds, types.PerfMetricId{CounterId: metricdef.Key, Instance: metricdef.Instances})
 				}
 			}
