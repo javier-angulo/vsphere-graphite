@@ -52,19 +52,19 @@ Backend paramters can also be set via environement paramterers (see docker)
 
 ### Backend parameters
 
-- Type (BACKEND_TYPE): Type of backend to use. Currently "graphite" or "influxdb"
+- Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb" or "thinfluxdb" (influx client in the project) 
 
-- Hostname (BACKEND_HOSTNAME): hostname were the backend is running (graphite, influxdb)
+- Hostname (BACKEND_HOSTNAME): hostname were the backend is running (graphite, influxdb, thinfluxdb)
 
-- Port (BACKEND_PORT): port to connect to for the backend (graphite, influxdb)
+- Port (BACKEND_PORT): port to connect to for the backend (graphite, influxdb, thinfluxdb)
 
-- Username (BACKEND_USERNAME): username to connect to the backend (influxdb)
+- Username (BACKEND_USERNAME): username to connect to the backend (influxdb and optionally for thinfluxdb)
 
-- Password (BACKEND_PASSWORD): password to connect to the backend (influxdb)
+- Password (BACKEND_PASSWORD): password to connect to the backend (influxdb and optionally for thinfluxdb)
 
-- Database (BACKEND_DATABASE): database to use in the backend (influxdb)
+- Database (BACKEND_DATABASE): database to use in the backend (influxdb, thinfluxdb)
 
-- NoArray (BACKEND_NOARRAY): don't use csv 'array' as tags, only the first element is used (influxdb)
+- NoArray (BACKEND_NOARRAY): don't use csv 'array' as tags, only the first element is used (influxdb, thinfluxdb)
 
 ## Docker
 
