@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -136,12 +137,20 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 		buf.WriteString(string(perf.RollupType))
 		metricToPerf[buf.String()] = perf.Key
 	}
+	for key, value := range metricToPerf {
+		stdlog.Println("perf " + key + " has id " + strconv.FormatInt(int64(value), 10))
+	}
 	// fill in the metric key
 	for _, metric := range metrics {
 		for _, metricdef := range metric.Definition {
 			if key, ok := metricToPerf[metricdef.Metric]; ok {
 				metricdef.Key = key
 			}
+		}
+	}
+	for _, metric := range metrics {
+		for _, metricdef := range metric.Definition {
+			stdlog.Println("required perf " + metricdef.Metric + " has key " + strconv.FormatInt(int64(metricdef.Key), 10))
 		}
 	}
 	// add the metric to be collected in vcenter

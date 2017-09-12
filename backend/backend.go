@@ -226,6 +226,9 @@ func (backend *Backend) SendMetrics(metrics []*Point) {
 	case Graphite:
 		var graphiteMetrics []graphite.Metric
 		for _, point := range metrics {
+			if point == nil {
+				continue
+			}
 			//key := "vsphere." + vcName + "." + entityName + "." + name + "." + metricName
 			key := "vsphere." + point.VCenter + "." + point.ObjectType + "." + point.ObjectName + "." + point.Group + "." + point.Counter + "." + point.Rollup
 			if len(point.Instance) > 0 {
@@ -253,6 +256,9 @@ func (backend *Backend) SendMetrics(metrics []*Point) {
 			return
 		}
 		for _, point := range metrics {
+			if point == nil {
+				continue
+			}
 			key := point.Group + "_" + point.Counter + "_" + point.Rollup
 			tags := map[string]string{}
 			tags["vcenter"] = point.VCenter
@@ -323,6 +329,9 @@ func (backend *Backend) SendMetrics(metrics []*Point) {
 	case ThinInfluxDB:
 		lines := []string{}
 		for _, point := range metrics {
+			if point == nil {
+				continue
+			}
 			lines = append(lines, point.ToInflux(backend.NoArray, backend.ValueField))
 		}
 		count := 3
