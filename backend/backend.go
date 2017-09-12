@@ -51,13 +51,13 @@ type Backend struct {
 	thininfluxdb *ThinInfluxClient.ThinInfluxClient
 }
 
-const(
-  // Graphite name of the graphite backend
-  Graphite = "graphite"
-  // InfluxDB name of the influx db backend
-  InfluxDB = "influxdb"
-  // ThinInfluxDB name of the thin influx db backend
-  ThinInfluxDB = "thininfluxdb"
+const (
+	// Graphite name of the graphite backend
+	Graphite = "graphite"
+	// InfluxDB name of the influx db backend
+	InfluxDB = "influxdb"
+	// ThinInfluxDB name of the thin influx db backend
+	ThinInfluxDB = "thininfluxdb"
 )
 
 var stdlog, errlog *log.Logger
@@ -302,10 +302,10 @@ func (backend *Backend) SendMetrics(metrics []Point) {
 				}
 			}
 			if point.NumCPU != 0 {
-				tags["numcpu"] = strconv.FormatInt(int64(point.NumCPU),10)
+				tags["numcpu"] = strconv.FormatInt(int64(point.NumCPU), 10)
 			}
 			if point.MemorySizeMB != 0 {
-				tags["memorysizemb"] = strconv.FormatInt(int64(point.MemorySizeMB),10)
+				tags["memorysizemb"] = strconv.FormatInt(int64(point.MemorySizeMB), 10)
 			}
 			fields := make(map[string]interface{})
 			fields[backend.ValueField] = point.Value
