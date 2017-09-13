@@ -97,6 +97,29 @@ func (vcenter *VCenter) Connect() (*govmomi.Client, error) {
 	return client, nil
 }
 
+// InitMetrics : maps metric keys to requested metrics
+func InitMetrics(metrics []*Metric, perfmanager *mo.PerformanceManager) {
+	// build a map of perf key per metric string id
+	metricToPerf := make(map[string]int32)
+	for _, perf := range perfmanager.PerfCounter {
+		var buf bytes.Buffer
+		buf.WriteString(perf.GroupInfo.GetElementDescription().Key)
+		buf.WriteString(".")
+		buf.WriteString(perf.NameInfo.GetElementDescription().Key)
+		buf.WriteString(".")
+		buf.WriteString(string(perf.RollupType))
+		metricToPerf[buf.String()] = perf.Key
+	}
+	// fill in the metric key
+	for _, metric := range metrics {
+		for _, metricdef := range metric.Definition {
+			if key, ok := metricToPerf[metricdef.Metric]; ok {
+				metricdef.Key = key
+			}
+		}
+	}
+}
+
 // Init : initialize vcenter
 func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorLogs *log.Logger) {
 	stdlog = standardLogs
@@ -125,25 +148,7 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 		errlog.Println("Error: ", err)
 		return
 	}
-	// build a map of perf key per metric string id
-	metricToPerf := make(map[string]int32)
-	for _, perf := range perfmanager.PerfCounter {
-		var buf bytes.Buffer
-		buf.WriteString(perf.GroupInfo.GetElementDescription().Key)
-		buf.WriteString(".")
-		buf.WriteString(perf.NameInfo.GetElementDescription().Key)
-		buf.WriteString(".")
-		buf.WriteString(string(perf.RollupType))
-		metricToPerf[buf.String()] = perf.Key
-	}
-	// fill in the metric key
-	for _, metric := range metrics {
-		for _, metricdef := range metric.Definition {
-			if key, ok := metricToPerf[metricdef.Metric]; ok {
-				metricdef.Key = key
-			}
-		}
-	}
+	InitMetrics(metrics, &perfmanager)
 	// add the metric to be collected in vcenter
 	for _, metric := range metrics {
 		for _, metricdef := range metric.Definition {
