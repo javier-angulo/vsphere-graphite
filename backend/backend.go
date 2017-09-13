@@ -206,7 +206,7 @@ func (p *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint {
 		case "tag":
 			ip.Tags[tagname] = ValToString(vfield.Interface(), ",", noarray)
 		case "value":
-			ip.Fields[valuefield] = ValToString(vfield.Interface, ",", true) + "i"
+			ip.Fields[valuefield] = ValToString(vfield.Interface(), ",", true) + "i"
 		case "time":
 			ip.Timestamp = vfield.Int()
 		default:
@@ -248,16 +248,6 @@ func (ip *InfluxPoint) ToInflux(noarray bool, valuefield string) string {
 	// timestamp
 	buff.WriteString(strconv.FormatInt(ip.Timestamp, 10))
 	return buff.String()
-}
-
-// AppendBuf :  append value to key=value buffer in csv format
-func AppendBuf(buff *bytes.Buffer, value, name string) {
-	if len(value) > 0 {
-		buff.WriteString(",")
-		buff.WriteString(name)
-		buff.WriteString("=")
-		buff.WriteString(value)
-	}
 }
 
 // ToInflux serialises the data to be consumed by influx line protocol
