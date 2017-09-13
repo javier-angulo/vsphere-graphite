@@ -62,6 +62,16 @@ const (
 
 var stdlog, errlog *log.Logger
 
+// AppendBuf :  append value to key=value buffer in csv format
+func AppendBuf(buff *bytes.Buffer, value, name string) {
+	if len(value) > 0 {
+		buff.WriteString(",")
+		buff.WriteString(name)
+		buff.WriteString("=")
+		buff.WriteString(value)
+	}
+}
+
 // ToInflux serialises the data to be consumed by influx line protocol
 // see https://docs.influxdata.com/influxdb/v1.2/write_protocols/line_protocol_tutorial/
 func (point *Point) ToInflux(noarray bool, valuefield string) string {
@@ -105,38 +115,14 @@ func (point *Point) ToInflux(noarray bool, valuefield string) string {
 			vitags = strings.Join(point.ViTags, "\\,")
 		}
 	}
-	if len(datastore) > 0 {
-		buff.WriteString(",datastore=")
-		buff.WriteString(datastore)
-	}
-	if len(network) > 0 {
-		buff.WriteString(",network=")
-		buff.WriteString(network)
-	}
-	if len(vitags) > 0 {
-		buff.WriteString(",vitags=")
-		buff.WriteString(vitags)
-	}
-	if len(point.ESXi) > 0 {
-		buff.WriteString(",host=")
-		buff.WriteString(point.ESXi)
-	}
-	if len(point.Cluster) > 0 {
-		buff.WriteString(",cluster=")
-		buff.WriteString(point.Cluster)
-	}
-	if len(point.Instance) > 0 {
-		buff.WriteString(",instance=")
-		buff.WriteString(point.Instance)
-	}
-	if len(point.ResourcePool) > 0 {
-		buff.WriteString(",resourcepool=")
-		buff.WriteString(point.ResourcePool)
-	}
-	if len(point.Folder) > 0 {
-		buff.WriteString(",folder=")
-		buff.WriteString(point.Folder)
-	}
+	AppendBuf(buff, datastore, "datastore")
+	AppendBuf(buff, network, "network")
+	AppendBuf(buff, vitags, "vitags")
+	AppendBuf(buff, point.ESXi, "host")
+	AppendBuf(buff, point.Cluster, "cluster")
+	AppendBuf(buff, point.Instance, "instance")
+	AppendBuf(buff, point.ResourcePool, "resourcepool")
+	AppendBuf(buff, point.Folder, "folder")
 	buff.WriteString(" ")
 	buff.WriteString(valuefield)
 	buff.WriteString("=")
