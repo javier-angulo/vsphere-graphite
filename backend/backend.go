@@ -221,6 +221,9 @@ func (p *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint {
 func ConvertToKV(values map[string]string) string {
 	var tmp []string
 	for key, val := range values {
+		if len(val) == 0 {
+			continue
+		}
 		tbuf := bytes.NewBuffer(nil)
 		tbuf.WriteString(key)
 		tbuf.WriteRune('=')
