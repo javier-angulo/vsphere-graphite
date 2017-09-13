@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"log"
+	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -15,24 +17,32 @@ import (
 
 // Point : Information collected for a point
 type Point struct {
-	VCenter      string
-	ObjectType   string
-	ObjectName   string
-	Group        string
-	Counter      string
-	Instance     string
-	Rollup       string
-	Value        int64
-	Datastore    []string
-	ESXi         string
-	Cluster      string
-	Network      []string
-	ResourcePool string
-	Folder       string
-	ViTags       []string
-	NumCPU       int32
-	MemorySizeMB int32
-	Timestamp    int64
+	VCenter      string   `influx:"tag,name"`
+	ObjectType   string   `influx:"tag,type"`
+	ObjectName   string   `influx:"tag,name"`
+	Group        string   `influx:"key,1"`
+	Counter      string   `influx:"key,2"`
+	Instance     string   `influx:"tag,instance"`
+	Rollup       string   `influx:"key,3"`
+	Value        int64    `influx:"value"`
+	Datastore    []string `influx:"tag,datastore"`
+	ESXi         string   `influx:"tag,host"`
+	Cluster      string   `influx:"tag,cluster"`
+	Network      []string `influx:"tag,network"`
+	ResourcePool string   `influx:"tag,resourcepool"`
+	Folder       string   `influx:"tag,folder"`
+	ViTags       []string `influx:"tag,vitags"`
+	NumCPU       int32    `influx:"tag,numcpu"`
+	MemorySizeMB int32    `influx:"tag,memorysizemb"`
+	Timestamp    int64    `influx:"time"`
+}
+
+// InfluxPoint is the representation of the parts of a point for influx
+type InfluxPoint struct {
+	Key       string
+	Fields    map[string]string
+	Tags      map[string]string
+	Timestamp int64
 }
 
 // Backend : storage backend
@@ -58,9 +68,187 @@ const (
 	InfluxDB = "influxdb"
 	// ThinInfluxDB name of the thin influx db backend
 	ThinInfluxDB = "thininfluxdb"
+	// InfluxTag is the tag for influxdb
+	InfluxTag = "influx"
 )
 
 var stdlog, errlog *log.Logger
+
+// StringMaptoString converts a string map to csv or get the first value
+func StringMaptoString(value []string, separator string, noarray bool) string {
+	if len(value) == 0 {
+		return ""
+	}
+	if noarray {
+		return value[0]
+	}
+	return strings.Join(value, separator)
+}
+
+// IntMaptoString converts a int map to csv or get the first value
+func IntMaptoString(value []int, separator string, noarray bool) string {
+	if len(value) == 0 {
+		return ""
+	}
+	if noarray {
+		return strconv.Itoa(value[0])
+	}
+	var strval []string
+	for _, i := range value {
+		strval = append(strval, strconv.Itoa(i))
+	}
+	return strings.Join(strval, separator)
+}
+
+// Int32MaptoString converts a int32 map to csv or get the first value
+func Int32MaptoString(value []int32, separator string, noarray bool) string {
+	if len(value) == 0 {
+		return ""
+	}
+	if noarray {
+		return strconv.FormatInt(int64(value[0]), 10)
+	}
+	var strval []string
+	for _, i := range value {
+		strval = append(strval, strconv.FormatInt(int64(i), 10))
+	}
+	return strings.Join(strval, separator)
+}
+
+// Int64MaptoString converts a int64 map to csv or get the first value
+func Int64MaptoString(value []int64, separator string, noarray bool) string {
+	if len(value) == 0 {
+		return ""
+	}
+	if noarray {
+		return strconv.FormatInt(value[0], 10)
+	}
+	var strval []string
+	for _, i := range value {
+		strval = append(strval, strconv.FormatInt(i, 10))
+	}
+	return strings.Join(strval, separator)
+}
+
+// ValToString : try to convert interface to string. Separated by separator if slice
+func ValToString(value interface{}, separator string, noarray bool) string {
+	switch v := value.(type) {
+	case string:
+		return v
+	case []string:
+		return StringMaptoString(v, separator, noarray)
+	case int:
+		return strconv.Itoa(v)
+	case []int:
+		return IntMaptoString(v, separator, noarray)
+	case int32:
+		return strconv.FormatInt(int64(v), 10)
+	case []int32:
+		return Int32MaptoString(v, separator, noarray)
+	case int64:
+		return strconv.FormatInt(v, 10)
+	case []int64:
+		return Int64MaptoString(v, separator, noarray)
+	default:
+		return ""
+	}
+}
+
+// Join map[int]string into a string
+func Join(values map[int]string, separator string) string {
+	var keys []int
+	for k := range values {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+	// create a map with the key parts in order
+	var tmp []string
+	for _, k := range keys {
+		tmp = append(tmp, values[k])
+	}
+	return strings.Join(tmp, separator)
+}
+
+// MustAtoi converts a string to integer and return 0 i case of error
+func MustAtoi(value string) int {
+	i, err := strconv.Atoi(value)
+	if err != nil {
+		i = 0
+	}
+	return i
+}
+
+// GetInfluxPoint : convert a point to an influxpoint
+func (p *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint {
+	keyParts := make(map[int]string)
+	ip := InfluxPoint{
+		Fields: make(map[string]string),
+		Tags:   make(map[string]string),
+	}
+	v := reflect.ValueOf(p).Elem()
+	for i := 0; i < v.NumField(); i++ {
+		vfield := v.Field(i)
+		tfield := v.Type().Field(i)
+		tag := tfield.Tag.Get(InfluxTag)
+		tagfields := strings.Split(tag, ",")
+		if len(tagfields) == 0 || len(tagfields) > 2 {
+			stdlog.Println("tag field ignored: " + tag)
+			continue
+		}
+		tagtype := tagfields[0]
+		tagname := strings.ToLower(tfield.Name)
+		if len(tagfields) == 2 {
+			tagname = tagfields[1]
+		}
+		switch tagtype {
+		case "key":
+			keyParts[MustAtoi(tagname)] = ValToString(vfield.Interface(), "_", false)
+		case "tag":
+			ip.Tags[tagname] = ValToString(vfield.Interface(), ",", noarray)
+		case "value":
+			ip.Fields[valuefield] = ValToString(vfield.Interface, ",", true) + "i"
+		case "time":
+			ip.Timestamp = vfield.Int()
+		default:
+		}
+	}
+	// sort key part keys and join them
+	ip.Key = Join(keyParts, "_")
+	return &ip
+}
+
+// ConvertToKV converts a map[string]string to a csv with k=v pairs
+func ConvertToKV(values map[string]string) string {
+	var tmp []string
+	for key, val := range values {
+		tbuf := bytes.NewBuffer(nil)
+		tbuf.WriteString(key)
+		tbuf.WriteRune('=')
+		tbuf.WriteString(val)
+		tmp = append(tmp, tbuf.String())
+	}
+	return strings.Join(tmp, ",")
+}
+
+// ToInflux converts the influx point to influx string format
+func (ip *InfluxPoint) ToInflux(noarray bool, valuefield string) string {
+	// buffer containing the resulting line
+	buff := bytes.NewBuffer(nil)
+	// key of the mesurement
+	buff.WriteString(ip.Key)
+	buff.WriteRune(',')
+	// Tags
+	buff.WriteString(ConvertToKV(ip.Tags))
+	// separator
+	buff.WriteRune(' ')
+	// fields
+	buff.WriteString(ConvertToKV(ip.Fields))
+	// separator
+	buff.WriteRune(' ')
+	// timestamp
+	buff.WriteString(strconv.FormatInt(ip.Timestamp, 10))
+	return buff.String()
+}
 
 // AppendBuf :  append value to key=value buffer in csv format
 func AppendBuf(buff *bytes.Buffer, value, name string) {
@@ -74,63 +262,8 @@ func AppendBuf(buff *bytes.Buffer, value, name string) {
 
 // ToInflux serialises the data to be consumed by influx line protocol
 // see https://docs.influxdata.com/influxdb/v1.2/write_protocols/line_protocol_tutorial/
-func (point *Point) ToInflux(noarray bool, valuefield string) string {
-	// buffer containing the resulting line
-	buff := bytes.NewBuffer(nil)
-	// measurement name
-	buff.WriteString(point.Group)
-	buff.WriteString("_")
-	buff.WriteString(point.Counter)
-	buff.WriteString("_")
-	buff.WriteString(point.Rollup)
-	// tags name=value
-	buff.WriteString(",vcenter=")
-	buff.WriteString(point.VCenter)
-	buff.WriteString(",type=")
-	buff.WriteString(point.ObjectType)
-	buff.WriteString(",name=")
-	buff.WriteString(point.ObjectName)
-	// these value could have multiple values
-	datastore := ""
-	network := ""
-	vitags := ""
-	if noarray {
-		if len(point.Datastore) > 0 {
-			datastore = point.Datastore[0]
-		}
-		if len(point.Network) > 0 {
-			network = point.Network[0]
-		}
-		if len(point.ViTags) > 0 {
-			vitags = point.ViTags[0]
-		}
-	} else {
-		if len(point.Datastore) > 0 {
-			datastore = strings.Join(point.Datastore, "\\,")
-		}
-		if len(point.Network) > 0 {
-			network = strings.Join(point.Network, "\\,")
-		}
-		if len(point.ViTags) > 0 {
-			vitags = strings.Join(point.ViTags, "\\,")
-		}
-	}
-	AppendBuf(buff, datastore, "datastore")
-	AppendBuf(buff, network, "network")
-	AppendBuf(buff, vitags, "vitags")
-	AppendBuf(buff, point.ESXi, "host")
-	AppendBuf(buff, point.Cluster, "cluster")
-	AppendBuf(buff, point.Instance, "instance")
-	AppendBuf(buff, point.ResourcePool, "resourcepool")
-	AppendBuf(buff, point.Folder, "folder")
-	buff.WriteString(" ")
-	buff.WriteString(valuefield)
-	buff.WriteString("=")
-	buff.WriteString(strconv.FormatInt(point.Value, 10))
-	buff.WriteString("i")
-	buff.WriteString(" ")
-	buff.WriteString(strconv.FormatInt(point.Timestamp, 10))
-	return buff.String()
+func (p *Point) ToInflux(noarray bool, valuefield string) string {
+	return p.GetInfluxPoint(noarray, valuefield).ToInflux(noarray, valuefield)
 }
 
 // Init : initialize a backend
