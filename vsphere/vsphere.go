@@ -474,7 +474,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	for _, query := range queries {
 		metriccount = metriccount + len(query.MetricId)
 	}
-	stdlog.Println("Issuing " + strconv.Itoa(querycount) + "queries to vcenter " + vcenter.Hostname + " requesting " + strconv.Itoa(metriccount) + " metrics.")
+	stdlog.Println("Issuing " + strconv.Itoa(querycount) + " queries to vcenter " + vcenter.Hostname + " requesting " + strconv.Itoa(metriccount) + " metrics.")
 
 	// Query the performances
 	perfreq := types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries}

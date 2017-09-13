@@ -204,7 +204,7 @@ func (p *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint {
 		case "key":
 			keyParts[MustAtoi(tagname)] = ValToString(vfield.Interface(), "_", false)
 		case "tag":
-			ip.Tags[tagname] = ValToString(vfield.Interface(), ",", noarray)
+			ip.Tags[tagname] = ValToString(vfield.Interface(), "\\,", noarray)
 		case "value":
 			ip.Fields[valuefield] = ValToString(vfield.Interface(), ",", true) + "i"
 		case "time":
