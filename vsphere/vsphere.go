@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -464,10 +465,16 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	}
 
 	// Check that there is somethong to query
-	if len(queries) == 0 {
+	querycount := len(queries)
+	if querycount == 0 {
 		errlog.Println("No queries created!")
 		return
 	}
+	metriccount := 0
+	for _, query := range queries {
+		metriccount = metriccount + len(query.MetricId)
+	}
+	stdlog.Println("Issuing " + strconv.Itoa(querycount) + "queries to vcenter " + vcenter.Hostname + " requesting " + strconv.Itoa(metriccount) + " metrics.")
 
 	// Query the performances
 	perfreq := types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries}
@@ -480,6 +487,11 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 
 	// Get the result
 	vcName := strings.Replace(vcenter.Hostname, domain, "", -1)
+	returncount := len(perfres.Returnval)
+	if returncount == 0 {
+		errlog.Println("No result returned by queries.")
+	}
+	valuescount := 0
 	for _, base := range perfres.Returnval {
 		pem := base.(*types.PerfEntityMetric)
 		//entityName := strings.ToLower(pem.Entity.Type)
@@ -571,6 +583,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		numcpu := morToNumCPU[pem.Entity]
 		//find memorysizemb
 		memorysizemb := morToMemorySizeMB[pem.Entity]
+		if len(pem.Value) == 0 {
+			errlog.Println("No values returned in query!")
+		}
+		valuescount = valuescount + len(pem.Value)
 		for _, baseserie := range pem.Value {
 			serie := baseserie.(*types.PerfMetricIntSeries)
 			metricName := strings.ToLower(metricToName[serie.Id.CounterId])
@@ -610,4 +626,5 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 			*channel <- point
 		}
 	}
+	stdlog.Println("Got " + strconv.Itoa(returncount) + " resluts from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
 }
