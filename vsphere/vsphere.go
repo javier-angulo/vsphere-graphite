@@ -601,6 +601,11 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		//send disk infos
 		if diskInfos, ok:= morToDiskInfos[pem.Entity]; ok {
 			for _, diskInfo := range diskInfos {
+				// skip if no capacity
+				if diskInfo.Capacity == 0 {
+					continue
+				}
+				// send free space
 				diskfree := backend.Point{
 					VCenter:      vcName,
 					ObjectType:   objType,
@@ -621,6 +626,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					Timestamp:    timeStamp,
 				}
 				*channel <- diskfree
+				// send capacity
 				diskcapa := backend.Point{
 					VCenter:      vcName,
 					ObjectType:   objType,
@@ -641,6 +647,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					Timestamp:    timeStamp,
 				}
 				*channel <- diskcapa
+				// send usage %
 				diskpc := backend.Point{
 					VCenter:      vcName,
 					ObjectType:   objType,
@@ -649,7 +656,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					Counter:      "usage",
 					Instance:     diskInfo.DiskPath,
 					Rollup:       "latest",
-					Value:        int64(1000 * (1 -  (diskInfo.FreeSpace / diskInfo.Capacity))),
+					Value:        int64(1000 * (1 -  (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity)))),
 					Datastore:    datastore,
 					ESXi:         vmhost,
 					Cluster:      cluster,
