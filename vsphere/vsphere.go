@@ -658,7 +658,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					Counter:      "usage",
 					Instance:     diskPath,
 					Rollup:       "latest",
-					Value:        int64(1000 * (1 -  (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity)))),
+					Value:        int64(10000 * (1 -  (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity)))),
 					Datastore:    datastore,
 					ESXi:         vmhost,
 					Cluster:      cluster,
