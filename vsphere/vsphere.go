@@ -306,6 +306,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	//create a map to resolve mor to memorysizemb
 	morToMemorySizeMB := make(map[types.ManagedObjectReference]int32)
 
+	//create a map to resolve diskinfos
+	morToDiskInfos := make(map[types.ManagedObjectReference][]types.GuestDiskInfo)
+
 	for _, objectContent := range propres.Returnval {
 		for _, Property := range objectContent.PropSet {
 			switch propertyName := Property.Name; propertyName {
@@ -380,6 +383,13 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					morToMemorySizeMB[objectContent.Obj] = memorysizemb
 				} else {
 					errlog.Println("MemorySizeMB property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
+				}
+			case "guest.disk":
+				diskInfos, ok := Propery.Val.(types.ArratOfGuestDiskInfo)
+				if ok {
+					if len(diskInfos.GuestDiskInfo) > 0 {
+						morToDiskInfos[objectContent.Obj] = diskInfos.GuestDiskInfo
+					}
 				}
 			default:
 				errlog.Println("Unhandled property '" + propertyName + "' for " + objectContent.Obj.String() + " whose type is " + fmt.Sprintf("%T", Property.Val))
@@ -586,6 +596,73 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		if len(pem.Value) == 0 {
 			errlog.Println("No values returned in query!")
 		}
+		objType := strings.ToLower(pem.Entity.Type)
+		timeStamp := endTime.Unix()
+		//send disk infos
+		if diskInfos, ok:= morToDiskInfos[pem.Entity]; ok {
+			for _, diskInfo := range diskInfos {
+				diskfree := backend.Point{
+					VCenter:      vcName,
+					ObjectType:   objType,
+					ObjectName:   name,
+					Group:        "guestdisk",
+					Counter:      "freespace",
+					Instance:     diskInfos.DiskPath,
+					Rollup:       "latest",
+					Value:        diskInfos.FreeSpace,
+					Datastore:    datastore,
+					ESXi:         vmhost,
+					Cluster:      cluster,
+					Network:      network,
+					ResourcePool: resourcepool,
+					ViTags:       vitags,
+					NumCPU:       numcpu,
+					MemorySizeMB: memorysizemb,
+					Timestamp:    timeStamp,
+				}
+				*channel <- diskfree
+				diskcapa := backend.Point{
+					VCenter:      vcName,
+					ObjectType:   objType,
+					ObjectName:   name,
+					Group:        "guestdisk",
+					Counter:      "capacity",
+					Instance:     diskInfos.DiskPath,
+					Rollup:       "latest",
+					Value:        diskInfos.Capacity,
+					Datastore:    datastore,
+					ESXi:         vmhost,
+					Cluster:      cluster,
+					Network:      network,
+					ResourcePool: resourcepool,
+					ViTags:       vitags,
+					NumCPU:       numcpu,
+					MemorySizeMB: memorysizemb,
+					Timestamp:    timeStamp,
+				}
+				*channel <- diskcapa
+				diskpc := backend.Point{
+					VCenter:      vcName,
+					ObjectType:   objType,
+					ObjectName:   name,
+					Group:        "guestdisk",
+					Counter:      "usage",
+					Instance:     diskInfos.DiskPath,
+					Rollup:       "latest",
+					Value:        int64(1000 * (1 -  (diskInfos.FreeSpace / diskInfos.Capacity))),
+					Datastore:    datastore,
+					ESXi:         vmhost,
+					Cluster:      cluster,
+					Network:      network,
+					ResourcePool: resourcepool,
+					ViTags:       vitags,
+					NumCPU:       numcpu,
+					MemorySizeMB: memorysizemb,
+					Timestamp:    timeStamp,
+				}
+				*channel <- diskpc
+			}
+		}
 		valuescount = valuescount + len(pem.Value)
 		for _, baseserie := range pem.Value {
 			serie := baseserie.(*types.PerfMetricIntSeries)
@@ -606,7 +683,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 			metricparts := strings.Split(metricName, ".")
 			point := backend.Point{
 				VCenter:      vcName,
-				ObjectType:   strings.ToLower(pem.Entity.Type),
+				ObjectType:   objType,
 				ObjectName:   name,
 				Group:        metricparts[0],
 				Counter:      metricparts[1],
@@ -621,7 +698,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 				ViTags:       vitags,
 				NumCPU:       numcpu,
 				MemorySizeMB: memorysizemb,
-				Timestamp:    endTime.Unix(),
+				Timestamp:    timeStamp,
 			}
 			*channel <- point
 		}
