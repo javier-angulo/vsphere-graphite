@@ -385,7 +385,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					errlog.Println("MemorySizeMB property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "guest.disk":
-				diskInfos, ok := Propery.Val.(types.ArratOfGuestDiskInfo)
+				diskInfos, ok := Property.Val.(types.ArratOfGuestDiskInfo)
 				if ok {
 					if len(diskInfos.GuestDiskInfo) > 0 {
 						morToDiskInfos[objectContent.Obj] = diskInfos.GuestDiskInfo
@@ -607,9 +607,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					ObjectName:   name,
 					Group:        "guestdisk",
 					Counter:      "freespace",
-					Instance:     diskInfos.DiskPath,
+					Instance:     diskInfo.DiskPath,
 					Rollup:       "latest",
-					Value:        diskInfos.FreeSpace,
+					Value:        diskInfo.FreeSpace,
 					Datastore:    datastore,
 					ESXi:         vmhost,
 					Cluster:      cluster,
@@ -627,9 +627,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					ObjectName:   name,
 					Group:        "guestdisk",
 					Counter:      "capacity",
-					Instance:     diskInfos.DiskPath,
+					Instance:     diskInfo.DiskPath,
 					Rollup:       "latest",
-					Value:        diskInfos.Capacity,
+					Value:        diskInfo.Capacity,
 					Datastore:    datastore,
 					ESXi:         vmhost,
 					Cluster:      cluster,
@@ -647,9 +647,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					ObjectName:   name,
 					Group:        "guestdisk",
 					Counter:      "usage",
-					Instance:     diskInfos.DiskPath,
+					Instance:     diskInfo.DiskPath,
 					Rollup:       "latest",
-					Value:        int64(1000 * (1 -  (diskInfos.FreeSpace / diskInfos.Capacity))),
+					Value:        int64(1000 * (1 -  (diskInfo.FreeSpace / diskInfo.Capacity))),
 					Datastore:    datastore,
 					ESXi:         vmhost,
 					Cluster:      cluster,
