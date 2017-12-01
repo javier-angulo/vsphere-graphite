@@ -385,7 +385,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					errlog.Println("MemorySizeMB property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "guest.disk":
-				diskInfos, ok := Property.Val.(types.ArratOfGuestDiskInfo)
+				diskInfos, ok := Property.Val.(types.ArrayOfGuestDiskInfo)
 				if ok {
 					if len(diskInfos.GuestDiskInfo) > 0 {
 						morToDiskInfos[objectContent.Obj] = diskInfos.GuestDiskInfo
