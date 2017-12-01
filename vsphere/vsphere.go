@@ -605,6 +605,8 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 				if diskInfo.Capacity == 0 {
 					continue
 				}
+				// format disk path
+				diskPath := strings.Replace(diskInfo.DiskPath,"\\","/",-1)
 				// send free space
 				diskfree := backend.Point{
 					VCenter:      vcName,
