@@ -267,7 +267,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	//properties specifications
 	propSet := []types.PropertySpec{}
 	propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent", "tag"}})
-	propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host", "summary.config.numCpu", "summary.config.memorySizeMB"}})
+	propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host", "summary.config.numCpu", "summary.config.memorySizeMB", "guest.disk"}})
 	propSet = append(propSet, types.PropertySpec{Type: "ResourcePool", PathSet: []string{"vm"}})
 
 	//retrieve properties
