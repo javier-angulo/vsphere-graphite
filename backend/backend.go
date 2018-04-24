@@ -225,10 +225,12 @@ func ConvertToKV(values map[string]string) string {
 			continue
 		}
 		tbuf := bytes.NewBuffer(nil)
-		tbuf.WriteString(key)
-		tbuf.WriteRune('=')
-		tbuf.WriteString(val)
-		tmp = append(tmp, tbuf.String())
+		_, err := tbuf.WriteString(key)
+		_, err = tbuf.WriteRune('=')
+		_, err = tbuf.WriteString(val)
+		if err == nil {
+			tmp = append(tmp, tbuf.String())
+		}
 	}
 	return strings.Join(tmp, ",")
 }
@@ -238,18 +240,21 @@ func (ip *InfluxPoint) ToInflux(noarray bool, valuefield string) string {
 	// buffer containing the resulting line
 	buff := bytes.NewBuffer(nil)
 	// key of the mesurement
-	buff.WriteString(ip.Key)
+	_, err := buff.WriteString(ip.Key)
 	buff.WriteRune(',')
 	// Tags
-	buff.WriteString(ConvertToKV(ip.Tags))
+	_, err = buff.WriteString(ConvertToKV(ip.Tags))
 	// separator
-	buff.WriteRune(' ')
+	_, err = buff.WriteRune(' ')
 	// fields
-	buff.WriteString(ConvertToKV(ip.Fields))
+	_, err = buff.WriteString(ConvertToKV(ip.Fields))
 	// separator
-	buff.WriteRune(' ')
+	_, err = buff.WriteRune(' ')
 	// timestamp
-	buff.WriteString(strconv.FormatInt(ip.Timestamp, 10))
+	_, err = buff.WriteString(strconv.FormatInt(ip.Timestamp, 10))
+	if err != nil {
+		return ""
+	}
 	return buff.String()
 }
 
