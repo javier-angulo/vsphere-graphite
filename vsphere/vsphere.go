@@ -15,6 +15,7 @@ import (
 	"golang.org/x/net/context"
 
 	"github.com/vmware/govmomi"
+	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
@@ -199,21 +200,27 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		return
 	}
 
-	// Get the Datacenters from root folder
-	var rootFolder mo.Folder
-	err = client.RetrieveOne(ctx, client.ServiceContent.RootFolder, nil, &rootFolder)
-	if err != nil {
-		errlog.Println("Could not get root folder from vcenter: " + vcenter.Hostname)
-		errlog.Println("Error: ", err)
-		return
-	}
+	// // Get the Datacenters from root folder
+	// var rootFolder mo.Folder
+	// err = client.RetrieveOne(ctx, client.ServiceContent.RootFolder, nil, &rootFolder)
+	// if err != nil {
+	// 	errlog.Println("Could not get root folder from vcenter: " + vcenter.Hostname)
+	// 	errlog.Println("Error: ", err)
+	// 	return
+	// }
 
+	// Find all Datacenters accessed by the user
 	datacenters := []types.ManagedObjectReference{}
-	for _, child := range rootFolder.ChildEntity {
-		if child.Type == "Datacenter" {
-			datacenters = append(datacenters, child)
-		}
+	finder := find.NewFinder(client.Client, true)
+	dcs, _ := finder.DatacenterList(ctx, "*")
+	for _, child := range dcs {
+		datacenters = append(datacenters, child.Reference())
 	}
+	// for _, child := range rootFolder.ChildEntity {
+	// 	if child.Type == "Datacenter" {
+	// 		datacenters = append(datacenters, child)
+	// 	}
+	// }
 
 	// Get intresting object types from specified queries
 	objectTypes := []string{"ClusterComputeResource", "Datastore", "HostSystem", "DistributedVirtualPortgroup", "Network", "ResourcePool", "Folder"}
@@ -599,14 +606,14 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		objType := strings.ToLower(pem.Entity.Type)
 		timeStamp := endTime.Unix()
 		//send disk infos
-		if diskInfos, ok:= morToDiskInfos[pem.Entity]; ok {
+		if diskInfos, ok := morToDiskInfos[pem.Entity]; ok {
 			for _, diskInfo := range diskInfos {
 				// skip if no capacity
 				if diskInfo.Capacity == 0 {
 					continue
 				}
 				// format disk path
-				diskPath := strings.Replace(diskInfo.DiskPath,"\\","/",-1)
+				diskPath := strings.Replace(diskInfo.DiskPath, "\\", "/", -1)
 				// send free space
 				diskfree := backend.Point{
 					VCenter:      vcName,
@@ -658,7 +665,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					Counter:      "usage",
 					Instance:     diskPath,
 					Rollup:       "latest",
-					Value:        int64(10000 * (1 -  (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity)))),
+					Value:        int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity)))),
 					Datastore:    datastore,
 					ESXi:         vmhost,
 					Cluster:      cluster,
@@ -712,5 +719,5 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 			*channel <- point
 		}
 	}
-	stdlog.Println("Got " + strconv.Itoa(returncount) + " resluts from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
+	stdlog.Println("Got " + strconv.Itoa(returncount) + " results from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
 }
