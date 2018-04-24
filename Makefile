@@ -61,7 +61,8 @@ docker-windows-amd64: ;
 
 checks:
 	go get honnef.co/go/tools/cmd/gosimple
-	go get github.com/golang/lint/golint
+	#go get github.com/golang/lint/golint
+	golang.org/x/lint/golint
 	go get github.com/gordonklaus/ineffassign
 	go get github.com/GoASTScanner/gas
 	gosimple ./...
