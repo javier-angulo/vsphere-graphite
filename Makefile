@@ -9,6 +9,9 @@ MUSL_CC=musl-gcc
 MUSL_CCGLAGS="-static"
 
 deps:
+    go get golang.org/x/sys/windows/registry
+	go get golang.org/x/sys/windows/svc
+	go get golang.org/x/sys/windows/svc/mgr
 	go get github.com/takama/daemon
 	go get golang.org/x/net/context
 	go get github.com/vmware/govmomi
@@ -61,7 +64,6 @@ docker-windows-amd64: ;
 
 checks:
 	go get honnef.co/go/tools/cmd/gosimple
-	#go get github.com/golang/lint/golint
 	go get golang.org/x/lint/golint
 	go get github.com/gordonklaus/ineffassign
 	go get github.com/GoASTScanner/gas/cmd/gas/...
