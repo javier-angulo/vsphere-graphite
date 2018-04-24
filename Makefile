@@ -10,8 +10,6 @@ MUSL_CCGLAGS="-static"
 
 deps:
 	go get golang.org/x/sys/windows/registry
-	go get golang.org/x/sys/windows/svc
-	go get golang.org/x/sys/windows/svc/mgr
 	go get github.com/takama/daemon
 	go get golang.org/x/net/context
 	go get github.com/vmware/govmomi
