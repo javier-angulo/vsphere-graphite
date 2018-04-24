@@ -1,8 +1,8 @@
 package backend
 
 import (
-	"bytes"
 	"errors"
+	"fmt"
 	"log"
 	"reflect"
 	"sort"
@@ -224,38 +224,14 @@ func ConvertToKV(values map[string]string) string {
 		if len(val) == 0 {
 			continue
 		}
-		tbuf := bytes.NewBuffer(nil)
-		_, err := tbuf.WriteString(key)
-		_, err = tbuf.WriteRune('=')
-		_, err = tbuf.WriteString(val)
-		if err == nil {
-			tmp = append(tmp, tbuf.String())
-		}
+		tmp = append(tmp, fmt.Sprintf("%s=%s", key, val))
 	}
 	return strings.Join(tmp, ",")
 }
 
 // ToInflux converts the influx point to influx string format
 func (ip *InfluxPoint) ToInflux(noarray bool, valuefield string) string {
-	// buffer containing the resulting line
-	buff := bytes.NewBuffer(nil)
-	// key of the mesurement
-	_, err := buff.WriteString(ip.Key)
-	buff.WriteRune(',')
-	// Tags
-	_, err = buff.WriteString(ConvertToKV(ip.Tags))
-	// separator
-	_, err = buff.WriteRune(' ')
-	// fields
-	_, err = buff.WriteString(ConvertToKV(ip.Fields))
-	// separator
-	_, err = buff.WriteRune(' ')
-	// timestamp
-	_, err = buff.WriteString(strconv.FormatInt(ip.Timestamp, 10))
-	if err != nil {
-		return ""
-	}
-	return buff.String()
+	return fmt.Sprintf("%s,%s %s %s", ip.Key, ConvertToKV(ip.Tags), ConvertToKV(ip.Fields), strconv.FormatInt(ip.Timestamp, 10))
 }
 
 // ToInflux serialises the data to be consumed by influx line protocol
