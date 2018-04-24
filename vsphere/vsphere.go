@@ -206,7 +206,12 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	// Find all Datacenters accessed by the user
 	datacenters := []types.ManagedObjectReference{}
 	finder := find.NewFinder(client.Client, true)
-	dcs, _ := finder.DatacenterList(ctx, "*")
+	dcs, err := finder.DatacenterList(ctx, "*")
+	if err != nil {
+		errlog.Println("Could not find a datacenter: ", vcenter.Hostname)
+		errlog.Println("Error: ", err)
+		return
+	}
 	for _, child := range dcs {
 		datacenters = append(datacenters, child.Reference())
 	}
