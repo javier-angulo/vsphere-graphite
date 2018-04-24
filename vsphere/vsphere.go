@@ -1,7 +1,6 @@
 package vsphere
 
 import (
-	"bytes"
 	"fmt"
 	"log"
 	"net/url"
@@ -104,13 +103,8 @@ func InitMetrics(metrics []*Metric, perfmanager *mo.PerformanceManager) {
 	// build a map of perf key per metric string id
 	metricToPerf := make(map[string]int32)
 	for _, perf := range perfmanager.PerfCounter {
-		var buf bytes.Buffer
-		buf.WriteString(perf.GroupInfo.GetElementDescription().Key)
-		buf.WriteString(".")
-		buf.WriteString(perf.NameInfo.GetElementDescription().Key)
-		buf.WriteString(".")
-		buf.WriteString(string(perf.RollupType))
-		metricToPerf[buf.String()] = perf.Key
+		key := fmt.Sprintf("%s.%s.%s", perf.GroupInfo.GetElementDescription().Key, perf.NameInfo.GetElementDescription().Key, string(perf.RollupType))
+		metricToPerf[key] = perf.Key
 	}
 	// fill in the metric key
 	for _, metric := range metrics {
