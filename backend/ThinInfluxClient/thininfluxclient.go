@@ -1,4 +1,6 @@
-package ThinInfluxClient
+package thininfluxclient
+
+//go:generate ffjson $GOFILE
 
 import (
 	"bytes"

@@ -17,6 +17,8 @@ deps:
 	go get github.com/influxdata/influxdb/client/v2
 	go get github.com/pquerna/ffjson/fflib/v1
 	go get code.cloudfoundry.org/bytefmt
+	go get github.com/pquerna/ffjson
+	go generate ./...
 
 build-windows-amd64:
 	@$(MAKE) build GOOS=windows GOARCH=amd64 SUFFIX=.exe
