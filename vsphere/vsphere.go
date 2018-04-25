@@ -326,23 +326,25 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					errlog.Println("Name property of " + objectContent.Obj.String() + " was not a string, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "datastore":
-				mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
-				if ok {
-					if len(mors.ManagedObjectReference) > 0 {
-						vmToDatastore[objectContent.Obj] = mors.ManagedObjectReference
-					}
-				} else {
-					errlog.Println("Datastore property of " + objectContent.Obj.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
-				}
+				//mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
+				//if ok {
+				//	if len(mors.ManagedObjectReference) > 0 {
+				//		vmToDatastore[objectContent.Obj] = mors.ManagedObjectReference
+				//	}
+				//} else {
+				//	errlog.Println("Datastore property of " + objectContent.Obj.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
+				//}
+				utils.MapObjRefs(Property.Val, vmToDatastore, objectContent.Obj)
 			case "network":
-				mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
-				if ok {
-					if len(mors.ManagedObjectReference) > 0 {
-						vmToNetwork[objectContent.Obj] = mors.ManagedObjectReference
-					}
-				} else {
-					errlog.Println("Network property of " + objectContent.Obj.String() + " was not an array of  ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
-				}
+				//mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
+				//if ok {
+				//	if len(mors.ManagedObjectReference) > 0 {
+				//		vmToNetwork[objectContent.Obj] = mors.ManagedObjectReference
+				//	}
+				//} else {
+				//	errlog.Println("Network property of " + objectContent.Obj.String() + " was not an array of  ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
+				//}
+				utils.MapObjRefs(Property.Val, vmToNetwork, objectContent.Obj)
 			case "runtime.host":
 				mor, ok := Property.Val.(types.ManagedObjectReference)
 				if ok {
@@ -358,15 +360,16 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					errlog.Println("Parent property of " + objectContent.Obj.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "vm":
-				mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
-				if ok {
-					if len(mors.ManagedObjectReference) > 0 {
-						// container without vms in it will be ignored (no meta container)
-						morToVms[objectContent.Obj] = mors.ManagedObjectReference
-					}
-				} else {
-					errlog.Println("VM property of " + objectContent.Obj.String() + " was not an array of ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
-				}
+				//mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
+				//if ok {
+				//	if len(mors.ManagedObjectReference) > 0 {
+				//		// container without vms in it will be ignored (no meta container)
+				//		morToVms[objectContent.Obj] = mors.ManagedObjectReference
+				//	}
+				//} else {
+				//	errlog.Println("VM property of " + objectContent.Obj.String() + " was not an array of ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
+				//}
+				utils.MapObjRefs(Property.Val, morToVms, objectContent.Obj)
 			case "tag":
 				tags, ok := Property.Val.(types.ArrayOfTag)
 				if ok {
