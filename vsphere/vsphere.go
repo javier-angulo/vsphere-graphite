@@ -346,19 +346,21 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 				//}
 				utils.MapObjRefs(Property.Val, vmToNetwork, objectContent.Obj)
 			case "runtime.host":
-				mor, ok := Property.Val.(types.ManagedObjectReference)
-				if ok {
-					vmToHost[objectContent.Obj] = mor
-				} else {
-					errlog.Println("Runtime host property of " + objectContent.Obj.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", Property.Val))
-				}
+				//mor, ok := Property.Val.(types.ManagedObjectReference)
+				//if ok {
+				//	vmToHost[objectContent.Obj] = mor
+				//} else {
+				//	errlog.Println("Runtime host property of " + objectContent.Obj.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", Property.Val))
+				//}
+				utils.MapObjRef(Property.Val, vmToHost, objectContent.Obj)
 			case "parent":
-				mor, ok := Property.Val.(types.ManagedObjectReference)
-				if ok {
-					morToParent[objectContent.Obj] = mor
-				} else {
-					errlog.Println("Parent property of " + objectContent.Obj.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", Property.Val))
-				}
+				//mor, ok := Property.Val.(types.ManagedObjectReference)
+				//if ok {
+				//	morToParent[objectContent.Obj] = mor
+				//} else {
+				//	errlog.Println("Parent property of " + objectContent.Obj.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", Property.Val))
+				//}
+				utils.MapObjRef(Property.Val, morToParent, objectContent.Obj)
 			case "vm":
 				//mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
 				//if ok {
@@ -380,19 +382,21 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					errlog.Println("Tag property of " + objectContent.Obj.String() + " was not an array of Tag, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "summary.config.numCpu":
-				numcpu, ok := Property.Val.(int32)
-				if ok {
-					morToNumCPU[objectContent.Obj] = numcpu
-				} else {
-					errlog.Println("Numpcpu property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
-				}
+				//numcpu, ok := Property.Val.(int32)
+				//if ok {
+				//	morToNumCPU[objectContent.Obj] = numcpu
+				//} else {
+				//	errlog.Println("Numpcpu property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
+				//}
+				utils.MapObjInt32(Property.Val, morToNumCPU, objectContent.Obj)
 			case "summary.config.memorySizeMB":
-				memorysizemb, ok := Property.Val.(int32)
-				if ok {
-					morToMemorySizeMB[objectContent.Obj] = memorysizemb
-				} else {
-					errlog.Println("MemorySizeMB property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
-				}
+				//memorysizemb, ok := Property.Val.(int32)
+				//if ok {
+				//	morToMemorySizeMB[objectContent.Obj] = memorysizemb
+				//} else {
+				//	errlog.Println("MemorySizeMB property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
+				//}
+				utils.MapObjInt32(Property.Val, morToMemorySizeMB, objectContent.Obj)
 			case "guest.disk":
 				diskInfos, ok := Property.Val.(types.ArrayOfGuestDiskInfo)
 				if ok {

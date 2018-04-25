@@ -69,7 +69,7 @@ func Average(n ...int64) int64 {
 	return int64(math.Floor(favg + .5))
 }
 
-// MapObjRefs fills in object references into a map to another objec reference
+// MapObjRefs fills in object references into a map to another object reference
 func MapObjRefs(sourceVal types.AnyType, dest map[types.ManagedObjectReference][]types.ManagedObjectReference, index types.ManagedObjectReference) {
 	mors, ok := sourceVal.(types.ArrayOfManagedObjectReference)
 	if ok {
@@ -80,5 +80,25 @@ func MapObjRefs(sourceVal types.AnyType, dest map[types.ManagedObjectReference][
 		}
 	} else {
 		errlog.Println("Property " + index.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", sourceVal))
+	}
+}
+
+// MapObjRef fills in object reference into a map to another object reference
+func MapObjRef(sourceVal types.AnyType, dest map[types.ManagedObjectReference]types.ManagedObjectReference, index types.ManagedObjectReference) {
+	mor, ok := sourceVal.(types.ManagedObjectReference)
+	if ok {
+		dest[index] = mor
+	} else {
+		errlog.Println("Property of " + index.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", sourceVal))
+	}
+}
+
+// MapObjInt32 fills in an int32 into a map to another object reference
+func MapObjInt32(sourceVal types.AnyType, dest map[types.ManagedObjectReference]int32, index types.ManagedObjectReference) {
+	val, ok := sourceVal.(int32)
+	if ok {
+		dest[index] = val
+	} else {
+		errlog.Println("Property of " + index.String() + " was not an int32, it was " + fmt.Sprintf("%T", sourceVal))
 	}
 }
