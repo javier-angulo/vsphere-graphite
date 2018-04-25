@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/cblomart/vsphere-graphite/backend/ThinInfluxClient"
+	"github.com/cblomart/vsphere-graphite/backend/thininfluxclient"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
 )
@@ -58,7 +58,7 @@ type Backend struct {
 	Encrypted    bool
 	carbon       *graphite.Graphite
 	influx       *influxclient.Client
-	thininfluxdb *ThinInfluxClient.ThinInfluxClient
+	thininfluxdb *thininfluxclient.ThinInfluxClient
 }
 
 const (
@@ -279,7 +279,7 @@ func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) er
 	case ThinInfluxDB:
 		//Initialize thin Influx DB client
 		stdlog.Println("Initializing " + backendType + " backend")
-		thininfluxclt, err := ThinInfluxClient.NewThinInlfuxClient(backend.Hostname, backend.Port, backend.Database, backend.Username, backend.Password, "s", backend.Encrypted)
+		thininfluxclt, err := thininfluxclient.NewThinInlfuxClient(backend.Hostname, backend.Port, backend.Database, backend.Username, backend.Password, "s", backend.Encrypted)
 		if err != nil {
 			errlog.Println("Error creating thin InfluxDB client")
 			return err
