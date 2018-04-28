@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/cblomart/vsphere-graphite/backend/thininfluxclient"
+	"github.com/cblomart/vsphere-graphite/utils"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
 )
@@ -97,18 +98,18 @@ func (p *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint {
 		}
 		switch tagtype {
 		case "key":
-			keyParts[MustAtoi(tagname)] = ValToString(vfield.Interface(), "_", false)
+			keyParts[utils.MustAtoi(tagname)] = utils.ValToString(vfield.Interface(), "_", false)
 		case "tag":
-			ip.Tags[tagname] = ValToString(vfield.Interface(), "\\,", noarray)
+			ip.Tags[tagname] = utils.ValToString(vfield.Interface(), "\\,", noarray)
 		case "value":
-			ip.Fields[valuefield] = ValToString(vfield.Interface(), ",", true) + "i"
+			ip.Fields[valuefield] = utils.ValToString(vfield.Interface(), ",", true) + "i"
 		case "time":
 			ip.Timestamp = vfield.Int()
 		default:
 		}
 	}
 	// sort key part keys and join them
-	ip.Key = Join(keyParts, "_")
+	ip.Key = utils.Join(keyParts, "_")
 	return &ip
 }
 
