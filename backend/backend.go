@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"reflect"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -73,110 +72,6 @@ const (
 )
 
 var stdlog, errlog *log.Logger
-
-// StringMaptoString converts a string map to csv or get the first value
-func StringMaptoString(value []string, separator string, noarray bool) string {
-	if len(value) == 0 {
-		return ""
-	}
-	if noarray {
-		return value[0]
-	}
-	return strings.Join(value, separator)
-}
-
-// IntMaptoString converts a int map to csv or get the first value
-func IntMaptoString(value []int, separator string, noarray bool) string {
-	if len(value) == 0 {
-		return ""
-	}
-	if noarray {
-		return strconv.Itoa(value[0])
-	}
-	var strval []string
-	for _, i := range value {
-		strval = append(strval, strconv.Itoa(i))
-	}
-	return strings.Join(strval, separator)
-}
-
-// Int32MaptoString converts a int32 map to csv or get the first value
-func Int32MaptoString(value []int32, separator string, noarray bool) string {
-	if len(value) == 0 {
-		return ""
-	}
-	if noarray {
-		return strconv.FormatInt(int64(value[0]), 10)
-	}
-	var strval []string
-	for _, i := range value {
-		strval = append(strval, strconv.FormatInt(int64(i), 10))
-	}
-	return strings.Join(strval, separator)
-}
-
-// Int64MaptoString converts a int64 map to csv or get the first value
-func Int64MaptoString(value []int64, separator string, noarray bool) string {
-	if len(value) == 0 {
-		return ""
-	}
-	if noarray {
-		return strconv.FormatInt(value[0], 10)
-	}
-	var strval []string
-	for _, i := range value {
-		strval = append(strval, strconv.FormatInt(i, 10))
-	}
-	return strings.Join(strval, separator)
-}
-
-// ValToString : try to convert interface to string. Separated by separator if slice
-func ValToString(value interface{}, separator string, noarray bool) string {
-	switch v := value.(type) {
-	case string:
-		return v
-	case []string:
-		return StringMaptoString(v, separator, noarray)
-	case int:
-		return strconv.Itoa(v)
-	case []int:
-		return IntMaptoString(v, separator, noarray)
-	case int32:
-		return strconv.FormatInt(int64(v), 10)
-	case []int32:
-		return Int32MaptoString(v, separator, noarray)
-	case int64:
-		return strconv.FormatInt(v, 10)
-	case []int64:
-		return Int64MaptoString(v, separator, noarray)
-	default:
-		return ""
-	}
-}
-
-// Join map[int]string into a string
-func Join(values map[int]string, separator string) string {
-	var keys []int
-	for k := range values {
-		keys = append(keys, k)
-	}
-	sort.Ints(keys)
-	// create a map with the key parts in order
-	var tmp []string
-	for _, k := range keys {
-		tmp = append(tmp, values[k])
-	}
-	return strings.Join(tmp, separator)
-}
-
-// MustAtoi converts a string to integer and return 0 i case of error
-func MustAtoi(value string) int {
-	i, err := strconv.Atoi(value)
-	if err != nil {
-		i = 0
-	}
-	return i
-}
 
 // GetInfluxPoint : convert a point to an influxpoint
 func (p *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint {
