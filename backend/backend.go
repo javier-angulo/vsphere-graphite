@@ -45,8 +45,8 @@ type InfluxPoint struct {
 	Timestamp int64
 }
 
-// Backend : storage backend
-type Backend struct {
+// BackendConfig : storage backend
+type BackendConfig struct {
 	Hostname     string
 	ValueField   string
 	Database     string
@@ -59,6 +59,13 @@ type Backend struct {
 	carbon       *graphite.Graphite
 	influx       *influxclient.Client
 	thininfluxdb *thininfluxclient.ThinInfluxClient
+}
+
+// Backend Interface
+type Backend interface {
+	Init(config BackendConfig) error
+	Disconnect()
+	SendMetrics(metrics []*Point)
 }
 
 const (
@@ -137,7 +144,7 @@ func (p *Point) ToInflux(noarray bool, valuefield string) string {
 }
 
 // Init : initialize a backend
-func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
+func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
 	stdlog = standardLogs
 	errlog = errorLogs
 	if len(backend.ValueField) == 0 {
@@ -189,7 +196,7 @@ func (backend *Backend) Init(standardLogs *log.Logger, errorLogs *log.Logger) er
 }
 
 // Disconnect : disconnect from backend
-func (backend *Backend) Disconnect() {
+func (backend *BackendConfig) Disconnect() {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		// Disconnect from graphite
@@ -210,7 +217,7 @@ func (backend *Backend) Disconnect() {
 }
 
 // SendMetrics : send metrics to backend
-func (backend *Backend) SendMetrics(metrics []*Point) {
+func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		var graphiteMetrics []graphite.Metric
