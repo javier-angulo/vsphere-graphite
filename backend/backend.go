@@ -247,6 +247,7 @@ func (backend *BackendConfig) Disconnect() {
 
 // SendMetrics : send metrics to backend
 func (backend *BackendConfig) SendMetrics(metrics []*Point) {
+	stdlog.Println("SendMetrics to backend")
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		var graphiteMetrics []graphite.Metric
@@ -388,7 +389,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			// Handle error
 			panic(err)
 		} else {
-			stdlog.Println("Elastic index: 'vsphere-graphite' already exists")
+			stdlog.Println("Elastic index: 'vsphere-graphite' already exists. Ateempting to Sink Metris")
 		}
 		if !exists {
 			// Create a new index.
@@ -415,7 +416,6 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			//row := append(row, (Name: key, Value: strconv.FormatInt(point.Value, 10), Timestamp: point.Timestamp))
 			//row := append(row, `{"Name" : key, "Value" : strconv.FormatInt(point.Value, 10), Timestamp: point.Timestamp}`)
 
-			stdlog.Println(key)
 			row := vSphereMetricType{
 				//Timestamp: point.Timestamp,
 				Timestamp: time.Now(),
@@ -423,6 +423,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 				Value:     strconv.FormatInt(point.Value, 10),
 			}
 
+			stdlog.Println(row)
 			_, err := backend.elastic.Index().
 				Index("vsphere-graphite").
 				Type("vSphereMetricType").
@@ -430,7 +431,6 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 				BodyJson(row).
 				//BodyString(row).
 				Do(ctx)
-			fmt.Printf(key, strconv.FormatInt(point.Value, 10))
 			if err != nil {
 				// Handle error
 				panic(err)
