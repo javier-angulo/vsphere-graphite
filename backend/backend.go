@@ -203,9 +203,9 @@ func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logg
 		return nil
 	case Elastic:
 		//Initialize Elastic client
-		stdlog.Println("Initializing " + backendType + " backend")
+		stdlog.Println("Initializing " + backendType + " backend " + backend.Hostname + ":" + strconv.Itoa(backend.Port))
 		elasticclt, err := elastic.NewClient(
-			elastic.SetURL("https://monrkn-vccn007.wsgc.com:9200"),
+			elastic.SetURL("https://"+backend.Hostname+":"+strconv.Itoa(backend.Port)),
 			elastic.SetMaxRetries(10),
 			elastic.SetScheme("https"),
 			elastic.SetBasicAuth(backend.Username, backend.Password))
