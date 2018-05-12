@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"github.com/cblomart/vsphere-graphite/utils"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
+	"github.com/olivere/elastic"
 )
 
 // Point : Information collected for a point
@@ -59,6 +61,7 @@ type BackendConfig struct {
 	carbon       *graphite.Graphite
 	influx       *influxclient.Client
 	thininfluxdb *thininfluxclient.ThinInfluxClient
+	elastic      *elastic.Client
 }
 
 // Backend Interface
@@ -66,6 +69,13 @@ type Backend interface {
 	Init(config BackendConfig) error
 	Disconnect()
 	SendMetrics(metrics []*Point)
+}
+
+//Elastic vsphereMetricType
+type vSphereMetricType struct {
+	Timestamp time.Time `json:"@timestamp"`
+	Name      string    `json:"name"`
+	Value     string    `json:"value"`
 }
 
 const (
@@ -77,6 +87,8 @@ const (
 	ThinInfluxDB = "thininfluxdb"
 	// InfluxTag is the tag for influxdb
 	InfluxTag = "influx"
+	// Elastic name of the elastic backend
+	Elastic = "elastic"
 )
 
 var stdlog, errlog *log.Logger
@@ -189,9 +201,23 @@ func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logg
 		}
 		backend.thininfluxdb = &thininfluxclt
 		return nil
+	case Elastic:
+		//Initialize Elastic client
+		stdlog.Println("Initializing " + backendType + " backend")
+		elasticclt, err := elastic.NewClient(
+			elastic.SetURL("https://monrkn-vccn007.wsgc.com:9200"),
+			elastic.SetMaxRetries(10),
+			elastic.SetScheme("https"),
+			elastic.SetBasicAuth(backend.Username, backend.Password))
+		if err != nil {
+			errlog.Println("Error creating Elastic client")
+			return err
+		}
+		backend.elastic = elasticclt
+		return nil
 	default:
-		errlog.Println("Backend " + backendType + " unknown.")
-		return errors.New("Backend " + backendType + " unknown.")
+		errlog.Println("Init: Backend " + backendType + " unknown.")
+		return errors.New("Init: Backend " + backendType + " unknown.")
 	}
 }
 
@@ -211,8 +237,11 @@ func (backend *BackendConfig) Disconnect() {
 	case ThinInfluxDB:
 		// Disconnect from thin influx db
 		errlog.Println("Disconnecting from thininfluxdb")
+	case Elastic:
+		// Disconnect from Elastic
+		errlog.Println("Disconnecting from elastic")
 	default:
-		errlog.Println("Backend " + backendType + " unknown.")
+		errlog.Println("Disconnect: Backend " + backendType + " unknown.")
 	}
 }
 
@@ -350,7 +379,72 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		if err != nil {
 			errlog.Println("Error sendg metrics: ", err)
 		}
+	case Elastic:
+		ctx := context.Background()
+
+		// Use the IndexExists service to check if a specified index exists.
+		exists, err := backend.elastic.IndexExists("vsphere-graphite").Do(ctx)
+		if err != nil {
+			// Handle error
+			panic(err)
+		} else {
+			stdlog.Println("Elastic index: 'vsphere-graphite' already exists")
+		}
+		if !exists {
+			// Create a new index.
+			createIndex, err := backend.elastic.CreateIndex("vsphere-graphite").Do(ctx)
+			if err != nil {
+				// Handle error
+				errlog.Println("Error creating Elastic index")
+				panic(err)
+			}
+			if !createIndex.Acknowledged {
+				// Not acknowledged
+			}
+		}
+
+		for _, point := range metrics {
+			if point == nil {
+				continue
+			}
+			//key := "vsphere." + vcName + "." + entityName + "." + name + "." + metricName
+			key := "vsphere." + point.VCenter + "." + point.ObjectType + "." + point.ObjectName + "." + point.Group + "." + point.Counter + "." + point.Rollup
+			if len(point.Instance) > 0 {
+				key += "." + strings.ToLower(strings.Replace(point.Instance, ".", "_", -1))
+			}
+			//row := append(row, (Name: key, Value: strconv.FormatInt(point.Value, 10), Timestamp: point.Timestamp))
+			//row := append(row, `{"Name" : key, "Value" : strconv.FormatInt(point.Value, 10), Timestamp: point.Timestamp}`)
+
+			stdlog.Println(key)
+			row := vSphereMetricType{
+				//Timestamp: point.Timestamp,
+				Timestamp: time.Now(),
+				Name:      key,
+				Value:     strconv.FormatInt(point.Value, 10),
+			}
+
+			_, err := backend.elastic.Index().
+				Index("vsphere-graphite").
+				Type("vSphereMetricType").
+				Id("1").
+				BodyJson(row).
+				//BodyString(row).
+				Do(ctx)
+			fmt.Printf(key, strconv.FormatInt(point.Value, 10))
+			if err != nil {
+				// Handle error
+				panic(err)
+			}
+		}
+
+		_, err = backend.elastic.Flush().Index("vsphere-graphite").Do(context.Background())
+		if err != nil {
+			panic(err)
+		} else {
+			stdlog.Println("Elastic flushed")
+		}
+
 	default:
-		errlog.Println("Backend " + backendType + " unknown.")
+		errlog.Println("SendMetrics: Backend " + backendType + " unknown.")
 	}
 }
