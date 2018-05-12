@@ -216,8 +216,8 @@ func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logg
 		backend.elastic = elasticclt
 		return nil
 	default:
-		errlog.Println("Init: Backend " + backendType + " unknown.")
-		return errors.New("Init: Backend " + backendType + " unknown.")
+		errlog.Println("Backend " + backendType + " unknown.")
+		return errors.New("Backend " + backendType + " unknown.")
 	}
 }
 
@@ -241,7 +241,7 @@ func (backend *BackendConfig) Disconnect() {
 		// Disconnect from Elastic
 		errlog.Println("Disconnecting from elastic")
 	default:
-		errlog.Println("Disconnect: Backend " + backendType + " unknown.")
+		errlog.Println("Backend " + backendType + " unknown.")
 	}
 }
 
@@ -409,7 +409,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 				continue
 			}
 			//key := "vsphere." + vcName + "." + entityName + "." + name + "." + metricName
-			key := "vsphere." + point.VCenter + "." + point.ObjectType + "." + point.ObjectName + "." + point.Group + "." + point.Counter + "." + point.Rollup
+			key := "vsphere." + point.VCenter + "." + point.Cluster + "." + point.ObjectType + "." + point.ObjectName + "." + point.Group + "." + point.Counter + "." + point.Rollup
 			if len(point.Instance) > 0 {
 				key += "." + strings.ToLower(strings.Replace(point.Instance, ".", "_", -1))
 			}
@@ -427,10 +427,10 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			_, err := backend.elastic.Index().
 				Index("vsphere-graphite").
 				Type("vSphereMetricType").
-				Id("1").
+				//Id("1").
 				BodyJson(row).
-				//BodyString(row).
-				Do(ctx)
+				//Refresh("wait_for").
+				Do(context.Background())
 			if err != nil {
 				// Handle error
 				panic(err)
@@ -445,6 +445,6 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		}
 
 	default:
-		errlog.Println("SendMetrics: Backend " + backendType + " unknown.")
+		errlog.Println("Backend " + backendType + " unknown.")
 	}
 }
