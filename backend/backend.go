@@ -73,9 +73,13 @@ type Backend interface {
 
 //Elastic vsphereMetricType
 type vSphereMetricType struct {
-	Timestamp time.Time `json:"@timestamp"`
-	Name      string    `json:"name"`
-	Value     string    `json:"value"`
+	Timestamp   time.Time `json:"@timestamp"`
+	Vcenter     string    `json:"vcenter"`
+	Cluster     string    `json:"cluster"`
+	ObjectType  string    `json:"vsphere.objecttype"`
+	ObjectName  string    `json:"vsphere.objectname"`
+	Metric      string    `json:"vsphere.metric"`
+	MetricValue string    `json:"vsphere.metricvalue"`
 }
 
 const (
@@ -381,22 +385,26 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			errlog.Println("Error sendg metrics: ", err)
 		}
 	case Elastic:
-		ctx := context.Background()
+		elasticindex := backend.Database
+		if len(elasticindex) > 0 {
+			elasticindex = elasticindex + "-" + time.Now().Format("2006.01.02")
+		} else {
+			errlog.Println("backend.Database (used as Elastic Index name) not found in vsphere-graphite.json")
+			break
+		}
 
 		// Use the IndexExists service to check if a specified index exists.
-		exists, err := backend.elastic.IndexExists("vsphere-graphite").Do(ctx)
+		exists, err := backend.elastic.IndexExists(elasticindex).Do(context.Background())
 		if err != nil {
-			// Handle error
 			panic(err)
 		} else {
-			stdlog.Println("Elastic index: 'vsphere-graphite' already exists. Ateempting to Sink Metris")
+			stdlog.Println("Sinking metrics to index: " + elasticindex)
 		}
 		if !exists {
 			// Create a new index.
-			createIndex, err := backend.elastic.CreateIndex("vsphere-graphite").Do(ctx)
+			createIndex, err := backend.elastic.CreateIndex(elasticindex).Do(context.Background())
 			if err != nil {
-				// Handle error
-				errlog.Println("Error creating Elastic index")
+				errlog.Println("Error creating Elastic index:" + elasticindex)
 				panic(err)
 			}
 			if !createIndex.Acknowledged {
@@ -404,45 +412,55 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			}
 		}
 
+		bulkRequest := backend.elastic.Bulk()
 		for _, point := range metrics {
 			if point == nil {
 				continue
 			}
-			//key := "vsphere." + vcName + "." + entityName + "." + name + "." + metricName
-			key := "vsphere." + point.VCenter + "." + point.Cluster + "." + point.ObjectType + "." + point.ObjectName + "." + point.Group + "." + point.Counter + "." + point.Rollup
-			if len(point.Instance) > 0 {
-				key += "." + strings.ToLower(strings.Replace(point.Instance, ".", "_", -1))
-			}
-			//row := append(row, (Name: key, Value: strconv.FormatInt(point.Value, 10), Timestamp: point.Timestamp))
-			//row := append(row, `{"Name" : key, "Value" : strconv.FormatInt(point.Value, 10), Timestamp: point.Timestamp}`)
+
+			/*
+				// GM check still neeeded?
+				key := "vsphere." + point.ObjectType + "." + point.Group + "." + point.Counter + "." + point.Rollup
+				if len(point.Instance) > 0 {
+					key += "." + strings.ToLower(strings.Replace(point.Instance, ".", "_", -1))
+				}
+			*/
 
 			row := vSphereMetricType{
 				//Timestamp: point.Timestamp,
-				Timestamp: time.Now(),
-				Name:      key,
-				Value:     strconv.FormatInt(point.Value, 10),
-			}
+				Timestamp:   time.Now(),
+				Vcenter:     point.VCenter,
+				Cluster:     point.Cluster,
+				ObjectType:  point.ObjectType,
+				ObjectName:  point.ObjectName,
+				Metric:      point.Group + "." + point.Counter + "." + point.Rollup,
+				MetricValue: strconv.FormatInt(point.Value, 10)}
 
-			stdlog.Println(row)
-			_, err := backend.elastic.Index().
-				Index("vsphere-graphite").
-				Type("vSphereMetricType").
-				//Id("1").
-				BodyJson(row).
-				//Refresh("wait_for").
-				Do(context.Background())
-			if err != nil {
-				// Handle error
-				panic(err)
-			}
+			indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("vSphereMetricType").Doc(row)
+			bulkRequest = bulkRequest.Add(indexReq)
 		}
 
-		_, err = backend.elastic.Flush().Index("vsphere-graphite").Do(context.Background())
+		_, err = bulkRequest.Do(context.Background())
+		if err != nil {
+			// Handle error
+			panic(err)
+		}
+
+		_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
 		if err != nil {
 			panic(err)
 		} else {
 			stdlog.Println("Elastic flushed")
 		}
+
+		/*
+			// Delete an index.
+			_, err = backend.elastic.DeleteIndex(elasticindex).Do(context.Background())
+			if err != nil {
+				// Handle error
+				panic(err)
+			}
+		*/
 
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
