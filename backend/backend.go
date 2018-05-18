@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -69,17 +70,6 @@ type Backend interface {
 	Init(config BackendConfig) error
 	Disconnect()
 	SendMetrics(metrics []*Point)
-}
-
-//Elastic vsphereMetricType
-type vSphereMetricType struct {
-	Timestamp   time.Time `json:"@timestamp"`
-	Vcenter     string    `json:"vcenter"`
-	Cluster     string    `json:"cluster"`
-	ObjectType  string    `json:"vsphere.objecttype"`
-	ObjectName  string    `json:"vsphere.objectname"`
-	Metric      string    `json:"vsphere.metric"`
-	MetricValue string    `json:"vsphere.metricvalue"`
 }
 
 const (
@@ -412,7 +402,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			}
 		}
 
-		bulkRequest := backend.elastic.Bulk()
+		//bulkRequest := backend.elastic.Bulk()
 		for _, point := range metrics {
 			if point == nil {
 				continue
@@ -426,25 +416,40 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 				}
 			*/
 
-			row := vSphereMetricType{
-				//Timestamp: point.Timestamp,
-				Timestamp:   time.Now(),
-				Vcenter:     point.VCenter,
-				Cluster:     point.Cluster,
-				ObjectType:  point.ObjectType,
-				ObjectName:  point.ObjectName,
-				Metric:      point.Group + "." + point.Counter + "." + point.Rollup,
-				MetricValue: strconv.FormatInt(point.Value, 10)}
+			m := map[string]interface{}{
+				//"@timestamp": point.Timestamp,
+				"@timestamp": time.Now(),
+				"vcenter":    point.VCenter,
+				"cluster":    point.Cluster,
+				"vsphere." + point.ObjectType + ".name":                                                      point.ObjectName,
+				"vsphere." + point.ObjectType + "." + point.Group + "." + point.Counter + "." + point.Rollup: strconv.FormatInt(point.Value, 10),
+			}
 
-			indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("vSphereMetricType").Doc(row)
-			bulkRequest = bulkRequest.Add(indexReq)
+			row, _ := json.Marshal(m)
+
+			_, err := backend.elastic.Index().
+				Index(elasticindex).
+				Type("doc").
+				//BodyJson(row).
+				BodyString(string(row)).
+				Do(context.Background())
+			if err != nil {
+				errlog.Println("executing the index operation failed with error: ", err)
+			}
+
+			//indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(row)
+			//bulkRequest = bulkRequest.Add(indexReq)
 		}
 
-		_, err = bulkRequest.Do(context.Background())
-		if err != nil {
-			// Handle error
-			panic(err)
-		}
+		/*
+			res, err := bulkRequest.Do(context.Background())
+			if err != nil {
+				// Handle error
+				panic(err)
+			} else {
+				stdlog.Println(res)
+			}
+		*/
 
 		_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
 		if err != nil {
@@ -452,7 +457,6 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		} else {
 			stdlog.Println("Elastic flushed")
 		}
-
 		/*
 			// Delete an index.
 			_, err = backend.elastic.DeleteIndex(elasticindex).Do(context.Background())
@@ -461,7 +465,6 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 				panic(err)
 			}
 		*/
-
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
