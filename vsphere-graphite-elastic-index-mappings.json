@@ -1,0 +1,290 @@
+PUT _template/vsphere_graphite 
+{
+    "vsphere_graphite": {
+        "order": 0,
+        "index_patterns": [
+            "vsphere-graphite-*"
+        ],
+        "settings": {
+            "index": {
+                "number_of_shards": "1",
+                "number_of_replicas": "1"
+            }
+        },
+        "mappings": {
+            "doc": {
+                "properties": {
+                    "@timestamp": {
+                        "type": "date"
+                    },
+                    "cluster": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "vcenter": {
+                        "type": "text",
+                        "fields": {
+                            "keyword": {
+                                "type": "keyword",
+                                "ignore_above": 256
+                            }
+                        }
+                    },
+                    "vsphere": {
+                        "properties": {
+                            "hostsystem": {
+                                "properties": {
+                                    "cpu": {
+                                        "properties": {
+                                            "totalcapacity": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "usage": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "usagemhz": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "disk": {
+                                        "properties": {
+                                            "maxtotallatency": {
+                                                "properties": {
+                                                    "latest": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "numberreadaveraged": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "numberwriteaveraged": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "mem": {
+                                        "properties": {
+                                            "active": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            },
+                                            "consumed": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            },
+                                            "totalcapacity": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            },
+                                            "usage": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            },
+                                            "vmmemctl": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "name": {
+                                        "type": "text",
+                                        "fields": {
+                                            "keyword": {
+                                                "type": "keyword",
+                                                "ignore_above": 256
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            "virtualmachine": {
+                                "properties": {
+                                    "cpu": {
+                                        "properties": {
+                                            "ready": {
+                                                "properties": {
+                                                    "summation": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "usage": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "usagemhz": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "guestdisk": {
+                                        "properties": {
+                                            "capacity": {
+                                                "properties": {
+                                                    "latest": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            },
+                                            "freespace": {
+                                                "properties": {
+                                                    "latest": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            },
+                                            "usage": {
+                                                "properties": {
+                                                    "latest": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "mem": {
+                                        "properties": {
+                                            "active": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            },
+                                            "consumed": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            },
+                                            "usage": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            },
+                                            "vmmemctl": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "long"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
+                                    "name": {
+                                        "type": "text",
+                                        "fields": {
+                                            "keyword": {
+                                                "type": "keyword",
+                                                "ignore_above": 256
+                                            }
+                                        }
+                                    },
+                                    "virtualdisk": {
+                                        "properties": {
+                                            "numberreadaveraged": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "numberwriteaveraged": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "read": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "totalreadlatency": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "totalwritelatency": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "write": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "aliases": {}
+    }
+}

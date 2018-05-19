@@ -379,7 +379,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		if len(elasticindex) > 0 {
 			elasticindex = elasticindex + "-" + time.Now().Format("2006.01.02")
 		} else {
-			errlog.Println("backend.Database (used as Elastic Index name) not found in vsphere-graphite.json")
+			errlog.Println("backend.Database (used as Elastic Index name) not specified in vsphere-graphite.json")
 			break
 		}
 
@@ -387,8 +387,6 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		exists, err := backend.elastic.IndexExists(elasticindex).Do(context.Background())
 		if err != nil {
 			panic(err)
-		} else {
-			stdlog.Println("Sinking metrics to index: " + elasticindex)
 		}
 		if !exists {
 			// Create a new index.
@@ -396,12 +394,13 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			if err != nil {
 				errlog.Println("Error creating Elastic index:" + elasticindex)
 				panic(err)
+				break
 			}
 			if !createIndex.Acknowledged {
 				// Not acknowledged
 			}
 		}
-
+		time := time.Now()
 		//bulkRequest := backend.elastic.Bulk()
 		for _, point := range metrics {
 			if point == nil {
@@ -409,7 +408,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			}
 
 			/*
-				// GM check still neeeded?
+				// check if still neeeded?
 				key := "vsphere." + point.ObjectType + "." + point.Group + "." + point.Counter + "." + point.Rollup
 				if len(point.Instance) > 0 {
 					key += "." + strings.ToLower(strings.Replace(point.Instance, ".", "_", -1))
@@ -418,7 +417,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 
 			m := map[string]interface{}{
 				//"@timestamp": point.Timestamp,
-				"@timestamp": time.Now(),
+				"@timestamp": time,
 				"vcenter":    point.VCenter,
 				"cluster":    point.Cluster,
 				"vsphere." + point.ObjectType + ".name":                                                      point.ObjectName,
@@ -426,6 +425,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			}
 
 			row, _ := json.Marshal(m)
+			stdlog.Println(string(row))
 
 			_, err := backend.elastic.Index().
 				Index(elasticindex).
@@ -455,7 +455,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		if err != nil {
 			panic(err)
 		} else {
-			stdlog.Println("Elastic flushed")
+			stdlog.Println("Elastic Indexing flushed")
 		}
 		/*
 			// Delete an index.
