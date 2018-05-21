@@ -241,7 +241,6 @@ func (backend *BackendConfig) Disconnect() {
 
 // SendMetrics : send metrics to backend
 func (backend *BackendConfig) SendMetrics(metrics []*Point) {
-	stdlog.Println("SendMetrics to backend")
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		var graphiteMetrics []graphite.Metric
@@ -425,7 +424,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			}
 
 			row, _ := json.Marshal(m)
-			stdlog.Println(string(row))
+			//stdlog.Println(string(row))
 
 			_, err := backend.elastic.Index().
 				Index(elasticindex).

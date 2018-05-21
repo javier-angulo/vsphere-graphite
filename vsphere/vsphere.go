@@ -212,22 +212,18 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		errlog.Println("Error: ", err)
 		return
 	}
-	i := 0
+
 	for _, child := range dcs {
-		stdlog.Println(child.Reference())
-		// GM* custom loop to choose only 1 datacenter
-		if i == 1 {
-			datacenters = append(datacenters, child.Reference())
-		}
-		i++
+		datacenters = append(datacenters, child.Reference())
 	}
+
 	// for _, child := range rootFolder.ChildEntity {
 	// 	if child.Type == "Datacenter" {
 	// 		datacenters = append(datacenters, child)
 	// 	}
 	// }
 
-	// Get intresting object types from specified queries
+	// Get interesting object types from specified queries
 	objectTypes := []string{"ClusterComputeResource", "Datastore", "HostSystem", "DistributedVirtualPortgroup", "Network", "ResourcePool", "Folder"}
 	for _, group := range vcenter.MetricGroups {
 		found := false
