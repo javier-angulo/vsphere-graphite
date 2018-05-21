@@ -212,11 +212,9 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		errlog.Println("Error: ", err)
 		return
 	}
-
 	for _, child := range dcs {
 		datacenters = append(datacenters, child.Reference())
 	}
-
 	// for _, child := range rootFolder.ChildEntity {
 	// 	if child.Type == "Datacenter" {
 	// 		datacenters = append(datacenters, child)
