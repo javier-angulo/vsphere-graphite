@@ -2,7 +2,6 @@ package backend
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -16,6 +15,7 @@ import (
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
 	"github.com/olivere/elastic"
+	json "github.com/pquerna/ffjson/ffjson"
 )
 
 // Point : Information collected for a point
@@ -393,7 +393,6 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 			if err != nil {
 				errlog.Println("Error creating Elastic index:" + elasticindex)
 				panic(err)
-				break
 			}
 			if !createIndex.Acknowledged {
 				// Not acknowledged
