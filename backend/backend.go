@@ -15,7 +15,7 @@ import (
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
 	"github.com/olivere/elastic"
-	json "github.com/pquerna/ffjson/ffjson"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 // Point : Information collected for a point
@@ -422,7 +422,7 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 				"vsphere." + point.ObjectType + "." + point.Group + "." + point.Counter + "." + point.Rollup: strconv.FormatInt(point.Value, 10),
 			}
 
-			row, _ := json.Marshal(m)
+			row, _ := ffjson.Marshal(m)
 			//stdlog.Println(string(row))
 
 			_, err := backend.elastic.Index().
