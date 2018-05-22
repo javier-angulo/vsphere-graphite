@@ -422,10 +422,13 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 				"vsphere." + point.ObjectType + "." + point.Group + "." + point.Counter + "." + point.Rollup: strconv.FormatInt(point.Value, 10),
 			}
 
-			row, _ := ffjson.Marshal(m)
+			row, err := ffjson.Marshal(m)
+			if err != nil {
+				errlog.Println("JSON Marshalling failed with error: ", err)
+			}
 			//stdlog.Println(string(row))
 
-			_, err := backend.elastic.Index().
+			_, err = backend.elastic.Index().
 				Index(elasticindex).
 				Type("doc").
 				//BodyJson(row).
