@@ -1,8 +1,8 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
-	"log"
 	"math"
 	"sort"
 	"strconv"
@@ -10,8 +10,6 @@ import (
 
 	"github.com/vmware/govmomi/vim25/types"
 )
-
-var stdlog, errlog *log.Logger
 
 // Min : get the minimum of values
 func Min(n ...int64) int64 {
@@ -73,36 +71,39 @@ func Average(n ...int64) int64 {
 }
 
 // MapObjRefs fills in object references into a map to another object reference
-func MapObjRefs(sourceVal types.AnyType, dest map[types.ManagedObjectReference][]types.ManagedObjectReference, index types.ManagedObjectReference) {
+func MapObjRefs(sourceVal types.AnyType, dest map[types.ManagedObjectReference][]types.ManagedObjectReference, index types.ManagedObjectReference) error {
 	mors, ok := sourceVal.(types.ArrayOfManagedObjectReference)
 	if ok {
 		if len(mors.ManagedObjectReference) > 0 {
 			dest[index] = mors.ManagedObjectReference
+			return nil
 		} else {
-			errlog.Println("Property didn't contain any object references")
+			return errors.New("Property didn't contain any object references")
 		}
 	} else {
-		errlog.Println("Property " + index.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", sourceVal))
+		return errors.New("Property " + index.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", sourceVal))
 	}
 }
 
 // MapObjRef fills in object reference into a map to another object reference
-func MapObjRef(sourceVal types.AnyType, dest map[types.ManagedObjectReference]types.ManagedObjectReference, index types.ManagedObjectReference) {
+func MapObjRef(sourceVal types.AnyType, dest map[types.ManagedObjectReference]types.ManagedObjectReference, index types.ManagedObjectReference) error {
 	mor, ok := sourceVal.(types.ManagedObjectReference)
 	if ok {
 		dest[index] = mor
+		return nil
 	} else {
-		errlog.Println("Property of " + index.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", sourceVal))
+		return errors.New("Property of " + index.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", sourceVal))
 	}
 }
 
 // MapObjInt32 fills in an int32 into a map to another object reference
-func MapObjInt32(sourceVal types.AnyType, dest map[types.ManagedObjectReference]int32, index types.ManagedObjectReference) {
+func MapObjInt32(sourceVal types.AnyType, dest map[types.ManagedObjectReference]int32, index types.ManagedObjectReference) error {
 	val, ok := sourceVal.(int32)
 	if ok {
 		dest[index] = val
+		return nil
 	} else {
-		errlog.Println("Property of " + index.String() + " was not an int32, it was " + fmt.Sprintf("%T", sourceVal))
+		return errors.New("Property of " + index.String() + " was not an int32, it was " + fmt.Sprintf("%T", sourceVal))
 	}
 }
 
