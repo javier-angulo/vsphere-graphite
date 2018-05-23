@@ -1,10 +1,10 @@
-PUT _template/vsphere_graphite 
+POST _template/vsphere_graphite
 {
-    "vsphere_graphite": {
         "order": 0,
         "index_patterns": [
             "vsphere-graphite-*"
         ],
+        "version": 2,
         "settings": {
             "index": {
                 "number_of_shards": "1",
@@ -86,6 +86,34 @@ PUT _template/vsphere_graphite
                                                         "type": "integer"
                                                     }
                                                 }
+                                            },
+                                            "read": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "write": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "totalreadlatency": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "totalwritelatency": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
                                             }
                                         }
                                     },
@@ -134,6 +162,31 @@ PUT _template/vsphere_graphite
                                             "keyword": {
                                                 "type": "keyword",
                                                 "ignore_above": 256
+                                            }
+                                        }
+                                    },
+                                    "net": {
+                                        "properties": {
+                                            "received": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "transmitted": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "usage": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -232,6 +285,31 @@ PUT _template/vsphere_graphite
                                             }
                                         }
                                     },
+                                    "net": {
+                                        "properties": {
+                                            "received": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "transmitted": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "usage": {
+                                                "properties": {
+                                                    "average": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    },
                                     "virtualdisk": {
                                         "properties": {
                                             "numberreadaveraged": {
@@ -285,6 +363,5 @@ PUT _template/vsphere_graphite
                 }
             }
         },
-        "aliases": {}
-    }
+        "aliases": {}   
 }
