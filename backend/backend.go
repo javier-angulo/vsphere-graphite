@@ -36,7 +36,7 @@ type Point struct {
 	ViTags       []string `influx:"tag,vitags"`
 	NumCPU       int32    `influx:"tag,numcpu"`
 	MemorySizeMB int32    `influx:"tag,memorysizemb"`
-	Timestamp    int64    `influx:"time"`
+	Timestamp    int64    `influx:"time" elastic:"type:date,format:epoch_seconds"`
 }
 
 // InfluxPoint is the representation of the parts of a point for influx
@@ -203,10 +203,14 @@ func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logg
 			errlog.Println("backend.Database (used as Elastic Index name) not specified in vsphere-graphite.json")
 		}
 		stdlog.Println("Initializing " + backendType + " backend " + backend.Hostname + ":" + strconv.Itoa(backend.Port) + "/" + elasticindex)
+		protocol := "http"
+		if backend.Encrypted {
+			protocol = "https"
+		}
 		elasticclt, err := elastic.NewClient(
-			elastic.SetURL("https://"+backend.Hostname+":"+strconv.Itoa(backend.Port)),
+			elastic.SetURL(protocol+"://"+backend.Hostname+":"+strconv.Itoa(backend.Port)),
 			elastic.SetMaxRetries(10),
-			elastic.SetScheme("https"),
+			elastic.SetScheme(protocol),
 			elastic.SetBasicAuth(backend.Username, backend.Password))
 		if err != nil {
 			errlog.Println("Error creating Elastic client")
@@ -396,29 +400,9 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		}
 	case Elastic:
 		elasticindex := backend.Database + "-" + time.Now().Format("2006.01.02")
-		time := time.Now()
 		bulkRequest := backend.elastic.Bulk()
 		for _, point := range metrics {
-			if point == nil {
-				continue
-			}
-			/*
-				// check if still neeeded?
-				key := "vsphere." + point.ObjectType + "." + point.Group + "." + point.Counter + "." + point.Rollup
-				if len(point.Instance) > 0 {
-					key += "." + strings.ToLower(strings.Replace(point.Instance, ".", "_", -1))
-				}
-			*/
-			m := map[string]interface{}{
-				//"@timestamp": point.Timestamp,
-				"@timestamp": time,
-				"vcenter":    point.VCenter,
-				"cluster":    point.Cluster,
-				"vsphere." + point.ObjectType + ".name":                                                      point.ObjectName,
-				"vsphere." + point.ObjectType + "." + point.Group + "." + point.Counter + "." + point.Rollup: strconv.FormatInt(point.Value, 10),
-			}
-
-			indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(m).UseEasyJSON(true)
+			indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(point).UseEasyJSON(true)
 			bulkRequest = bulkRequest.Add(indexReq)
 		}
 		bulkResponse, err := bulkRequest.Do(context.Background())
@@ -436,15 +420,6 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 				stdlog.Println("Elastic Indexing flushed")
 			}
 		}
-
-		/*
-			// Delete an index.
-			_, err = backend.elastic.DeleteIndex(elasticindex).Do(context.Background())
-			if err != nil {
-				// Handle error
-				panic(err)
-			}
-		*/
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
