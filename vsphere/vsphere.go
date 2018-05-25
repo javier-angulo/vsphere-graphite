@@ -221,7 +221,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	// 	}
 	// }
 
-	// Get intresting object types from specified queries
+	// Get interesting object types from specified queries
 	objectTypes := []string{"ClusterComputeResource", "Datastore", "HostSystem", "DistributedVirtualPortgroup", "Network", "ResourcePool", "Folder"}
 	for _, group := range vcenter.MetricGroups {
 		found := false

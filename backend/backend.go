@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -13,6 +14,7 @@ import (
 	"github.com/cblomart/vsphere-graphite/utils"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
+	"github.com/olivere/elastic"
 )
 
 // Point : Information collected for a point
@@ -59,6 +61,7 @@ type BackendConfig struct {
 	carbon       *graphite.Graphite
 	influx       *influxclient.Client
 	thininfluxdb *thininfluxclient.ThinInfluxClient
+	elastic      *elastic.Client
 }
 
 // Backend Interface
@@ -77,6 +80,8 @@ const (
 	ThinInfluxDB = "thininfluxdb"
 	// InfluxTag is the tag for influxdb
 	InfluxTag = "influx"
+	// Elastic name of the elastic backend
+	Elastic = "elastic"
 )
 
 var stdlog, errlog *log.Logger
@@ -189,6 +194,42 @@ func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logg
 		}
 		backend.thininfluxdb = &thininfluxclt
 		return nil
+	case Elastic:
+		//Initialize Elastic client
+		elasticindex := backend.Database
+		if len(elasticindex) > 0 {
+			elasticindex = elasticindex + "-" + time.Now().Format("2006.01.02")
+		} else {
+			errlog.Println("backend.Database (used as Elastic Index name) not specified in vsphere-graphite.json")
+		}
+		stdlog.Println("Initializing " + backendType + " backend " + backend.Hostname + ":" + strconv.Itoa(backend.Port) + "/" + elasticindex)
+		elasticclt, err := elastic.NewClient(
+			elastic.SetURL("https://"+backend.Hostname+":"+strconv.Itoa(backend.Port)),
+			elastic.SetMaxRetries(10),
+			elastic.SetScheme("https"),
+			elastic.SetBasicAuth(backend.Username, backend.Password))
+		if err != nil {
+			errlog.Println("Error creating Elastic client")
+			return err
+		}
+		backend.elastic = elasticclt
+		// Use the IndexExists service to check if a specified index exists.
+		exists, err := backend.elastic.IndexExists(elasticindex).Do(context.Background())
+		if err != nil {
+			errlog.Println("Unable to check if Elastic Index exists: ", err)
+			return err
+		}
+		if !exists {
+			// Create a new index.
+			_, err := backend.elastic.CreateIndex(elasticindex).Do(context.Background())
+			if err != nil {
+				errlog.Println("Error creating Elastic Index:" + elasticindex)
+				return err
+			} else {
+				stdlog.Println("Elastic Index created: " + elasticindex)
+			}
+		}
+		return nil
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 		return errors.New("Backend " + backendType + " unknown.")
@@ -211,6 +252,9 @@ func (backend *BackendConfig) Disconnect() {
 	case ThinInfluxDB:
 		// Disconnect from thin influx db
 		errlog.Println("Disconnecting from thininfluxdb")
+	case Elastic:
+		// Disconnect from Elastic
+		errlog.Println("Disconnecting from elastic")
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
@@ -350,6 +394,57 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		if err != nil {
 			errlog.Println("Error sendg metrics: ", err)
 		}
+	case Elastic:
+		elasticindex := backend.Database + "-" + time.Now().Format("2006.01.02")
+		time := time.Now()
+		bulkRequest := backend.elastic.Bulk()
+		for _, point := range metrics {
+			if point == nil {
+				continue
+			}
+			/*
+				// check if still neeeded?
+				key := "vsphere." + point.ObjectType + "." + point.Group + "." + point.Counter + "." + point.Rollup
+				if len(point.Instance) > 0 {
+					key += "." + strings.ToLower(strings.Replace(point.Instance, ".", "_", -1))
+				}
+			*/
+			m := map[string]interface{}{
+				//"@timestamp": point.Timestamp,
+				"@timestamp": time,
+				"vcenter":    point.VCenter,
+				"cluster":    point.Cluster,
+				"vsphere." + point.ObjectType + ".name":                                                      point.ObjectName,
+				"vsphere." + point.ObjectType + "." + point.Group + "." + point.Counter + "." + point.Rollup: strconv.FormatInt(point.Value, 10),
+			}
+
+			indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(m).UseEasyJSON(true)
+			bulkRequest = bulkRequest.Add(indexReq)
+		}
+		bulkResponse, err := bulkRequest.Do(context.Background())
+		if err != nil {
+			// Handle error
+			errlog.Println(err)
+		} else {
+			// Succeeded actions
+			succeeded := bulkResponse.Succeeded()
+			stdlog.Println("Logs successfully indexed: ", len(succeeded))
+			_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
+			if err != nil {
+				panic(err)
+			} else {
+				stdlog.Println("Elastic Indexing flushed")
+			}
+		}
+
+		/*
+			// Delete an index.
+			_, err = backend.elastic.DeleteIndex(elasticindex).Do(context.Background())
+			if err != nil {
+				// Handle error
+				panic(err)
+			}
+		*/
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
