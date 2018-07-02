@@ -78,7 +78,7 @@ func MapObjRefs(sourceVal types.AnyType, dest map[types.ManagedObjectReference][
 			dest[index] = mors.ManagedObjectReference
 			return nil
 		} else {
-			return errors.New("Property didn't contain any object references")
+			return errors.New("Property " + index.String() + "didn't contain any object references")
 		}
 	} else {
 		return errors.New("Property " + index.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", sourceVal))
