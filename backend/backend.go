@@ -163,9 +163,8 @@ func CreateIndexIfNotExists(e *elastic.Client, index string) (error) {
 	if !exists {
 		// Create a new index.
 		v := reflect.TypeOf(Point{})
-		var mapping MapStr
 
-		mapping = MapStr{
+		mapping := MapStr{
 			"mappings" : MapStr{
 				"doc" : MapStr{
 					"properties": MapStr{
