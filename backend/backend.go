@@ -445,27 +445,32 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		}
 	case Elastic:
 		elasticindex := backend.Database + "-" + time.Now().Format("2006.01.02")
-		CreateIndexIfNotExists(backend.elastic, elasticindex)
-		bulkRequest := backend.elastic.Bulk()
-		for _, point := range metrics {
-			indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(point).UseEasyJSON(true)
-			bulkRequest = bulkRequest.Add(indexReq)
-		}
-		bulkResponse, err := bulkRequest.Do(context.Background())
+		err := CreateIndexIfNotExists(backend.elastic, elasticindex)
 		if err != nil {
-			// Handle error
 			errlog.Println(err)
 		} else {
-			// Succeeded actions
-			succeeded := bulkResponse.Succeeded()
-			stdlog.Println("Logs successfully indexed: ", len(succeeded))
-			_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
+			bulkRequest := backend.elastic.Bulk()
+			for _, point := range metrics {
+				indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(point).UseEasyJSON(true)
+				bulkRequest = bulkRequest.Add(indexReq)
+			}
+			bulkResponse, err := bulkRequest.Do(context.Background())
 			if err != nil {
-				panic(err)
+				// Handle error
+				errlog.Println(err)
 			} else {
-				stdlog.Println("Elastic Indexing flushed")
+				// Succeeded actions
+				succeeded := bulkResponse.Succeeded()
+				stdlog.Println("Logs successfully indexed: ", len(succeeded))
+				_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
+				if err != nil {
+					panic(err)
+				} else {
+					stdlog.Println("Elastic Indexing flushed")
+				}
 			}
 		}
+
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
