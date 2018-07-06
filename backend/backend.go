@@ -191,6 +191,11 @@ func CreateIndexIfNotExists(e *elastic.Client, index string) (error) {
 		}
 		mappingJson, err := json.Marshal(mapping)
 
+		if err != nil {
+			errlog.Println("Error on Json Marshal")
+			return err
+		}
+
 		_, err = e.CreateIndex(index).BodyString(string(mappingJson)).Do(context.Background())
 
 		if err != nil {
