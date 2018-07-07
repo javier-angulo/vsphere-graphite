@@ -1,6 +1,7 @@
 {
   "Domain": ".contoso.com",
   "Interval": 60,
+  "FlushSize": 1000,
   "VCenters": [
     { "Username": "CONTOSO\\Administrator", "Password": "$P@ssw0rd", "Hostname": "vc1.contoso.com" },
     { "Username": "CONTOSO\\Administrator", "Password": "$P@ssw0rd", "Hostname": "vc2.contoso.com" }
@@ -8,7 +9,8 @@
   "Backend": {
     "Type": "graphite",
     "Hostname": "graphite.contoso.com",
-    "Port": 2003
+    "Port": 2003,
+    "Encrypted": false
   },
   "Metrics": [
     { 

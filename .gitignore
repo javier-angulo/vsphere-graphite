@@ -15,3 +15,4 @@ vsphere-graphite
 
 #vendor folder
 vendor/
+ca-certificates.crt
