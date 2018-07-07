@@ -43,7 +43,7 @@ Performance metrics are explained in [this](https://docs.vmware.com/en/VMware-vS
 
 ### Backend parameters
 
-- Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" or "elasticsearch" (influx client in the project)
+- Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" (embeded influx client) or "elasticsearch" 
 
 - Hostname (BACKEND_HOSTNAME): hostname were the backend is running
 
