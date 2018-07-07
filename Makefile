@@ -18,6 +18,7 @@ deps:
 	go get github.com/pquerna/ffjson/fflib/v1
 	go get code.cloudfoundry.org/bytefmt
 	go get github.com/pquerna/ffjson
+	go get github.com/olivere/elastic
 	go generate ./...
 
 build-windows-amd64:

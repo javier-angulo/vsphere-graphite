@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
@@ -13,6 +14,8 @@ import (
 	"github.com/cblomart/vsphere-graphite/utils"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
+	"github.com/olivere/elastic"
+	"encoding/json"
 )
 
 // Point : Information collected for a point
@@ -34,7 +37,7 @@ type Point struct {
 	ViTags       []string `influx:"tag,vitags"`
 	NumCPU       int32    `influx:"tag,numcpu"`
 	MemorySizeMB int32    `influx:"tag,memorysizemb"`
-	Timestamp    int64    `influx:"time"`
+	Timestamp    int64    `influx:"time" elastic:"type:date,format:epoch_second"`
 }
 
 // InfluxPoint is the representation of the parts of a point for influx
@@ -59,6 +62,7 @@ type BackendConfig struct {
 	carbon       *graphite.Graphite
 	influx       *influxclient.Client
 	thininfluxdb *thininfluxclient.ThinInfluxClient
+	elastic      *elastic.Client
 }
 
 // Backend Interface
@@ -67,6 +71,8 @@ type Backend interface {
 	Disconnect()
 	SendMetrics(metrics []*Point)
 }
+
+type MapStr map[string]interface{}
 
 const (
 	// Graphite name of the graphite backend
@@ -77,6 +83,8 @@ const (
 	ThinInfluxDB = "thininfluxdb"
 	// InfluxTag is the tag for influxdb
 	InfluxTag = "influx"
+	// Elastic name of the elastic backend
+	Elastic = "elastic"
 )
 
 var stdlog, errlog *log.Logger
@@ -143,6 +151,64 @@ func (p *Point) ToInflux(noarray bool, valuefield string) string {
 	return p.GetInfluxPoint(noarray, valuefield).ToInflux(noarray, valuefield)
 }
 
+// Create Index if Not Exists
+func CreateIndexIfNotExists(e *elastic.Client, index string) (error) {
+	// Use the IndexExists service to check if a specified index exists.
+	exists, err := e.IndexExists(index).Do(context.Background())
+	if err != nil {
+		errlog.Println("Unable to check if Elastic Index exists: ", err)
+		return err
+	}
+
+	if !exists {
+		// Create a new index.
+		v := reflect.TypeOf(Point{})
+
+		mapping := MapStr{
+			"mappings" : MapStr{
+				"doc" : MapStr{
+					"properties": MapStr{
+					},
+				},
+			},
+		}
+
+		for i := 0; i < v.NumField(); i++ {
+			field := v.Field(i)
+			tag := field.Tag.Get("elastic")
+			if len(tag) == 0 {
+				continue
+			}
+			tagfields := strings.Split(tag, ",")
+
+			mapping["mappings"].(MapStr)["doc"].(MapStr)["properties"].(MapStr)[field.Name] = MapStr{
+			}
+
+			for _, tagfield := range tagfields{
+				tagfieldValues := strings.Split(tagfield, ":")
+				mapping["mappings"].(MapStr)["doc"].(MapStr)["properties"].(MapStr)[field.Name].(MapStr)[tagfieldValues[0]] = tagfieldValues[1]
+			}
+		}
+		mappingJson, err := json.Marshal(mapping)
+
+		if err != nil {
+			errlog.Println("Error on Json Marshal")
+			return err
+		}
+
+		_, err = e.CreateIndex(index).BodyString(string(mappingJson)).Do(context.Background())
+
+		if err != nil {
+			errlog.Println("Error creating Elastic Index:" + index)
+			return err
+		} else {
+			stdlog.Println("Elastic Index created: " + index)
+		}
+	}
+	return nil
+}
+
+
 // Init : initialize a backend
 func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
 	stdlog = standardLogs
@@ -189,6 +255,30 @@ func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logg
 		}
 		backend.thininfluxdb = &thininfluxclt
 		return nil
+	case Elastic:
+		//Initialize Elastic client
+		elasticindex := backend.Database
+		if len(elasticindex) > 0 {
+			elasticindex = elasticindex + "-" + time.Now().Format("2006.01.02")
+		} else {
+			errlog.Println("backend.Database (used as Elastic Index name) not specified in vsphere-graphite.json")
+		}
+		stdlog.Println("Initializing " + backendType + " backend " + backend.Hostname + ":" + strconv.Itoa(backend.Port) + "/" + elasticindex)
+		protocol := "http"
+		if backend.Encrypted {
+			protocol = "https"
+		}
+		elasticclt, err := elastic.NewClient(
+			elastic.SetURL(protocol+"://"+backend.Hostname+":"+strconv.Itoa(backend.Port)),
+			elastic.SetMaxRetries(10),
+			elastic.SetScheme(protocol),
+			elastic.SetBasicAuth(backend.Username, backend.Password))
+		if err != nil {
+			errlog.Println("Error creating Elastic client")
+			return err
+		}
+		backend.elastic = elasticclt
+		return CreateIndexIfNotExists(backend.elastic, elasticindex)
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 		return errors.New("Backend " + backendType + " unknown.")
@@ -211,6 +301,9 @@ func (backend *BackendConfig) Disconnect() {
 	case ThinInfluxDB:
 		// Disconnect from thin influx db
 		errlog.Println("Disconnecting from thininfluxdb")
+	case Elastic:
+		// Disconnect from Elastic
+		errlog.Println("Disconnecting from elastic")
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
@@ -350,6 +443,34 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		if err != nil {
 			errlog.Println("Error sendg metrics: ", err)
 		}
+	case Elastic:
+		elasticindex := backend.Database + "-" + time.Now().Format("2006.01.02")
+		err := CreateIndexIfNotExists(backend.elastic, elasticindex)
+		if err != nil {
+			errlog.Println(err)
+		} else {
+			bulkRequest := backend.elastic.Bulk()
+			for _, point := range metrics {
+				indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(point).UseEasyJSON(true)
+				bulkRequest = bulkRequest.Add(indexReq)
+			}
+			bulkResponse, err := bulkRequest.Do(context.Background())
+			if err != nil {
+				// Handle error
+				errlog.Println(err)
+			} else {
+				// Succeeded actions
+				succeeded := bulkResponse.Succeeded()
+				stdlog.Println("Logs successfully indexed: ", len(succeeded))
+				_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
+				if err != nil {
+					panic(err)
+				} else {
+					stdlog.Println("Elastic Indexing flushed")
+				}
+			}
+		}
+
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
