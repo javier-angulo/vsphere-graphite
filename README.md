@@ -138,6 +138,8 @@ No open source projects would live and thrive without common effort. Here is the
 - [BlueAceTS](https://github.com/BlueAceTS)
 - [NoMotion](https://github.com/NoMotion)
 - [korservick](https://github.com/korservick)
+- [MnrGreg](https://github.com/mnrgreg)
+- [fdmsantos](https://github.com/fdmsantos)
 
 Also keep in mind that if you can't contribute code, issues and imporvement request are also a key part of a project evolution!
 So don't hesitate and tell us what doens't work or what you miss.
