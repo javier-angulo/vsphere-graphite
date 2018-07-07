@@ -15,6 +15,7 @@ import (
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
 	"github.com/olivere/elastic"
+	"encoding/json"
 )
 
 // Point : Information collected for a point
@@ -36,7 +37,7 @@ type Point struct {
 	ViTags       []string `influx:"tag,vitags"`
 	NumCPU       int32    `influx:"tag,numcpu"`
 	MemorySizeMB int32    `influx:"tag,memorysizemb"`
-	Timestamp    int64    `influx:"time" elastic:"type:date,format:epoch_seconds"`
+	Timestamp    int64    `influx:"time" elastic:"type:date,format:epoch_second"`
 }
 
 // InfluxPoint is the representation of the parts of a point for influx
@@ -70,6 +71,8 @@ type Backend interface {
 	Disconnect()
 	SendMetrics(metrics []*Point)
 }
+
+type MapStr map[string]interface{}
 
 const (
 	// Graphite name of the graphite backend
@@ -148,6 +151,64 @@ func (p *Point) ToInflux(noarray bool, valuefield string) string {
 	return p.GetInfluxPoint(noarray, valuefield).ToInflux(noarray, valuefield)
 }
 
+// Create Index if Not Exists
+func CreateIndexIfNotExists(e *elastic.Client, index string) (error) {
+	// Use the IndexExists service to check if a specified index exists.
+	exists, err := e.IndexExists(index).Do(context.Background())
+	if err != nil {
+		errlog.Println("Unable to check if Elastic Index exists: ", err)
+		return err
+	}
+
+	if !exists {
+		// Create a new index.
+		v := reflect.TypeOf(Point{})
+
+		mapping := MapStr{
+			"mappings" : MapStr{
+				"doc" : MapStr{
+					"properties": MapStr{
+					},
+				},
+			},
+		}
+
+		for i := 0; i < v.NumField(); i++ {
+			field := v.Field(i)
+			tag := field.Tag.Get("elastic")
+			if len(tag) == 0 {
+				continue
+			}
+			tagfields := strings.Split(tag, ",")
+
+			mapping["mappings"].(MapStr)["doc"].(MapStr)["properties"].(MapStr)[field.Name] = MapStr{
+			}
+
+			for _, tagfield := range tagfields{
+				tagfieldValues := strings.Split(tagfield, ":")
+				mapping["mappings"].(MapStr)["doc"].(MapStr)["properties"].(MapStr)[field.Name].(MapStr)[tagfieldValues[0]] = tagfieldValues[1]
+			}
+		}
+		mappingJson, err := json.Marshal(mapping)
+
+		if err != nil {
+			errlog.Println("Error on Json Marshal")
+			return err
+		}
+
+		_, err = e.CreateIndex(index).BodyString(string(mappingJson)).Do(context.Background())
+
+		if err != nil {
+			errlog.Println("Error creating Elastic Index:" + index)
+			return err
+		} else {
+			stdlog.Println("Elastic Index created: " + index)
+		}
+	}
+	return nil
+}
+
+
 // Init : initialize a backend
 func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
 	stdlog = standardLogs
@@ -217,23 +278,7 @@ func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logg
 			return err
 		}
 		backend.elastic = elasticclt
-		// Use the IndexExists service to check if a specified index exists.
-		exists, err := backend.elastic.IndexExists(elasticindex).Do(context.Background())
-		if err != nil {
-			errlog.Println("Unable to check if Elastic Index exists: ", err)
-			return err
-		}
-		if !exists {
-			// Create a new index.
-			_, err := backend.elastic.CreateIndex(elasticindex).Do(context.Background())
-			if err != nil {
-				errlog.Println("Error creating Elastic Index:" + elasticindex)
-				return err
-			} else {
-				stdlog.Println("Elastic Index created: " + elasticindex)
-			}
-		}
-		return nil
+		return CreateIndexIfNotExists(backend.elastic, elasticindex)
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 		return errors.New("Backend " + backendType + " unknown.")
@@ -400,26 +445,32 @@ func (backend *BackendConfig) SendMetrics(metrics []*Point) {
 		}
 	case Elastic:
 		elasticindex := backend.Database + "-" + time.Now().Format("2006.01.02")
-		bulkRequest := backend.elastic.Bulk()
-		for _, point := range metrics {
-			indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(point).UseEasyJSON(true)
-			bulkRequest = bulkRequest.Add(indexReq)
-		}
-		bulkResponse, err := bulkRequest.Do(context.Background())
+		err := CreateIndexIfNotExists(backend.elastic, elasticindex)
 		if err != nil {
-			// Handle error
 			errlog.Println(err)
 		} else {
-			// Succeeded actions
-			succeeded := bulkResponse.Succeeded()
-			stdlog.Println("Logs successfully indexed: ", len(succeeded))
-			_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
+			bulkRequest := backend.elastic.Bulk()
+			for _, point := range metrics {
+				indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(point).UseEasyJSON(true)
+				bulkRequest = bulkRequest.Add(indexReq)
+			}
+			bulkResponse, err := bulkRequest.Do(context.Background())
 			if err != nil {
-				panic(err)
+				// Handle error
+				errlog.Println(err)
 			} else {
-				stdlog.Println("Elastic Indexing flushed")
+				// Succeeded actions
+				succeeded := bulkResponse.Succeeded()
+				stdlog.Println("Logs successfully indexed: ", len(succeeded))
+				_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
+				if err != nil {
+					panic(err)
+				} else {
+					stdlog.Println("Elastic Indexing flushed")
+				}
 			}
 		}
+
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
