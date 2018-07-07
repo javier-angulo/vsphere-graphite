@@ -1,8 +1,8 @@
-# vSphere to Graphite
+# vSphere Graphite
 
-Export vSphere stats to graphite.
+Monitors VMware vSphere stats using govmomi. Sinks metrics to one of many time series backends.
 
-Written in go as the integration collectd and python plugin posed too much problems (cpu usage and pipe flood).
+Written in go to achieve fast sampling rates and high throughput sink. Successfuly benchmarked against 3000 VM's, logging 150,000 metrics per minute to an ElasticSearch backend.
 
 ## Build status
 
@@ -15,89 +15,80 @@ Drone: [![Drone Build Status](https://bot.blomart.net/api/badges/cblomart/vspher
 [![Go Report Card](https://goreportcard.com/badge/github.com/cblomart/vsphere-graphite)](https://goreportcard.com/report/github.com/cblomart/vsphere-graphite)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite?ref=badge_shield)
 
-## Example result
+## Example dashboard
 
-Bellow a dashboard realize with grafana.
-The backend used in this case is influxdb.
+The dashboard example below is using the grafana UI. The backend is using ElasticSearch.
 
-![Example Dashboard](vsphere-graphite-influxdb-grafana-dashboard.png)
+![Example Dashboard](./imgs/vsphere-graphite-elastic-grafana-dashboard1.png)
 
-## Extenal dependencies
 
-Naturaly heavilly based on [govmomi](https://github.com/vmware/govmomi).
+## Configuration
 
-But also on [daemon](github.com/takama/daemon) which provides simple daemon/service integration.
+Define vSphere credentials and collection metrics in the JSON config file. An example configuration for the Contoso domain is found [here](./vsphere-graphite-example.json).
 
-## Configure
+Copy this config file to /etc/*binaryname*.json and modify as needed. Example:
+  > cp vsphere-graphite-example.json /etc/vsphere-graphite.json
 
-You need to know you vcenters, logins and password ;-)
+<!-- provide link to vcenter role permissions -->
 
-If you set a domain, it will be automaticaly removed from found objects.
 
-Metrics collected are defined by associating ObjectType groups with Metric groups.
-They are expressed via the vsphere scheme: *group*.*metric*.*rollup*
+Metrics collection is performed by associating ObjectType groups with Metric groups.
+These are expressed via the vsphere scheme: *group*.*metric*.*rollup*
 
-ObjectTypes are explained in [this](https://code.vmware.com/web/dp/explorer-apis?id=196) vSphere doc
+ObjectTypes are explained in [this](https://code.vmware.com/web/dp/explorer-apis?id=196) vSphere doc.
 
-Performance metrics are explained in [this](https://docs.vmware.com/en/VMware-vSphere/6.5/com.vmware.vsphere.monitoring.doc/GUID-E95BD7F2-72CF-4A1B-93DA-E4ABE20DD1CC.html) vSphere doc
+Performance metrics are explained in [this](https://docs.vmware.com/en/VMware-vSphere/6.5/com.vmware.vsphere.monitoring.doc/GUID-E95BD7F2-72CF-4A1B-93DA-E4ABE20DD1CC.html) vSphere doc.
 
-An example of configuration file of contoso.com is [there](./vsphere-graphite-example.json).
 
-You need to place it at /etc/*binaryname*.json (/etc/vsphere-graphite.json per default)
-
-For contoso it would simply be:
-
-  > cp vsphere-graphite-example.json vsphere-graphite.json
-
-Backend paramters can also be set via environement paramterers (see docker)
 
 ### Backend parameters
 
-- Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" or elasticsearch (influx client in the project)
+- Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" or "elasticsearch" (influx client in the project)
 
-- Hostname (BACKEND_HOSTNAME): hostname were the backend is running (graphite, influxdb, thinfluxdb)
+- Hostname (BACKEND_HOSTNAME): hostname were the backend is running
 
-- Port (BACKEND_PORT): port to connect to for the backend (graphite, influxdb, thinfluxdb)
+- Port (BACKEND_PORT): port to connect to for the backend
 
-- Username (BACKEND_USERNAME): username to connect to the backend (influxdb and optionally for thinfluxdb)
+- Encrypted (BACKEND_ENCRYPTED): enable or disable TLS to backend (true, false)
 
-- Password (BACKEND_PASSWORD): password to connect to the backend (influxdb and optionally for thinfluxdb)
+- Username (BACKEND_USERNAME): username to connect to the backend (influxdb and optionally for thinfluxdb & elasticsearch)
+
+- Password (BACKEND_PASSWORD): password to connect to the backend (influxdb and optionally for thinfluxdb & elasticsearch)
 
 - Database (BACKEND_DATABASE): database to use in the backend (influxdb, thinfluxdb, elasticsearch)
 
 - NoArray (BACKEND_NOARRAY): don't use csv 'array' as tags, only the first element is used (influxdb, thinfluxdb)
 
-## Docker
+
+
+## Execute vsphere-graphite as a container
 
 All builds are pushed to docker:
-
 - [cblomart/vsphere-graphite](https://hub.docker.com/r/cblomart/vsphere-graphite/)
-
 - [cblomart/rpi-vsphere-graphite](https://hub.docker.com/r/cblomart/rpi-vsphere-graphite/)
 
 Default tags includes:
-
 - branch (i.e.: master) for latest commit in the branch
-
 - latest for latest release
 
-Configration file can be passed by mounting /etc.
+To make your own self-sufficient linux based vsphere-graphite binary and Docker scratch image:
+```bash
+CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o vsphere-graphite .
+docker build . -f ./docker/Dockerfile
+```
 
-Backend parameters can be set via environment variables to make docker user easier (having graphite or influx as another container).
-
-## Run it
-
-### the container way
-
-Edit the configuration file and set it in the place you like here $(pwd)
+The JSON configration file can be passed by mounting to /etc. Edit the configuration file and set it in the place you like here $(pwd)
 
   > docker run -t -v $(pwd)/vsphere-graphite.json:/etc/vsphere-graphite.json cblomart/vsphere-graphite:latest
 
-### The old way
 
-#### Deploy
+Backend parameters can be set via environment variables to make docker user easier (having graphite or influx as another container).
 
-Of course `golang` is needed. Install and set `$GOPATH` such as:
+
+
+## Execute vsphere-graphite in shell
+
+Heavilly based on [govmomi](https://github.com/vmware/govmomi) but also on [daemon](github.com/takama/daemon) which provides simple daemon/service integration. Of course `golang` is needed. Install and set `$GOPATH` such as:
 
 ```bash
 mkdir /etc/golang
