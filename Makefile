@@ -3,11 +3,11 @@ GOOS=$(word 1,$(subst /, ,$(lastword $(GOVERSION))))
 GOARCH=$(word 2,$(subst /, ,$(lastword $(GOVERSION))))
 RELEASE_DIR=releases
 SRC_FILES=$(wildcard *.go)
-MUSL_BUILD_FLAGS=-ldflags '-linkmode external -s -w -extldflags "-static"' -a
-BUILD_FLAGS=-ldflags -s -a
+EXTRA_FLAGS="-X main.commit '$(COMMIT)' -X main.tag '$(TRAVIS_TAG)'"
+MUSL_BUILD_FLAGS=-ldflags '-linkmode external -s -w -extldflags "-static" $(EXTRA_FLAGS)' -a
+BUILD_FLAGS=-ldflags '$(EXTRA_FLAGS)'-s -a
 MUSL_CC=musl-gcc
 MUSL_CCGLAGS="-static"
-EXTRA_FLASG="-X main.commit '$(COMMIT)' -X main.tag '$(TRAVIS_TAG)'"
 
 deps:
 	go get golang.org/x/sys/windows/registry
