@@ -10,12 +10,13 @@ import (
 	"strings"
 	"time"
 
+	"encoding/json"
+
 	"github.com/cblomart/vsphere-graphite/backend/thininfluxclient"
 	"github.com/cblomart/vsphere-graphite/utils"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
 	"github.com/olivere/elastic"
-	"encoding/json"
 )
 
 // Point : Information collected for a point
@@ -72,6 +73,7 @@ type Backend interface {
 	SendMetrics(metrics []*Point)
 }
 
+// MapStr represents a json node (string reference to an object)
 type MapStr map[string]interface{}
 
 const (
@@ -151,8 +153,8 @@ func (p *Point) ToInflux(noarray bool, valuefield string) string {
 	return p.GetInfluxPoint(noarray, valuefield).ToInflux(noarray, valuefield)
 }
 
-// Create Index if Not Exists
-func CreateIndexIfNotExists(e *elastic.Client, index string) (error) {
+// CreateIndexIfNotExists not exists creates Elasticsearch Index if Not Exists
+func CreateIndexIfNotExists(e *elastic.Client, index string) error {
 	// Use the IndexExists service to check if a specified index exists.
 	exists, err := e.IndexExists(index).Do(context.Background())
 	if err != nil {
@@ -165,10 +167,9 @@ func CreateIndexIfNotExists(e *elastic.Client, index string) (error) {
 		v := reflect.TypeOf(Point{})
 
 		mapping := MapStr{
-			"mappings" : MapStr{
-				"doc" : MapStr{
-					"properties": MapStr{
-					},
+			"mappings": MapStr{
+				"doc": MapStr{
+					"properties": MapStr{},
 				},
 			},
 		}
@@ -181,33 +182,30 @@ func CreateIndexIfNotExists(e *elastic.Client, index string) (error) {
 			}
 			tagfields := strings.Split(tag, ",")
 
-			mapping["mappings"].(MapStr)["doc"].(MapStr)["properties"].(MapStr)[field.Name] = MapStr{
-			}
+			mapping["mappings"].(MapStr)["doc"].(MapStr)["properties"].(MapStr)[field.Name] = MapStr{}
 
-			for _, tagfield := range tagfields{
+			for _, tagfield := range tagfields {
 				tagfieldValues := strings.Split(tagfield, ":")
 				mapping["mappings"].(MapStr)["doc"].(MapStr)["properties"].(MapStr)[field.Name].(MapStr)[tagfieldValues[0]] = tagfieldValues[1]
 			}
 		}
-		mappingJson, err := json.Marshal(mapping)
+		mappingJSON, err := json.Marshal(mapping)
 
 		if err != nil {
 			errlog.Println("Error on Json Marshal")
 			return err
 		}
 
-		_, err = e.CreateIndex(index).BodyString(string(mappingJson)).Do(context.Background())
+		_, err = e.CreateIndex(index).BodyString(string(mappingJSON)).Do(context.Background())
 
 		if err != nil {
 			errlog.Println("Error creating Elastic Index:" + index)
 			return err
-		} else {
-			stdlog.Println("Elastic Index created: " + index)
 		}
+		stdlog.Println("Elastic Index created: " + index)
 	}
 	return nil
 }
-
 
 // Init : initialize a backend
 func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
