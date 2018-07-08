@@ -35,14 +35,16 @@ type ThinInfluxClient struct {
 
 // NewThinInlfuxClient creates a new thin influx client
 func NewThinInlfuxClient(server string, port int, database, username, password, precision string, ssl bool) (ThinInfluxClient, error) {
+	// config checks
+	errormessage := ""
 	if len(server) == 0 {
-		return ThinInfluxClient{}, errors.New("No url indicated")
+		errormessage = "No url indicated"
 	}
 	if port < 1000 || port > 65535 {
-		return ThinInfluxClient{}, errors.New("Port not in acceptable range")
+		errormessage = "Port not in acceptable range"
 	}
 	if len(database) == 0 {
-		return ThinInfluxClient{}, errors.New("No database indicated")
+		errormessage = "No database indicated"
 	}
 	found := false
 	for _, p := range precisions {
@@ -52,12 +54,17 @@ func NewThinInlfuxClient(server string, port int, database, username, password, 
 		}
 	}
 	if !found {
-		return ThinInfluxClient{}, errors.New("Precision '" + precision + "' not in suppoted presisions " + strings.Join(precisions, ","))
+		errormessage = "Precision '" + precision + "' not in suppoted presisions " + strings.Join(precisions, ",")
 	}
 	fullurl := "http"
 	if ssl {
 		fullurl += "s"
 	}
+
+	if len(errormessage) > 0 {
+		return ThinInfluxClient{}, errors.New(errormessage)
+	}
+
 	fullurl += "://" + server + ":" + strconv.Itoa(port) + "/write?db=" + database + "&precision=" + precision
 
 	return ThinInfluxClient{URL: fullurl, Username: username, password: password}, nil

@@ -653,17 +653,31 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 			metricName := strings.ToLower(metricToName[serie.Id.CounterId])
 			instanceName := serie.Id.Instance
 			var value int64 = -1
-			if strings.HasSuffix(metricName, ".average") {
+			switch {
+			case strings.HasSuffix(metricName, ".average"):
 				value = utils.Average(serie.Value...)
-			} else if strings.HasSuffix(metricName, ".maximum") {
+			case strings.HasSuffix(metricName, ".maximum"):
 				value = utils.Max(serie.Value...)
-			} else if strings.HasSuffix(metricName, ".minimum") {
+			case strings.HasSuffix(metricName, ".minimum"):
 				value = utils.Min(serie.Value...)
-			} else if strings.HasSuffix(metricName, ".latest") {
+			case strings.HasSuffix(metricName, ".latest"):
 				value = serie.Value[len(serie.Value)-1]
-			} else if strings.HasSuffix(metricName, ".summation") {
+			case strings.HasSuffix(metricName, ".summation"):
 				value = utils.Sum(serie.Value...)
 			}
+			/*
+				if strings.HasSuffix(metricName, ".average") {
+					value = utils.Average(serie.Value...)
+				} else if strings.HasSuffix(metricName, ".maximum") {
+					value = utils.Max(serie.Value...)
+				} else if strings.HasSuffix(metricName, ".minimum") {
+					value = utils.Min(serie.Value...)
+				} else if strings.HasSuffix(metricName, ".latest") {
+					value = serie.Value[len(serie.Value)-1]
+				} else if strings.HasSuffix(metricName, ".summation") {
+					value = utils.Sum(serie.Value...)
+				}
+			*/
 			metricparts := strings.Split(metricName, ".")
 			point := backend.Point{
 				VCenter:      vcName,
