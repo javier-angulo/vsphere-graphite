@@ -49,8 +49,8 @@ type InfluxPoint struct {
 	Timestamp int64
 }
 
-// BackendConfig : storage backend
-type BackendConfig struct {
+// Config : storage backend
+type Config struct {
 	Hostname     string
 	ValueField   string
 	Database     string
@@ -68,7 +68,7 @@ type BackendConfig struct {
 
 // Backend Interface
 type Backend interface {
-	Init(config BackendConfig) error
+	Init(config Config) error
 	Disconnect()
 	SendMetrics(metrics []*Point)
 }
@@ -208,7 +208,7 @@ func CreateIndexIfNotExists(e *elastic.Client, index string) error {
 }
 
 // Init : initialize a backend
-func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
+func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
 	stdlog = standardLogs
 	errlog = errorLogs
 	if len(backend.ValueField) == 0 {
@@ -284,7 +284,7 @@ func (backend *BackendConfig) Init(standardLogs *log.Logger, errorLogs *log.Logg
 }
 
 // Disconnect : disconnect from backend
-func (backend *BackendConfig) Disconnect() {
+func (backend *Config) Disconnect() {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		// Disconnect from graphite
@@ -308,7 +308,7 @@ func (backend *BackendConfig) Disconnect() {
 }
 
 // SendMetrics : send metrics to backend
-func (backend *BackendConfig) SendMetrics(metrics []*Point) {
+func (backend *Config) SendMetrics(metrics []*Point) {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		var graphiteMetrics []graphite.Metric

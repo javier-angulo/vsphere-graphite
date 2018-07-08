@@ -11,7 +11,7 @@ type Configuration struct {
 	Metrics      []*vsphere.Metric
 	Interval     int
 	Domain       string
-	Backend      *backend.BackendConfig
+	Backend      *backend.Config
 	CPUProfiling bool
 	MEMProfiling bool
 	FlushSize    int
