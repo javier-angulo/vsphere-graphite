@@ -7,6 +7,7 @@ MUSL_BUILD_FLAGS=-ldflags '-linkmode external -s -w -extldflags "-static"' -a
 BUILD_FLAGS=-ldflags -s -a
 MUSL_CC=musl-gcc
 MUSL_CCGLAGS="-static"
+EXTRA_FLASG="-X main.commit '$(COMMIT)' -X main.tag '$(TRAVIS_TAG)'"
 
 deps:
 	go get golang.org/x/sys/windows/registry

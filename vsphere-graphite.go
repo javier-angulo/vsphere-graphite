@@ -36,6 +36,8 @@ var dependencies = []string{}
 
 var stdlog, errlog *log.Logger
 
+var commit, tag string
+
 // Service has embedded daemon
 type Service struct {
 	daemon.Daemon
@@ -234,6 +236,18 @@ func init() {
 }
 
 func main() {
+	if len(commit) == 0 && len(tag) == 0 {
+		stdlog.Println("No version information")
+	} else {
+		stdlog.Print("Version information")
+		if len(commit) > 0 {
+			stdlog.Print(" - Commit: ", commit)
+		}
+		if len(tag) > 0 {
+			stdlog.Println(" - Version: ", tag)
+		}
+		stdlog.print("\n")
+	}
 	srv, err := daemon.New(name, description, dependencies...)
 	if err != nil {
 		errlog.Println("Error: ", err)
