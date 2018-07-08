@@ -3,7 +3,7 @@ GOOS=$(word 1,$(subst /, ,$(lastword $(GOVERSION))))
 GOARCH=$(word 2,$(subst /, ,$(lastword $(GOVERSION))))
 RELEASE_DIR=releases
 SRC_FILES=$(wildcard *.go)
-EXTRA_FLAGS=-X main.commit "$(COMMIT)" -X main.tag "$(TRAVIS_TAG)"
+EXTRA_FLAGS=-X main.commit="$(COMMIT)" -X main.tag="$(TRAVIS_TAG)"
 MUSL_BUILD_FLAGS=-ldflags '-linkmode external -s -w -extldflags "-static" $(EXTRA_FLAGS)' -a
 BUILD_FLAGS=-ldflags '$(EXTRA_FLAGS)'-s -a
 MUSL_CC=musl-gcc
