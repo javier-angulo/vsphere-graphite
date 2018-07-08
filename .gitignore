@@ -10,6 +10,9 @@ vsphere-graphite
 #ignore saved files (i.e. nano)
 *.save
 
+#ignore generated preview of readme
+README.pdf
+
 #ignore file locks
 *.lock
 

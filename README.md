@@ -19,8 +19,7 @@ Drone: [![Drone Build Status](https://bot.blomart.net/api/badges/cblomart/vspher
 
 The dashboard example below is using the grafana UI. The backend is using ElasticSearch.
 
-![Example Dashboard](./imgs/vsphere-graphite-elastic-grafana-dashboard1.png)
-
+![Example Dashboard](./imgs/vsphere-graphite-elastic-grafana-dashboard-1.png)
 
 ## Configuration
 
@@ -31,7 +30,6 @@ Copy this config file to /etc/*binaryname*.json and modify as needed. Example:
 
 <!-- provide link to vcenter role permissions -->
 
-
 Metrics collection is performed by associating ObjectType groups with Metric groups.
 These are expressed via the vsphere scheme: *group*.*metric*.*rollup*
 
@@ -39,11 +37,9 @@ ObjectTypes are explained in [this](https://code.vmware.com/web/dp/explorer-apis
 
 Performance metrics are explained in [this](https://docs.vmware.com/en/VMware-vSphere/6.5/com.vmware.vsphere.monitoring.doc/GUID-E95BD7F2-72CF-4A1B-93DA-E4ABE20DD1CC.html) vSphere doc.
 
-
-
 ### Backend parameters
 
-- Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" (embeded influx client) or "elasticsearch" 
+- Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" (embeded influx client) or "elasticsearch"
 
 - Hostname (BACKEND_HOSTNAME): hostname were the backend is running
 
@@ -59,19 +55,20 @@ Performance metrics are explained in [this](https://docs.vmware.com/en/VMware-vS
 
 - NoArray (BACKEND_NOARRAY): don't use csv 'array' as tags, only the first element is used (influxdb, thinfluxdb)
 
-
-
 ## Execute vsphere-graphite as a container
 
 All builds are pushed to docker:
+
 - [cblomart/vsphere-graphite](https://hub.docker.com/r/cblomart/vsphere-graphite/)
 - [cblomart/rpi-vsphere-graphite](https://hub.docker.com/r/cblomart/rpi-vsphere-graphite/)
 
 Default tags includes:
+
 - branch (i.e.: master) for latest commit in the branch
 - latest for latest release
 
 To make your own self-sufficient linux based vsphere-graphite binary and Docker scratch image:
+
 ```bash
 CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o vsphere-graphite .
 docker build . -f ./docker/Dockerfile
@@ -81,10 +78,7 @@ The JSON configration file can be passed by mounting to /etc. Edit the configura
 
   > docker run -t -v $(pwd)/vsphere-graphite.json:/etc/vsphere-graphite.json cblomart/vsphere-graphite:latest
 
-
 Backend parameters can be set via environment variables to make docker user easier (having graphite or influx as another container).
-
-
 
 ## Execute vsphere-graphite in shell
 
@@ -101,15 +95,15 @@ Then install with GO:
 
 The executable should be `$GOPATH/bin/vsphere-graphite` and is now a binary for your architecture/OS
 
-#### Run on Commandline
+### Run on Commandline
 
   > vsphere-graphite
 
-#### Install as a service
+### Install as a service
 
   > vsphere-graphite install
 
-#### Run as a service
+### Run as a service
 
   > vsphere-graphite start
   >
@@ -117,7 +111,7 @@ The executable should be `$GOPATH/bin/vsphere-graphite` and is now a binary for 
   >
   > vsphere-graphite stop
 
-#### Remove service
+### Remove service
 
   > vsphere-graphite remove
 
