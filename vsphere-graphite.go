@@ -55,20 +55,21 @@ func (service *Service) Manage() (string, error) {
 	// if received any kind of command, do it
 	if len(os.Args) > 1 {
 		command := os.Args[1]
+		text := usage
+		var err error
 		switch command {
 		case "install":
-			return service.Install()
+			text, err = service.Install()
 		case "remove":
-			return service.Remove()
+			text, err = service.Remove()
 		case "start":
-			return service.Start()
+			text, err = service.Start()
 		case "stop":
-			return service.Stop()
+			text, err = service.Stop()
 		case "status":
-			return service.Status()
-		default:
-			return usage, nil
+			text, err = service.Status()
 		}
+		return text, err
 	}
 
 	stdlog.Println("Starting daemon:", path.Base(os.Args[0]))
