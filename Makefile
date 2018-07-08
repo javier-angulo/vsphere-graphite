@@ -29,9 +29,7 @@ dist-windows-amd64:
 	@$(MAKE) dist GOOS=windows GOARCH=amd64 SUFFIX=.exe
 
 build-linux-amd64:
-	CC=$(MUSL_CC) CCGLAGS=$(MUSL_CCGLAGS) go build $(MUSL_BUILD_FLAGS) -o $(RELEASE_DIR)/linux/amd64//vsphere-graphite .
-	upx -qq --best $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite
-	cp vsphere-graphite-example.json $(RELEASE_DIR)/linux/amd64/vsphere-graphite.json
+	@$(MAKE) build GOOS=linux GOARCH=amd64
 
 dist-linux-amd64:
 	@$(MAKE) dist GOOS=linux GOARCH=amd64
@@ -78,7 +76,12 @@ checks:
 	go tool vet ./..
 
 $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX): $(SRC_FILES)
-	go build $(BUILD_FLAGS) -o $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX) .
+	if [ "$(GOOS)-$(GOARCH)" = "linux-amd64" ]; then\
+		echo "Using musl";\
+		CC=$(MUSL_CC) CCGLAGS=$(MUSL_CCGLAGS) go build $(MUSL_BUILD_FLAGS) -o $(RELEASE_DIR)/linux/amd64//vsphere-graphite .;\
+	else\
+		go build $(BUILD_FLAGS) -o $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX) .;\
+	fi
 	upx -qq --best $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX)
 	cp vsphere-graphite-example.json $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite.json
 
