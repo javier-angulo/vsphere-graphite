@@ -206,3 +206,39 @@ func MustAtoi(value string) int {
 	}
 	return i
 }
+
+// FindHostAndCluster Find cluster for managed entity
+func FindHostAndCluster(entity types.ManagedObjectReference,
+	vmToHost map[types.ManagedObjectReference]types.ManagedObjectReference,
+	morToParent map[types.ManagedObjectReference]types.ManagedObjectReference,
+	morToName map[types.ManagedObjectReference]string) (string, string, error) {
+	// get host
+	var host types.ManagedObjectReference
+	hostname := ""
+	switch entity.Type {
+	case "VirtualMachine":
+		if vmhost, ok := vmToHost[entity]; ok {
+			host = vmhost
+			if vmhostname, ok := morToName[host]; ok {
+				hostname = vmhostname
+			}
+		}
+	case "HostSystem":
+		host = entity
+	}
+	// check if a host was found
+	if (types.ManagedObjectReference{}) == host {
+		return "", "", errors.New("No host found for " + entity.String())
+	}
+	cluster := ""
+	if parmor, ok := morToParent[host]; ok {
+		if parmor.Type == "ClusterComputeResource" {
+			cluster = morToName[parmor]
+		} else if parmor.Type != "ComputeResource" {
+			// ComputeRessource parent denotes a standalong host
+			// Any other is weird
+			return hostname, "", errors.New("No suitable parent for host " + host.String() + " to determine cluster")
+		}
+	}
+	return hostname, cluster, nil
+}

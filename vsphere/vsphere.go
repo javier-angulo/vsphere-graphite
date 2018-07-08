@@ -194,15 +194,6 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		return
 	}
 
-	// // Get the Datacenters from root folder
-	// var rootFolder mo.Folder
-	// err = client.RetrieveOne(ctx, client.ServiceContent.RootFolder, nil, &rootFolder)
-	// if err != nil {
-	// 	errlog.Println("Could not get root folder from vcenter: " + vcenter.Hostname)
-	// 	errlog.Println("Error: ", err)
-	// 	return
-	// }
-
 	// Find all Datacenters accessed by the user
 	datacenters := []types.ManagedObjectReference{}
 	finder := find.NewFinder(client.Client, true)
@@ -215,11 +206,6 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	for _, child := range dcs {
 		datacenters = append(datacenters, child.Reference())
 	}
-	// for _, child := range rootFolder.ChildEntity {
-	// 	if child.Type == "Datacenter" {
-	// 		datacenters = append(datacenters, child)
-	// 	}
-	// }
 
 	// Get interesting object types from specified queries
 	objectTypes := []string{"ClusterComputeResource", "Datastore", "HostSystem", "DistributedVirtualPortgroup", "Network", "ResourcePool", "Folder"}
@@ -326,63 +312,26 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					errlog.Println("Name property of " + objectContent.Obj.String() + " was not a string, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "datastore":
-				//mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
-				//if ok {
-				//	if len(mors.ManagedObjectReference) > 0 {
-				//		vmToDatastore[objectContent.Obj] = mors.ManagedObjectReference
-				//	}
-				//} else {
-				//	errlog.Println("Datastore property of " + objectContent.Obj.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
-				//}
 				err := utils.MapObjRefs(Property.Val, vmToDatastore, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
 			case "network":
-				//mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
-				//if ok {
-				//	if len(mors.ManagedObjectReference) > 0 {
-				//		vmToNetwork[objectContent.Obj] = mors.ManagedObjectReference
-				//	}
-				//} else {
-				//	errlog.Println("Network property of " + objectContent.Obj.String() + " was not an array of  ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
-				//}
 				err := utils.MapObjRefs(Property.Val, vmToNetwork, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
 			case "runtime.host":
-				//mor, ok := Property.Val.(types.ManagedObjectReference)
-				//if ok {
-				//	vmToHost[objectContent.Obj] = mor
-				//} else {
-				//	errlog.Println("Runtime host property of " + objectContent.Obj.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", Property.Val))
-				//}
 				err := utils.MapObjRef(Property.Val, vmToHost, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
 			case "parent":
-				//mor, ok := Property.Val.(types.ManagedObjectReference)
-				//if ok {
-				//	morToParent[objectContent.Obj] = mor
-				//} else {
-				//	errlog.Println("Parent property of " + objectContent.Obj.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", Property.Val))
-				//}
 				err := utils.MapObjRef(Property.Val, morToParent, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
 			case "vm":
-				//mors, ok := Property.Val.(types.ArrayOfManagedObjectReference)
-				//if ok {
-				//	if len(mors.ManagedObjectReference) > 0 {
-				//		// container without vms in it will be ignored (no meta container)
-				//		morToVms[objectContent.Obj] = mors.ManagedObjectReference
-				//	}
-				//} else {
-				//	errlog.Println("VM property of " + objectContent.Obj.String() + " was not an array of ManagedObjectReferences, it was " + fmt.Sprintf("%T", Property.Val))
-				//}
 				err := utils.MapObjRefs(Property.Val, morToVms, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
@@ -397,23 +346,11 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					errlog.Println("Tag property of " + objectContent.Obj.String() + " was not an array of Tag, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "summary.config.numCpu":
-				//numcpu, ok := Property.Val.(int32)
-				//if ok {
-				//	morToNumCPU[objectContent.Obj] = numcpu
-				//} else {
-				//	errlog.Println("Numpcpu property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
-				//}
 				err := utils.MapObjInt32(Property.Val, morToNumCPU, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
 			case "summary.config.memorySizeMB":
-				//memorysizemb, ok := Property.Val.(int32)
-				//if ok {
-				//	morToMemorySizeMB[objectContent.Obj] = memorysizemb
-				//} else {
-				//	errlog.Println("MemorySizeMB property of " + objectContent.Obj.String() + " was not a int, it was " + fmt.Sprintf("%T", Property.Val))
-				//}
 				err := utils.MapObjInt32(Property.Val, morToMemorySizeMB, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
@@ -548,7 +485,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 			}
 		}
 		//find host and cluster
-		vmhost := ""
+		/*vmhost := ""
 		cluster := ""
 		if pem.Entity.Type == "VirtualMachine" {
 			if esximor, ok := vmToHost[pem.Entity]; ok {
@@ -574,6 +511,10 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 					errlog.Println("Parent of host " + name + " was " + parmor.Type + "(" + parmor.Value + ")")
 				}
 			}
+		}*/
+		vmhost, cluster, err := utils.FindHostAndCluster(pem.Entity, vmToHost, morToParent, morToName)
+		if err != nil {
+			errlog.Println(err)
 		}
 		//find network
 		network := []string{}
