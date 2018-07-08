@@ -246,7 +246,7 @@ func main() {
 		if len(tag) > 0 {
 			stdlog.Println(" - Version: ", tag)
 		}
-		stdlog.print("\n")
+		stdlog.Print("\n")
 	}
 	srv, err := daemon.New(name, description, dependencies...)
 	if err != nil {
