@@ -38,7 +38,7 @@ type Point struct {
 	ViTags       []string `influx:"tag,vitags" json:",omitempty"`
 	NumCPU       int32    `influx:"tag,numcpu" json:",omitempty"`
 	MemorySizeMB int32    `influx:"tag,memorysizemb" json:",omitempty"`
-	Timestamp    int64    `influx:"time" elastic:"type:date,format:epoch_second" json:",omitempty"`
+	Timestamp    int64    `influx:"time" elastic:"type:date,format:epoch_second"`
 }
 
 // InfluxPoint is the representation of the parts of a point for influx
