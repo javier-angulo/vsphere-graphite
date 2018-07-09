@@ -347,6 +347,8 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			}
 		}
 	}
+	stdlog.Println("Collected Objects and props")
+	stdlog.Println(reqProps)
 	propSet := []types.PropertySpec{}
 	for objType, props := range reqProps {
 		propSet = append(propSet, types.PropertySpec{Type: objType, PathSet: props})
