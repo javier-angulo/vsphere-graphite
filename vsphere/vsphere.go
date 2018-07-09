@@ -485,33 +485,6 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 			}
 		}
 		//find host and cluster
-		/*vmhost := ""
-		cluster := ""
-		if pem.Entity.Type == "VirtualMachine" {
-			if esximor, ok := vmToHost[pem.Entity]; ok {
-				vmhost = strings.ToLower(strings.Replace(morToName[esximor], domain, "", -1))
-				if parmor, ok := morToParent[esximor]; ok {
-					if parmor.Type == "ClusterComputeResource" {
-						cluster = morToName[parmor]
-					} else if parmor.Type != "ComputeResource" {
-						// ComputeRessource parent denotes a standalong host
-						// Any other is weird
-						errlog.Println("Parent of host " + name + " was " + parmor.Type + "(" + parmor.Value + ")")
-					}
-				}
-			}
-		} else if pem.Entity.Type == "HostSystem" {
-			//find cluster if entity is a host
-			if parmor, ok := morToParent[pem.Entity]; ok {
-				if parmor.Type == "ClusterComputeResource" {
-					cluster = morToName[parmor]
-				} else if parmor.Type != "ComputeResource" {
-					// ComputeRessource parent denotes a standalong host
-					// Any other is weird
-					errlog.Println("Parent of host " + name + " was " + parmor.Type + "(" + parmor.Value + ")")
-				}
-			}
-		}*/
 		vmhost, cluster, err := utils.FindHostAndCluster(pem.Entity, vmToHost, morToParent, morToName)
 		if err != nil {
 			errlog.Println(err)
@@ -561,7 +534,7 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		vitags := []string{}
 		if tags, ok := morToTags[pem.Entity]; ok {
 			for _, tag := range tags {
-				vitags = append(network, tag.Key)
+				vitags = append(vitags, tag.Key)
 			}
 		}
 		//find numcpu
@@ -665,19 +638,6 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 			case strings.HasSuffix(metricName, ".summation"):
 				value = utils.Sum(serie.Value...)
 			}
-			/*
-				if strings.HasSuffix(metricName, ".average") {
-					value = utils.Average(serie.Value...)
-				} else if strings.HasSuffix(metricName, ".maximum") {
-					value = utils.Max(serie.Value...)
-				} else if strings.HasSuffix(metricName, ".minimum") {
-					value = utils.Min(serie.Value...)
-				} else if strings.HasSuffix(metricName, ".latest") {
-					value = serie.Value[len(serie.Value)-1]
-				} else if strings.HasSuffix(metricName, ".summation") {
-					value = utils.Sum(serie.Value...)
-				}
-			*/
 			metricparts := strings.Split(metricName, ".")
 			point := backend.Point{
 				VCenter:      vcName,
