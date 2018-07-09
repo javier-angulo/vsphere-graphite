@@ -1,5 +1,6 @@
 {
   "Domain": ".contoso.com",
+  "Properties": [ "all" ],
   "Interval": 60,
   "FlushSize": 1000,
   "VCenters": [

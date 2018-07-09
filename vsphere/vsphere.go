@@ -50,6 +50,46 @@ type Metric struct {
 	Definition []*MetricDef
 }
 
+// Properties describes know relation to properties to related objects and properties
+var Properties = map[string]map[string][]string{
+	"datastore": map[string][]string{
+		"Datastore":      []string{"name"},
+		"VirtualMachine": []string{"datastore"},
+	},
+	"host": map[string][]string{
+		"HostSystem":     []string{"name", "parent"},
+		"VirtualMachine": []string{"name", "runtime.host"},
+	},
+	"cluster": map[string][]string{
+		"ClusterComputeResource": []string{"name"},
+	},
+	"network": map[string][]string{
+		"DistributedVirtualPortgroup": []string{"name"},
+		"Network":                     []string{"name"},
+		"VirtualMachine":              []string{"network"},
+	},
+	"resourcepool": map[string][]string{
+		"ResourcePool": []string{"name", "parent", "vm"},
+	},
+	"folder": map[string][]string{
+		"Folder":         []string{"name", "parent"},
+		"VirtualMachine": []string{"parent"},
+	},
+	"tags": map[string][]string{
+		"VirtualMachine": []string{"tag"},
+		"HostSystem":     []string{"tag"},
+	},
+	"numcpu": map[string][]string{
+		"VirtualMachine": []string{"summary.config.numCpu"},
+	},
+	"memorysizemb": map[string][]string{
+		"VirtualMachine": []string{"summary.config.memorySizeMB"},
+	},
+	"disks": map[string][]string{
+		"VirtualMachine": []string{"guest.disk"},
+	},
+}
+
 // AddMetric : add a metric definition to a metric group
 func (vcenter *VCenter) AddMetric(metric *MetricDef, mtype string) {
 	// find the metric group for the type
@@ -160,7 +200,7 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 }
 
 // Query : Query a vcenter
-func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend.Point) {
+func (vcenter *VCenter) Query(interval int, domain string, properties []string, channel *chan backend.Point) {
 	stdlog.Println("Setting up query inventory of vcenter: ", vcenter.Hostname)
 
 	// Create the contect
@@ -207,8 +247,34 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 		datacenters = append(datacenters, child.Reference())
 	}
 
+	// Get interesting objects from properties
+	// Check if contains all
+	objectTypes := []string{}
+	all := false
+	for _, property := range properties {
+		if strings.ToLower(property) == "all" {
+			all = true
+			break
+		}
+	}
+	if all {
+		for propkey := range Properties {
+			for objkey := range Properties[propkey] {
+				objectTypes = append(objectTypes, objkey)
+			}
+		}
+	} else {
+		for _, property := range properties {
+			if propval, ok := Properties[property]; ok {
+				for objkey := range propval {
+					objectTypes = append(objectTypes, objkey)
+				}
+			}
+		}
+	}
 	// Get interesting object types from specified queries
-	objectTypes := []string{"ClusterComputeResource", "Datastore", "HostSystem", "DistributedVirtualPortgroup", "Network", "ResourcePool", "Folder"}
+	//objectTypes := []string{"ClusterComputeResource", "Datastore", "HostSystem", "DistributedVirtualPortgroup", "Network", "ResourcePool", "Folder"}
+	// Complete object of interest with required metrics
 	for _, group := range vcenter.MetricGroups {
 		found := false
 		for _, tmp := range objectTypes {
@@ -257,10 +323,37 @@ func (vcenter *VCenter) Query(interval int, domain string, channel *chan backend
 	}
 
 	//properties specifications
+	reqProps := make(map[string][]string)
+	//first fill in name for each object type
+	for _, objType := range objectTypes {
+		reqProps[objType] = []string{"name"}
+	}
+	//complete with required properties
+	for _, property := range properties {
+		if reqObjProps, ok := Properties[property]; ok {
+			for objType, reqProperties := range reqObjProps {
+				for _, reqProperty := range reqProperties {
+					found := false
+					for _, prop := range reqProps[objType] {
+						if prop == reqProperty {
+							found = true
+							break
+						}
+					}
+					if !found {
+						reqProps[objType] = append(reqProps[objType], reqProperty)
+					}
+				}
+			}
+		}
+	}
 	propSet := []types.PropertySpec{}
-	propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent", "tag"}})
-	propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host", "summary.config.numCpu", "summary.config.memorySizeMB", "guest.disk"}})
-	propSet = append(propSet, types.PropertySpec{Type: "ResourcePool", PathSet: []string{"vm"}})
+	for objType, props := range reqProps {
+		propSet = append(propSet, types.PropertySpec{Type: objType, PathSet: props})
+	}
+	//propSet = append(propSet, types.PropertySpec{Type: "ManagedEntity", PathSet: []string{"name", "parent", "tag"}})
+	//propSet = append(propSet, types.PropertySpec{Type: "VirtualMachine", PathSet: []string{"datastore", "network", "runtime.host", "summary.config.numCpu", "summary.config.memorySizeMB", "guest.disk"}})
+	//propSet = append(propSet, types.PropertySpec{Type: "ResourcePool", PathSet: []string{"vm"}})
 
 	//retrieve properties
 	propreq := types.RetrieveProperties{SpecSet: []types.PropertyFilterSpec{{ObjectSet: objectSet, PropSet: propSet}}}
