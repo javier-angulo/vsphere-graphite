@@ -657,7 +657,6 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 		//find folder
 		folder := folderMorToPath[pem.Entity]
-		folder = strings.Replace(folder, "/", "\\/", -1)
 		folder = strings.Replace(folder, " ", "\\ ", -1)
 		folder = strings.Replace(folder, ",", "\\,", -1)
 		objType := strings.ToLower(pem.Entity.Type)
