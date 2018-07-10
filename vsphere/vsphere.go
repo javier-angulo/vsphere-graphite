@@ -561,7 +561,9 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	}
 
 	// Get the result
+	stdlog.Println("venter name:" + vcenter.Hostname)
 	vcName := strings.Replace(vcenter.Hostname, domain, "", -1)
+	stdlog.Println("vcname:" + vcName)
 	returncount := len(perfres.Returnval)
 	if returncount == 0 {
 		errlog.Println("No result returned by queries.")
@@ -587,6 +589,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				errlog.Println(err)
 			}
 		}
+		vmhost = strings.Replace(vmhost, domain, "", -1)
 		//find network
 		network := []string{}
 		if len(vmToNetwork) > 0 {
