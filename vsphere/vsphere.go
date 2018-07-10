@@ -331,8 +331,10 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	//complete with required properties
 	stdlog.Println("Complete necessary properties requirement")
 	for _, property := range properties {
+		stdlog.Println("Looking up property: " + property)
 		if typeProperties, ok := Properties[property]; ok {
 			for objType, typeProperties := range typeProperties {
+				stdlog.Println("Req properties: " + objType + ":" + strings.Join(typeProperties, ","))
 				for _, typeProperty := range typeProperties {
 					found := false
 					for _, prop := range reqProps[objType] {
