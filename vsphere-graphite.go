@@ -86,6 +86,11 @@ func (service *Service) Manage() (string, error) {
 		return "Could not decode configuration file", err
 	}
 
+	// defaults to all properties
+	if conf.Properties == nil {
+		conf.Properties = []string{"all"}
+	}
+
 	if conf.FlushSize == 0 {
 		conf.FlushSize = 1000
 	}
