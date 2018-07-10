@@ -656,7 +656,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			errlog.Println("No values returned in query!")
 		}
 		//find folder
-		folder := folderMorToPath[pem.Entity]
+		folder := strings.Replace(folderMorToPath[pem.Entity], "/", "\\/", -1)
 		objType := strings.ToLower(pem.Entity.Type)
 		timeStamp := endTime.Unix()
 		//send disk infos
