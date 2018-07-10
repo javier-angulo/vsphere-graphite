@@ -643,12 +643,12 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			}
 		}
 		//find numcpu
-		numcpu := int32(0)
+		var numcpu int32
 		if len(morToNumCPU) > 0 {
 			numcpu = morToNumCPU[pem.Entity]
 		}
 		//find memorysizemb
-		memorysizemb := int32(0)
+		var memorysizemb int32
 		if len(morToMemorySizeMB) > 0 {
 			memorysizemb = morToMemorySizeMB[pem.Entity]
 		}
