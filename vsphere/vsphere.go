@@ -250,6 +250,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	// Get interesting objects from properties
 	// Check if contains all
 	objectTypes := []string{}
+	// replace all by all properties
 	all := false
 	for _, property := range properties {
 		if strings.ToLower(property) == "all" {
@@ -258,17 +259,16 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 	}
 	if all {
+		properties = []string{}
 		for propkey := range Properties {
-			for objkey := range Properties[propkey] {
-				objectTypes = append(objectTypes, objkey)
-			}
+			properties = append(properties, propkey)
 		}
-	} else {
-		for _, property := range properties {
-			if propval, ok := Properties[property]; ok {
-				for objkey := range propval {
-					objectTypes = append(objectTypes, objkey)
-				}
+	}
+	// get the object types from properties
+	for _, property := range properties {
+		if propval, ok := Properties[property]; ok {
+			for objkey := range propval {
+				objectTypes = append(objectTypes, objkey)
 			}
 		}
 	}
