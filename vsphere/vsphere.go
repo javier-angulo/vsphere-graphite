@@ -329,23 +329,18 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		reqProps[objType] = []string{"name"}
 	}
 	//complete with required properties
-	stdlog.Println("Complete necessary properties requirement")
 	for _, property := range properties {
-		stdlog.Println("Looking up property: " + property)
 		if typeProperties, ok := Properties[property]; ok {
 			for objType, typeProperties := range typeProperties {
-				stdlog.Println("Req properties: " + objType + ":" + strings.Join(typeProperties, ","))
 				for _, typeProperty := range typeProperties {
 					found := false
 					for _, prop := range reqProps[objType] {
 						if prop == typeProperty {
 							found = true
-							stdlog.Println("found " + objType + ":" + typeProperty)
 							break
 						}
 					}
 					if !found {
-						stdlog.Println("add " + objType + ":" + typeProperty)
 						reqProperties := append(reqProps[objType], typeProperty)
 						reqProps[objType] = reqProperties
 					}
@@ -353,8 +348,6 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			}
 		}
 	}
-	stdlog.Println("Collected Objects and props")
-	stdlog.Println(reqProps)
 	propSet := []types.PropertySpec{}
 	for objType, props := range reqProps {
 		propSet = append(propSet, types.PropertySpec{Type: objType, PathSet: props})
@@ -413,27 +406,27 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 					errlog.Println("Name property of " + objectContent.Obj.String() + " was not a string, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "datastore":
-				err := utils.MapObjRefs(Property.Val, vmToDatastore, objectContent.Obj)
+				err := utils.MapObjRefs(propertyName, Property.Val, vmToDatastore, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
 			case "network":
-				err := utils.MapObjRefs(Property.Val, vmToNetwork, objectContent.Obj)
+				err := utils.MapObjRefs(propertyName, Property.Val, vmToNetwork, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
 			case "runtime.host":
-				err := utils.MapObjRef(Property.Val, vmToHost, objectContent.Obj)
+				err := utils.MapObjRef(propertyName, Property.Val, vmToHost, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
 			case "parent":
-				err := utils.MapObjRef(Property.Val, morToParent, objectContent.Obj)
+				err := utils.MapObjRef(propertyName, Property.Val, morToParent, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
 			case "vm":
-				err := utils.MapObjRefs(Property.Val, morToVms, objectContent.Obj)
+				err := utils.MapObjRefs(propertyName, Property.Val, morToVms, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
@@ -447,12 +440,12 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 					errlog.Println("Tag property of " + objectContent.Obj.String() + " was not an array of Tag, it was " + fmt.Sprintf("%T", Property.Val))
 				}
 			case "summary.config.numCpu":
-				err := utils.MapObjInt32(Property.Val, morToNumCPU, objectContent.Obj)
+				err := utils.MapObjInt32(propertyName, Property.Val, morToNumCPU, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}
 			case "summary.config.memorySizeMB":
-				err := utils.MapObjInt32(Property.Val, morToMemorySizeMB, objectContent.Obj)
+				err := utils.MapObjInt32(propertyName, Property.Val, morToMemorySizeMB, objectContent.Obj)
 				if err != nil {
 					errlog.Println(err)
 				}

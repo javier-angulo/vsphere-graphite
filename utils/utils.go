@@ -71,36 +71,36 @@ func Average(n ...int64) int64 {
 }
 
 // MapObjRefs fills in object references into a map to another object reference
-func MapObjRefs(sourceVal types.AnyType, dest map[types.ManagedObjectReference][]types.ManagedObjectReference, index types.ManagedObjectReference) error {
+func MapObjRefs(property string, sourceVal types.AnyType, dest map[types.ManagedObjectReference][]types.ManagedObjectReference, index types.ManagedObjectReference) error {
 	mors, ok := sourceVal.(types.ArrayOfManagedObjectReference)
 	if ok {
 		if len(mors.ManagedObjectReference) > 0 {
 			dest[index] = mors.ManagedObjectReference
 			return nil
 		}
-		return errors.New("Property of " + index.String() + " didn't contain any object references")
+		return errors.New("Property " + property + " of " + index.String() + " didn't contain any object references")
 	}
-	return errors.New("Property " + index.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", sourceVal))
+	return errors.New("Property " + property + " of " + index.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", sourceVal))
 }
 
 // MapObjRef fills in object reference into a map to another object reference
-func MapObjRef(sourceVal types.AnyType, dest map[types.ManagedObjectReference]types.ManagedObjectReference, index types.ManagedObjectReference) error {
+func MapObjRef(property string, sourceVal types.AnyType, dest map[types.ManagedObjectReference]types.ManagedObjectReference, index types.ManagedObjectReference) error {
 	mor, ok := sourceVal.(types.ManagedObjectReference)
 	if ok {
 		dest[index] = mor
 		return nil
 	}
-	return errors.New("Property of " + index.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", sourceVal))
+	return errors.New("Property " + property + " of " + index.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", sourceVal))
 }
 
 // MapObjInt32 fills in an int32 into a map to another object reference
-func MapObjInt32(sourceVal types.AnyType, dest map[types.ManagedObjectReference]int32, index types.ManagedObjectReference) error {
+func MapObjInt32(property string, sourceVal types.AnyType, dest map[types.ManagedObjectReference]int32, index types.ManagedObjectReference) error {
 	val, ok := sourceVal.(int32)
 	if ok {
 		dest[index] = val
 		return nil
 	}
-	return errors.New("Property of " + index.String() + " was not an int32, it was " + fmt.Sprintf("%T", sourceVal))
+	return errors.New("Property " + property + " of " + index.String() + " was not an int32, it was " + fmt.Sprintf("%T", sourceVal))
 }
 
 // StringMaptoString converts a string map to csv or get the first value
