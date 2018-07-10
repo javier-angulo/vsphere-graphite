@@ -329,19 +329,23 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		reqProps[objType] = []string{"name"}
 	}
 	//complete with required properties
+	stdlog.Println("Complete necessary properties requirement")
 	for _, property := range properties {
-		if reqObjProps, ok := Properties[property]; ok {
-			for objType, reqProperties := range reqObjProps {
-				for _, reqProperty := range reqProperties {
+		if typeProperties, ok := Properties[property]; ok {
+			for objType, typeProperties := range typeProperties {
+				for _, typeProperty := range typeProperties {
 					found := false
 					for _, prop := range reqProps[objType] {
-						if prop == reqProperty {
+						if prop == typeProperty {
 							found = true
+							stdlog.Println("found " + objType + ":" + typeProperty)
 							break
 						}
 					}
 					if !found {
-						reqProps[objType] = append(reqProps[objType], reqProperty)
+						stdlog.Println("add " + objType + ":" + typeProperty)
+						reqProperties := append(reqProps[objType], typeProperty)
+						reqProps[objType] = reqProperties
 					}
 				}
 			}
@@ -580,50 +584,60 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			}
 		}
 		//find host and cluster
-		vmhost, cluster, err := utils.FindHostAndCluster(pem.Entity, vmToHost, morToParent, morToName)
-		if err != nil {
-			errlog.Println(err)
+		vmhost := ""
+		cluster := ""
+		if len(vmToHost) > 0 {
+			vmhost, cluster, err = utils.FindHostAndCluster(pem.Entity, vmToHost, morToParent, morToName)
+			if err != nil {
+				errlog.Println(err)
+			}
 		}
 		//find network
 		network := []string{}
-		if mors, ok := vmToNetwork[pem.Entity]; ok {
-			for _, mor := range mors {
-				network = append(network, morToName[mor])
+		if len(vmToNetwork) > 0 {
+			if mors, ok := vmToNetwork[pem.Entity]; ok {
+				for _, mor := range mors {
+					network = append(network, morToName[mor])
+				}
 			}
 		}
 		//find resource pool path
 		resourcepool := ""
-		if rppath, ok := vmToResourcePoolPath[pem.Entity]; ok {
-			resourcepool = rppath
+		if len(vmToResourcePoolPath) > 0 {
+			if rppath, ok := vmToResourcePoolPath[pem.Entity]; ok {
+				resourcepool = rppath
+			}
 		}
 		//find folder path
-		if folders, ok := folderMorToPath[pem.Entity]; !ok {
-			if pem.Entity.Type != "HostSystem" {
-				current, ok := morToParent[pem.Entity]
-				for ok {
-					if current.Type != "Folder" {
-						errlog.Println("Parent is not a folder for " + current.String())
-						break
+		if len(morToParent) > 0 {
+			if folders, ok := folderMorToPath[pem.Entity]; !ok {
+				if pem.Entity.Type != "HostSystem" {
+					current, ok := morToParent[pem.Entity]
+					for ok {
+						if current.Type != "Folder" {
+							errlog.Println("Parent is not a folder for " + current.String())
+							break
+						}
+						foldername, ok := morToName[current]
+						if !ok {
+							errlog.Println("Folder name not found for " + current.String())
+							break
+						}
+						if foldername == "vm" {
+							break
+						}
+						folders = foldername + "/" + folders
+						newcurrent, ok := morToParent[current]
+						if !ok {
+							errlog.Println("No parent found for folder " + current.String())
+							break
+						}
+						current = newcurrent
 					}
-					foldername, ok := morToName[current]
-					if !ok {
-						errlog.Println("Folder name not found for " + current.String())
-						break
-					}
-					if foldername == "vm" {
-						break
-					}
-					folders = foldername + "/" + folders
-					newcurrent, ok := morToParent[current]
-					if !ok {
-						errlog.Println("No parent found for folder " + current.String())
-						break
-					}
-					current = newcurrent
+					folders = strings.Trim(folders, "/")
 				}
-				folders = strings.Trim(folders, "/")
+				folderMorToPath[pem.Entity] = folders
 			}
-			folderMorToPath[pem.Entity] = folders
 		}
 		//find tags
 		vitags := []string{}
@@ -633,9 +647,15 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			}
 		}
 		//find numcpu
-		numcpu := morToNumCPU[pem.Entity]
+		numcpu := int32(0)
+		if len(morToNumCPU) > 0 {
+			numcpu = morToNumCPU[pem.Entity]
+		}
 		//find memorysizemb
-		memorysizemb := morToMemorySizeMB[pem.Entity]
+		memorysizemb := int32(0)
+		if len(morToMemorySizeMB) > 0 {
+			memorysizemb = morToMemorySizeMB[pem.Entity]
+		}
 		if len(pem.Value) == 0 {
 			errlog.Println("No values returned in query!")
 		}
