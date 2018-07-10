@@ -561,9 +561,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	}
 
 	// Get the result
-	stdlog.Println("venter name:" + vcenter.Hostname)
 	vcName := strings.Replace(vcenter.Hostname, domain, "", -1)
-	stdlog.Println("vcname:" + vcName)
 	returncount := len(perfres.Returnval)
 	if returncount == 0 {
 		errlog.Println("No result returned by queries.")
@@ -657,6 +655,8 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		if len(pem.Value) == 0 {
 			errlog.Println("No values returned in query!")
 		}
+		//find folder
+		folder := folderMorToPath[pem.Entity]
 		objType := strings.ToLower(pem.Entity.Type)
 		timeStamp := endTime.Unix()
 		//send disk infos
@@ -683,6 +683,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 					Cluster:      cluster,
 					Network:      network,
 					ResourcePool: resourcepool,
+					Folder:       folder,
 					ViTags:       vitags,
 					NumCPU:       numcpu,
 					MemorySizeMB: memorysizemb,
@@ -704,6 +705,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 					Cluster:      cluster,
 					Network:      network,
 					ResourcePool: resourcepool,
+					Folder:       folder,
 					ViTags:       vitags,
 					NumCPU:       numcpu,
 					MemorySizeMB: memorysizemb,
@@ -766,6 +768,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				Cluster:      cluster,
 				Network:      network,
 				ResourcePool: resourcepool,
+				Folder:       folder,
 				ViTags:       vitags,
 				NumCPU:       numcpu,
 				MemorySizeMB: memorysizemb,

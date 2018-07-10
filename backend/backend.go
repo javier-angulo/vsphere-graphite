@@ -21,7 +21,7 @@ import (
 
 // Point : Information collected for a point
 type Point struct {
-	VCenter      string   `influx:"tag,name"`
+	VCenter      string   `influx:"tag,vcenter"`
 	ObjectType   string   `influx:"tag,type"`
 	ObjectName   string   `influx:"tag,name"`
 	Group        string   `influx:"key,1"`
