@@ -30,66 +30,6 @@ type VCenter struct {
 	MetricGroups []*MetricGroup
 }
 
-// MetricGroup Grouping for retrieval
-type MetricGroup struct {
-	ObjectType string
-	Metrics    []*MetricDef
-	Mor        []*types.ManagedObjectReference
-}
-
-// MetricDef Definition
-type MetricDef struct {
-	Metric    string
-	Instances string
-	Key       int32
-}
-
-// Metric description in config
-type Metric struct {
-	ObjectType []string
-	Definition []*MetricDef
-}
-
-// Properties describes know relation to properties to related objects and properties
-var Properties = map[string]map[string][]string{
-	"datastore": map[string][]string{
-		"Datastore":      []string{"name"},
-		"VirtualMachine": []string{"datastore"},
-	},
-	"host": map[string][]string{
-		"HostSystem":     []string{"name", "parent"},
-		"VirtualMachine": []string{"name", "runtime.host"},
-	},
-	"cluster": map[string][]string{
-		"ClusterComputeResource": []string{"name"},
-	},
-	"network": map[string][]string{
-		"DistributedVirtualPortgroup": []string{"name"},
-		"Network":                     []string{"name"},
-		"VirtualMachine":              []string{"network"},
-	},
-	"resourcepool": map[string][]string{
-		"ResourcePool": []string{"name", "parent", "vm"},
-	},
-	"folder": map[string][]string{
-		"Folder":         []string{"name", "parent"},
-		"VirtualMachine": []string{"parent"},
-	},
-	"tags": map[string][]string{
-		"VirtualMachine": []string{"tag"},
-		"HostSystem":     []string{"tag"},
-	},
-	"numcpu": map[string][]string{
-		"VirtualMachine": []string{"summary.config.numCpu"},
-	},
-	"memorysizemb": map[string][]string{
-		"VirtualMachine": []string{"summary.config.memorySizeMB"},
-	},
-	"disks": map[string][]string{
-		"VirtualMachine": []string{"guest.disk"},
-	},
-}
-
 // AddMetric : add a metric definition to a metric group
 func (vcenter *VCenter) AddMetric(metric *MetricDef, mtype string) {
 	// find the metric group for the type
@@ -687,28 +627,6 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				// format disk path
 				diskPath := strings.Replace(diskInfo.DiskPath, "\\", "/", -1)
 				// send free space
-				/*
-					diskfree := backend.Point{
-						VCenter:      vcName,
-						ObjectType:   objType,
-						ObjectName:   name,
-						Group:        "guestdisk",
-						Counter:      "freespace",
-						Instance:     diskPath,
-						Rollup:       "latest",
-						Value:        diskInfo.FreeSpace,
-						Datastore:    datastore,
-						ESXi:         vmhost,
-						Cluster:      cluster,
-						Network:      network,
-						ResourcePool: resourcepool,
-						Folder:       folder,
-						ViTags:       vitags,
-						NumCPU:       numcpu,
-						MemorySizeMB: memorysizemb,
-						Timestamp:    timeStamp,
-					}
-				*/
 				point.Group = "guestdisk"
 				point.Counter = "freespace"
 				point.Instance = diskPath
@@ -716,28 +634,6 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				point.Value = diskInfo.FreeSpace
 				*channel <- point
 				// send capacity
-				/*
-					diskcapa := backend.Point{
-						VCenter:      vcName,
-						ObjectType:   objType,
-						ObjectName:   name,
-						Group:        "guestdisk",
-						Counter:      "capacity",
-						Instance:     diskPath,
-						Rollup:       "latest",
-						Value:        diskInfo.Capacity,
-						Datastore:    datastore,
-						ESXi:         vmhost,
-						Cluster:      cluster,
-						Network:      network,
-						ResourcePool: resourcepool,
-						Folder:       folder,
-						ViTags:       vitags,
-						NumCPU:       numcpu,
-						MemorySizeMB: memorysizemb,
-						Timestamp:    timeStamp,
-					}
-				*/
 				point.Group = "guestdisk"
 				point.Counter = "capacity"
 				point.Instance = diskPath
@@ -745,26 +641,6 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				point.Value = diskInfo.Capacity
 				*channel <- point
 				// send usage %
-				/*
-					diskpc := backend.Point{
-						VCenter:      vcName,
-						ObjectType:   objType,
-						ObjectName:   name,
-						Group:        "guestdisk",
-						Counter:      "usage",
-						Instance:     diskPath,
-						Rollup:       "latest",
-						Value:        int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity)))),
-						Datastore:    datastore,
-						ESXi:         vmhost,
-						Cluster:      cluster,
-						Network:      network,
-						ResourcePool: resourcepool,
-						ViTags:       vitags,
-						NumCPU:       numcpu,
-						MemorySizeMB: memorysizemb,
-						Timestamp:    timeStamp,
-					}*/
 				point.Group = "guestdisk"
 				point.Counter = "usage"
 				point.Instance = diskPath
@@ -792,28 +668,6 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				value = utils.Sum(serie.Value...)
 			}
 			metricparts := strings.Split(metricName, ".")
-			/*
-				point := backend.Point{
-					VCenter:      vcName,
-					ObjectType:   objType,
-					ObjectName:   name,
-					Group:        metricparts[0],
-					Counter:      metricparts[1],
-					Instance:     instanceName,
-					Rollup:       metricparts[2],
-					Value:        value,
-					Datastore:    datastore,
-					ESXi:         vmhost,
-					Cluster:      cluster,
-					Network:      network,
-					ResourcePool: resourcepool,
-					Folder:       folder,
-					ViTags:       vitags,
-					NumCPU:       numcpu,
-					MemorySizeMB: memorysizemb,
-					Timestamp:    timeStamp,
-				}
-			*/
 			point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
 			point.Instance = instanceName
 			point.Value = value
