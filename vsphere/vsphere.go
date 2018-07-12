@@ -661,6 +661,22 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		folder = strings.Replace(folder, ",", "\\,", -1)
 		objType := strings.ToLower(pem.Entity.Type)
 		timeStamp := endTime.Unix()
+		// prepare basic informaitons of point
+		point := backend.Point{
+			VCenter:      vcName,
+			ObjectType:   objType,
+			ObjectName:   name,
+			Datastore:    datastore,
+			ESXi:         vmhost,
+			Cluster:      cluster,
+			Network:      network,
+			ResourcePool: resourcepool,
+			Folder:       folder,
+			ViTags:       vitags,
+			NumCPU:       numcpu,
+			MemorySizeMB: memorysizemb,
+			Timestamp:    timeStamp,
+		}
 		//send disk infos
 		if diskInfos, ok := morToDiskInfos[pem.Entity]; ok {
 			for _, diskInfo := range diskInfos {
@@ -671,70 +687,90 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				// format disk path
 				diskPath := strings.Replace(diskInfo.DiskPath, "\\", "/", -1)
 				// send free space
-				diskfree := backend.Point{
-					VCenter:      vcName,
-					ObjectType:   objType,
-					ObjectName:   name,
-					Group:        "guestdisk",
-					Counter:      "freespace",
-					Instance:     diskPath,
-					Rollup:       "latest",
-					Value:        diskInfo.FreeSpace,
-					Datastore:    datastore,
-					ESXi:         vmhost,
-					Cluster:      cluster,
-					Network:      network,
-					ResourcePool: resourcepool,
-					Folder:       folder,
-					ViTags:       vitags,
-					NumCPU:       numcpu,
-					MemorySizeMB: memorysizemb,
-					Timestamp:    timeStamp,
-				}
-				*channel <- diskfree
+				/*
+					diskfree := backend.Point{
+						VCenter:      vcName,
+						ObjectType:   objType,
+						ObjectName:   name,
+						Group:        "guestdisk",
+						Counter:      "freespace",
+						Instance:     diskPath,
+						Rollup:       "latest",
+						Value:        diskInfo.FreeSpace,
+						Datastore:    datastore,
+						ESXi:         vmhost,
+						Cluster:      cluster,
+						Network:      network,
+						ResourcePool: resourcepool,
+						Folder:       folder,
+						ViTags:       vitags,
+						NumCPU:       numcpu,
+						MemorySizeMB: memorysizemb,
+						Timestamp:    timeStamp,
+					}
+				*/
+				point.Group = "guestdisk"
+				point.Counter = "freespace"
+				point.Instance = diskPath
+				point.Rollup = "latest"
+				point.Value = diskInfo.FreeSpace
+				*channel <- point
 				// send capacity
-				diskcapa := backend.Point{
-					VCenter:      vcName,
-					ObjectType:   objType,
-					ObjectName:   name,
-					Group:        "guestdisk",
-					Counter:      "capacity",
-					Instance:     diskPath,
-					Rollup:       "latest",
-					Value:        diskInfo.Capacity,
-					Datastore:    datastore,
-					ESXi:         vmhost,
-					Cluster:      cluster,
-					Network:      network,
-					ResourcePool: resourcepool,
-					Folder:       folder,
-					ViTags:       vitags,
-					NumCPU:       numcpu,
-					MemorySizeMB: memorysizemb,
-					Timestamp:    timeStamp,
-				}
-				*channel <- diskcapa
+				/*
+					diskcapa := backend.Point{
+						VCenter:      vcName,
+						ObjectType:   objType,
+						ObjectName:   name,
+						Group:        "guestdisk",
+						Counter:      "capacity",
+						Instance:     diskPath,
+						Rollup:       "latest",
+						Value:        diskInfo.Capacity,
+						Datastore:    datastore,
+						ESXi:         vmhost,
+						Cluster:      cluster,
+						Network:      network,
+						ResourcePool: resourcepool,
+						Folder:       folder,
+						ViTags:       vitags,
+						NumCPU:       numcpu,
+						MemorySizeMB: memorysizemb,
+						Timestamp:    timeStamp,
+					}
+				*/
+				point.Group = "guestdisk"
+				point.Counter = "capacity"
+				point.Instance = diskPath
+				point.Rollup = "latest"
+				point.Value = diskInfo.Capacity
+				*channel <- point
 				// send usage %
-				diskpc := backend.Point{
-					VCenter:      vcName,
-					ObjectType:   objType,
-					ObjectName:   name,
-					Group:        "guestdisk",
-					Counter:      "usage",
-					Instance:     diskPath,
-					Rollup:       "latest",
-					Value:        int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity)))),
-					Datastore:    datastore,
-					ESXi:         vmhost,
-					Cluster:      cluster,
-					Network:      network,
-					ResourcePool: resourcepool,
-					ViTags:       vitags,
-					NumCPU:       numcpu,
-					MemorySizeMB: memorysizemb,
-					Timestamp:    timeStamp,
-				}
-				*channel <- diskpc
+				/*
+					diskpc := backend.Point{
+						VCenter:      vcName,
+						ObjectType:   objType,
+						ObjectName:   name,
+						Group:        "guestdisk",
+						Counter:      "usage",
+						Instance:     diskPath,
+						Rollup:       "latest",
+						Value:        int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity)))),
+						Datastore:    datastore,
+						ESXi:         vmhost,
+						Cluster:      cluster,
+						Network:      network,
+						ResourcePool: resourcepool,
+						ViTags:       vitags,
+						NumCPU:       numcpu,
+						MemorySizeMB: memorysizemb,
+						Timestamp:    timeStamp,
+					}*/
+				point.Group = "guestdisk"
+				point.Counter = "usage"
+				point.Instance = diskPath
+				point.Rollup = "latest"
+				point.Value = int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity))))
+				*channel <- point
 			}
 		}
 		valuescount = valuescount + len(pem.Value)
@@ -756,26 +792,31 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				value = utils.Sum(serie.Value...)
 			}
 			metricparts := strings.Split(metricName, ".")
-			point := backend.Point{
-				VCenter:      vcName,
-				ObjectType:   objType,
-				ObjectName:   name,
-				Group:        metricparts[0],
-				Counter:      metricparts[1],
-				Instance:     instanceName,
-				Rollup:       metricparts[2],
-				Value:        value,
-				Datastore:    datastore,
-				ESXi:         vmhost,
-				Cluster:      cluster,
-				Network:      network,
-				ResourcePool: resourcepool,
-				Folder:       folder,
-				ViTags:       vitags,
-				NumCPU:       numcpu,
-				MemorySizeMB: memorysizemb,
-				Timestamp:    timeStamp,
-			}
+			/*
+				point := backend.Point{
+					VCenter:      vcName,
+					ObjectType:   objType,
+					ObjectName:   name,
+					Group:        metricparts[0],
+					Counter:      metricparts[1],
+					Instance:     instanceName,
+					Rollup:       metricparts[2],
+					Value:        value,
+					Datastore:    datastore,
+					ESXi:         vmhost,
+					Cluster:      cluster,
+					Network:      network,
+					ResourcePool: resourcepool,
+					Folder:       folder,
+					ViTags:       vitags,
+					NumCPU:       numcpu,
+					MemorySizeMB: memorysizemb,
+					Timestamp:    timeStamp,
+				}
+			*/
+			point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
+			point.Instance = instanceName
+			point.Value = value
 			*channel <- point
 		}
 	}
