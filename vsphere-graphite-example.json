@@ -37,12 +37,10 @@
       "ObjectType": [ "VirtualMachine" ], 
       "Definition": [
         { "Metric": "virtualDisk.totalWriteLatency.average", "Instances": "*" },
-        { "Metric": "virtualDisk.totalWriteLatency.maximum", "Instances": "*" },
         { "Metric": "virtualDisk.totalReadLatency.average", "Instances": "*" },
-        { "Metric": "virtualDisk.totalReadLatency.maximum", "Instances": "*" },
         { "Metric": "virtualDisk.numberReadAveraged.average", "Instances": "*" },
         { "Metric": "virtualDisk.numberWriteAveraged.average", "Instances": "*" },
-        { "Metric": "cpu.read.summation", "Instance": ""}
+        { "Metric": "cpu.ready.summation", "Instance": ""}
       ]
     },
     { 
