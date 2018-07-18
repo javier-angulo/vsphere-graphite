@@ -3,18 +3,14 @@ package backend
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"encoding/json"
 	"net/http"
 
 	"github.com/cblomart/vsphere-graphite/backend/thininfluxclient"
-	"github.com/cblomart/vsphere-graphite/utils"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
 	"github.com/olivere/elastic"
@@ -48,122 +44,6 @@ const (
 )
 
 var stdlog, errlog *log.Logger
-
-// GetInfluxPoint : convert a point to an influxpoint
-func (p *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint {
-	keyParts := make(map[int]string)
-	ip := InfluxPoint{
-		Fields: make(map[string]string),
-		Tags:   make(map[string]string),
-	}
-	v := reflect.ValueOf(p).Elem()
-	for i := 0; i < v.NumField(); i++ {
-		vfield := v.Field(i)
-		tfield := v.Type().Field(i)
-		tag := tfield.Tag.Get(InfluxTag)
-		tagfields := strings.Split(tag, ",")
-		if len(tagfields) == 0 || len(tagfields) > 2 {
-			stdlog.Println("tag field ignored: " + tag)
-			continue
-		}
-		tagtype := tagfields[0]
-		tagname := strings.ToLower(tfield.Name)
-		if len(tagfields) == 2 {
-			tagname = tagfields[1]
-		}
-		switch tagtype {
-		case "key":
-			keyParts[utils.MustAtoi(tagname)] = utils.ValToString(vfield.Interface(), "_", false)
-		case "tag":
-			ip.Tags[tagname] = utils.ValToString(vfield.Interface(), "\\,", noarray)
-		case "value":
-			ip.Fields[valuefield] = utils.ValToString(vfield.Interface(), ",", true) + "i"
-		case "time":
-			ip.Timestamp = vfield.Int()
-		default:
-		}
-	}
-	// sort key part keys and join them
-	ip.Key = utils.Join(keyParts, "_")
-	return &ip
-}
-
-// ConvertToKV converts a map[string]string to a csv with k=v pairs
-func ConvertToKV(values map[string]string) string {
-	var tmp []string
-	for key, val := range values {
-		if len(val) == 0 {
-			continue
-		}
-		tmp = append(tmp, fmt.Sprintf("%s=%s", key, val))
-	}
-	return strings.Join(tmp, ",")
-}
-
-// ToInflux converts the influx point to influx string format
-func (ip *InfluxPoint) ToInflux(noarray bool, valuefield string) string {
-	return fmt.Sprintf("%s,%s %s %s", ip.Key, ConvertToKV(ip.Tags), ConvertToKV(ip.Fields), strconv.FormatInt(ip.Timestamp, 10))
-}
-
-// ToInflux serialises the data to be consumed by influx line protocol
-// see https://docs.influxdata.com/influxdb/v1.2/write_protocols/line_protocol_tutorial/
-func (p *Point) ToInflux(noarray bool, valuefield string) string {
-	return p.GetInfluxPoint(noarray, valuefield).ToInflux(noarray, valuefield)
-}
-
-// CreateIndexIfNotExists not exists creates Elasticsearch Index if Not Exists
-func CreateIndexIfNotExists(e *elastic.Client, index string) error {
-	// Use the IndexExists service to check if a specified index exists.
-	exists, err := e.IndexExists(index).Do(context.Background())
-	if err != nil {
-		errlog.Println("Unable to check if Elastic Index exists: ", err)
-		return err
-	}
-
-	if !exists {
-		// Create a new index.
-		v := reflect.TypeOf(Point{})
-
-		mapping := MapStr{
-			"mappings": MapStr{
-				"doc": MapStr{
-					"properties": MapStr{},
-				},
-			},
-		}
-
-		for i := 0; i < v.NumField(); i++ {
-			field := v.Field(i)
-			tag := field.Tag.Get("elastic")
-			if len(tag) == 0 {
-				continue
-			}
-			tagfields := strings.Split(tag, ",")
-
-			mapping["mappings"].(MapStr)["doc"].(MapStr)["properties"].(MapStr)[field.Name] = MapStr{}
-
-			for _, tagfield := range tagfields {
-				tagfieldValues := strings.Split(tagfield, ":")
-				mapping["mappings"].(MapStr)["doc"].(MapStr)["properties"].(MapStr)[field.Name].(MapStr)[tagfieldValues[0]] = tagfieldValues[1]
-			}
-		}
-		mappingJSON, err := json.Marshal(mapping)
-
-		if err != nil {
-			errlog.Println("Error on Json Marshal")
-			return err
-		}
-
-		_, err = e.CreateIndex(index).BodyString(string(mappingJSON)).Do(context.Background())
-
-		if err != nil {
-			errlog.Println("Error creating Elastic Index:" + index)
-			return err
-		}
-		stdlog.Println("Elastic Index created: " + index)
-	}
-	return nil
-}
 
 // Init : initialize a backend
 func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
@@ -262,112 +142,6 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 	}
 }
 
-// InitPrometheus : Set some channels to notify other theads when using Prometheus
-func (backend *Config) InitPrometheus(channel *chan bool, doneChannel *chan bool, promMetrics *chan Point) error {
-	backend.channel = channel
-	backend.doneChannel = doneChannel
-	backend.promMetrics = promMetrics
-	return nil
-}
-
-// Describe : Implementation of Prometheus Collector.Describe
-func (backend *Config) Describe(ch chan<- *prometheus.Desc) {
-	prometheus.NewGauge(prometheus.GaugeOpts{Name: "Dummy", Help: "Dummy"}).Describe(ch)
-}
-
-// Collect : Implementation of Prometheus Collector.Collect
-func (backend *Config) Collect(ch chan<- prometheus.Metric) {
-
-	stdlog.Println("Requested Metrics!")
-
-	*backend.channel <- true
-
-	for {
-		select {
-		case point := <-*backend.promMetrics:
-			labelNames := []string{"vcenter", "name"}
-			var labelValues []string
-
-			labelValues = append(labelValues, point.VCenter)
-			labelValues = append(labelValues, point.ObjectName)
-			if point.Group == "disk" || point.Group == "datastore" {
-				if backend.NoArray {
-					if len(point.Datastore) > 0 {
-						labelNames = append(labelNames, "datastore")
-						labelValues = append(labelValues, point.Datastore[0])
-					}
-				} else {
-					if len(point.Datastore) > 0 {
-						labelNames = append(labelNames, "datastore")
-						labelValues = append(labelValues, strings.Join(point.Datastore, ","))
-					}
-				}
-			}
-			if point.Group == "net" {
-				if backend.NoArray {
-					if len(point.Network) > 0 {
-						labelNames = append(labelNames, "network")
-						labelValues = append(labelValues, point.Network[0])
-					}
-				} else {
-					if len(point.Network) > 0 {
-						labelNames = append(labelNames, "network")
-						labelValues = append(labelValues, strings.Join(point.Network, ","))
-					}
-				}
-			}
-			if len(point.ESXi) > 0 {
-				labelNames = append(labelNames, "host")
-				labelValues = append(labelValues, point.ESXi)
-			}
-			if len(point.Cluster) > 0 {
-				labelNames = append(labelNames, "cluster")
-				labelValues = append(labelValues, point.Cluster)
-			}
-			if len(point.Instance) > 0 {
-				labelNames = append(labelNames, "instance")
-				labelValues = append(labelValues, point.Instance)
-			}
-			if len(point.ResourcePool) > 0 {
-				labelNames = append(labelNames, "resourcepool")
-				labelValues = append(labelValues, point.ResourcePool)
-			}
-			if len(point.Folder) > 0 {
-				labelNames = append(labelNames, "folder")
-				labelValues = append(labelValues, point.Folder)
-			}
-			if backend.NoArray {
-				if len(point.ViTags) > 0 {
-					labelNames = append(labelNames, "vitags")
-					labelValues = append(labelValues, point.ViTags[0])
-				}
-			} else {
-				if len(point.ViTags) > 0 {
-					labelNames = append(labelNames, "vitags")
-					labelValues = append(labelValues, strings.Join(point.ViTags, ","))
-				}
-			}
-			//if point.NumCPU != 0 {
-			//	labelNames = append(labelNames, "numcpu")
-			//	labelValues = append(labelValues, strconv.FormatInt(int64(point.NumCPU), 10))
-			//}
-			//if point.MemorySizeMB != 0 {
-			//	labelNames = append(labelNames, "memorysizemb")
-			//	labelValues = append(labelValues, strconv.FormatInt(int64(point.MemorySizeMB), 10))
-			//}
-			name := "vsphere_" + point.ObjectType + "_" + point.Group + "_" + point.Counter + "_" + point.Rollup
-			desc := prometheus.NewDesc(name, "vSphere collected metric", labelNames, nil)
-			metric, err := prometheus.NewConstMetric(desc, prometheus.GaugeValue, float64(point.Value), labelValues...)
-			if err != nil {
-				errlog.Println("E! Error creating prometheus metric")
-			}
-			ch <- metric
-		case <-*backend.doneChannel:
-			return
-		}
-	}
-}
-
 // Disconnect : disconnect from backend
 func (backend *Config) Disconnect() {
 	switch backendType := strings.ToLower(backend.Type); backendType {
@@ -435,58 +209,7 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 				continue
 			}
 			key := point.Group + "_" + point.Counter + "_" + point.Rollup
-			tags := map[string]string{}
-			tags["vcenter"] = point.VCenter
-			tags["type"] = point.ObjectType
-			tags["name"] = point.ObjectName
-			if backend.NoArray {
-				if len(point.Datastore) > 0 {
-					tags["datastore"] = point.Datastore[0]
-				}
-			} else {
-				if len(point.Datastore) > 0 {
-					tags["datastore"] = strings.Join(point.Datastore, "\\,")
-				}
-			}
-			if backend.NoArray {
-				if len(point.Network) > 0 {
-					tags["network"] = point.Network[0]
-				}
-			} else {
-				if len(point.Network) > 0 {
-					tags["network"] = strings.Join(point.Network, "\\,")
-				}
-			}
-			if len(point.ESXi) > 0 {
-				tags["host"] = point.ESXi
-			}
-			if len(point.Cluster) > 0 {
-				tags["cluster"] = point.Cluster
-			}
-			if len(point.Instance) > 0 {
-				tags["instance"] = point.Instance
-			}
-			if len(point.ResourcePool) > 0 {
-				tags["resourcepool"] = point.ResourcePool
-			}
-			if len(point.Folder) > 0 {
-				tags["folder"] = point.Folder
-			}
-			if backend.NoArray {
-				if len(point.ViTags) > 0 {
-					tags["vitags"] = point.ViTags[0]
-				}
-			} else {
-				if len(point.ViTags) > 0 {
-					tags["vitags"] = strings.Join(point.ViTags, "\\,")
-				}
-			}
-			if point.NumCPU != 0 {
-				tags["numcpu"] = strconv.FormatInt(int64(point.NumCPU), 10)
-			}
-			if point.MemorySizeMB != 0 {
-				tags["memorysizemb"] = strconv.FormatInt(int64(point.MemorySizeMB), 10)
-			}
+			tags := point.GetTags(backend.NoArray, "\\,")
 			fields := make(map[string]interface{})
 			fields[backend.ValueField] = point.Value
 			pt, err := influxclient.NewPoint(key, tags, fields, time.Unix(point.Timestamp, 0)) // nolint: vetshadow
