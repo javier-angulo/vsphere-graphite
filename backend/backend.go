@@ -11,12 +11,15 @@ import (
 	"time"
 
 	"encoding/json"
+	"net/http"
 
 	"github.com/cblomart/vsphere-graphite/backend/thininfluxclient"
 	"github.com/cblomart/vsphere-graphite/utils"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
 	"github.com/olivere/elastic"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // Backend Interface
@@ -40,6 +43,8 @@ const (
 	InfluxTag = "influx"
 	// Elastic name of the elastic backend
 	Elastic = "elastic"
+	// Prometheus name of the prometheus backend
+	Prometheus = "prometheus"
 )
 
 var stdlog, errlog *log.Logger
@@ -230,9 +235,136 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 		}
 		backend.elastic = elasticclt
 		return CreateIndexIfNotExists(backend.elastic, elasticindex)
+	case Prometheus:
+		//Initialize Prometheus client
+		stdlog.Println("Initializing " + backendType + " backend")
+
+		registry := prometheus.NewRegistry()
+		err := registry.Register(backend)
+		if err != nil {
+			errlog.Println("Error creating Prometheus Registry")
+			return err
+		}
+
+		http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
+		go func() error {
+			err := http.ListenAndServe(":9155", nil)
+			if err != nil {
+				errlog.Println("Error creating Prometheus listener")
+				return err
+			}
+			return nil
+		}()
+		return nil
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 		return errors.New("Backend " + backendType + " unknown.")
+	}
+}
+
+// InitPrometheus : Set some channels to notify other theads when using Prometheus
+func (backend *Config) InitPrometheus(channel *chan bool, doneChannel *chan bool, promMetrics *chan Point) error {
+	backend.channel = channel
+	backend.doneChannel = doneChannel
+	backend.promMetrics = promMetrics
+	return nil
+}
+
+// Describe : Implementation of Prometheus Collector.Describe
+func (backend *Config) Describe(ch chan<- *prometheus.Desc) {
+	prometheus.NewGauge(prometheus.GaugeOpts{Name: "Dummy", Help: "Dummy"}).Describe(ch)
+}
+
+// Collect : Implementation of Prometheus Collector.Collect
+func (backend *Config) Collect(ch chan<- prometheus.Metric) {
+
+	stdlog.Println("Requested Metrics!")
+
+	*backend.channel <- true
+
+	for {
+		select {
+		case point := <-*backend.promMetrics:
+			labelNames := []string{"vcenter", "name"}
+			var labelValues []string
+
+			labelValues = append(labelValues, point.VCenter)
+			labelValues = append(labelValues, point.ObjectName)
+			if point.Group == "disk" || point.Group == "datastore" {
+				if backend.NoArray {
+					if len(point.Datastore) > 0 {
+						labelNames = append(labelNames, "datastore")
+						labelValues = append(labelValues, point.Datastore[0])
+					}
+				} else {
+					if len(point.Datastore) > 0 {
+						labelNames = append(labelNames, "datastore")
+						labelValues = append(labelValues, strings.Join(point.Datastore, ","))
+					}
+				}
+			}
+			if point.Group == "net" {
+				if backend.NoArray {
+					if len(point.Network) > 0 {
+						labelNames = append(labelNames, "network")
+						labelValues = append(labelValues, point.Network[0])
+					}
+				} else {
+					if len(point.Network) > 0 {
+						labelNames = append(labelNames, "network")
+						labelValues = append(labelValues, strings.Join(point.Network, ","))
+					}
+				}
+			}
+			if len(point.ESXi) > 0 {
+				labelNames = append(labelNames, "host")
+				labelValues = append(labelValues, point.ESXi)
+			}
+			if len(point.Cluster) > 0 {
+				labelNames = append(labelNames, "cluster")
+				labelValues = append(labelValues, point.Cluster)
+			}
+			if len(point.Instance) > 0 {
+				labelNames = append(labelNames, "instance")
+				labelValues = append(labelValues, point.Instance)
+			}
+			if len(point.ResourcePool) > 0 {
+				labelNames = append(labelNames, "resourcepool")
+				labelValues = append(labelValues, point.ResourcePool)
+			}
+			if len(point.Folder) > 0 {
+				labelNames = append(labelNames, "folder")
+				labelValues = append(labelValues, point.Folder)
+			}
+			if backend.NoArray {
+				if len(point.ViTags) > 0 {
+					labelNames = append(labelNames, "vitags")
+					labelValues = append(labelValues, point.ViTags[0])
+				}
+			} else {
+				if len(point.ViTags) > 0 {
+					labelNames = append(labelNames, "vitags")
+					labelValues = append(labelValues, strings.Join(point.ViTags, ","))
+				}
+			}
+			//if point.NumCPU != 0 {
+			//	labelNames = append(labelNames, "numcpu")
+			//	labelValues = append(labelValues, strconv.FormatInt(int64(point.NumCPU), 10))
+			//}
+			//if point.MemorySizeMB != 0 {
+			//	labelNames = append(labelNames, "memorysizemb")
+			//	labelValues = append(labelValues, strconv.FormatInt(int64(point.MemorySizeMB), 10))
+			//}
+			name := "vsphere_" + point.ObjectType + "_" + point.Group + "_" + point.Counter + "_" + point.Rollup
+			desc := prometheus.NewDesc(name, "vSphere collected metric", labelNames, nil)
+			metric, err := prometheus.NewConstMetric(desc, prometheus.GaugeValue, float64(point.Value), labelValues...)
+			if err != nil {
+				errlog.Println("E! Error creating prometheus metric")
+			}
+			ch <- metric
+		case <-*backend.doneChannel:
+			return
+		}
 	}
 }
 
@@ -255,6 +387,9 @@ func (backend *Config) Disconnect() {
 	case Elastic:
 		// Disconnect from Elastic
 		errlog.Println("Disconnecting from elastic")
+	case Prometheus:
+		// Stop Exporting Prometheus Metrics
+		errlog.Println("Stopping exporter")
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
@@ -421,7 +556,6 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 				}
 			}
 		}
-
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}

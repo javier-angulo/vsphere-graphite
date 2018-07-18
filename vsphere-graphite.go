@@ -43,8 +43,8 @@ type Service struct {
 	daemon.Daemon
 }
 
-func queryVCenter(vcenter vsphere.VCenter, conf config.Configuration, channel *chan backend.Point) {
-	vcenter.Query(conf.Interval, conf.Domain, conf.Properties, channel)
+func queryVCenter(vcenter vsphere.VCenter, conf config.Configuration, channel *chan backend.Point, done *chan bool) {
+	vcenter.Query(conf.Interval, conf.Domain, conf.Properties, channel, done)
 }
 
 // Manage by daemon commands or run the daemon
@@ -149,15 +149,27 @@ func (service *Service) Manage() (string, error) {
 
 	// Set up a channel to receive the metrics
 	metrics := make(chan backend.Point, conf.FlushSize)
+	runQuery := make(chan bool, 1)
+	doneQuery := make(chan bool, 1)
+	metricsProm := make(chan backend.Point)
 
-	// Set up a ticker to collect metrics at givent interval
 	ticker := time.NewTicker(time.Second * time.Duration(conf.Interval))
 	defer ticker.Stop()
 
-	// Start retriveing and sending metrics
-	stdlog.Println("Retrieving metrics")
-	for _, vcenter := range conf.VCenters {
-		go queryVCenter(*vcenter, conf, &metrics)
+	// Set up a ticker to collect metrics at givent interval (except for Prometheus which is Pull)
+	if conf.Backend.Type == "prometheus" {
+		stdlog.Println("Init Prometheus")
+		err = conf.Backend.InitPrometheus(&runQuery, &doneQuery, &metricsProm)
+		if err != nil {
+			return "Init Prometheus failed", err
+		}
+		ticker.Stop()
+	} else {
+		// Start retriveing and sending metrics
+		stdlog.Println("Retrieving metrics")
+		for _, vcenter := range conf.VCenters {
+			go queryVCenter(*vcenter, conf, &metrics, &doneQuery)
+		}
 	}
 
 	// Memory statisctics
@@ -196,10 +208,15 @@ func (service *Service) Manage() (string, error) {
 				ClearBuffer(pointbuffer)
 				bufferindex = 0
 			}
+		case <-runQuery:
+			stdlog.Println("Retrieving metrics")
+			for _, vcenter := range conf.VCenters {
+				go queryVCenter(*vcenter, conf, &metricsProm, &doneQuery)
+			}
 		case <-ticker.C:
 			stdlog.Println("Retrieving metrics")
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &metrics)
+				go queryVCenter(*vcenter, conf, &metrics, &doneQuery)
 			}
 		case <-memtimer.C:
 			// sent remaining values

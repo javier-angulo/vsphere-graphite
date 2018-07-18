@@ -140,7 +140,7 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 }
 
 // Query : Query a vcenter
-func (vcenter *VCenter) Query(interval int, domain string, properties []string, channel *chan backend.Point) {
+func (vcenter *VCenter) Query(interval int, domain string, properties []string, channel *chan backend.Point, done *chan bool) {
 	stdlog.Println("Setting up query inventory of vcenter: ", vcenter.Hostname)
 
 	// Create the contect
@@ -675,4 +675,5 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 	}
 	stdlog.Println("Got " + strconv.Itoa(returncount) + " results from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
+	*done <- true
 }
