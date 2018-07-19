@@ -37,7 +37,7 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 				labelValues[i] = value
 				i++
 			}
-			key := point.ObjectType + "_" + point.Group + "_" + point.Counter + "_" + point.Rollup
+			key := point.Group + "_" + point.Counter + "_" + point.Rollup
 			desc := prometheus.NewDesc(key, "vSphere collected metric", labelNames, nil)
 			metric, err := prometheus.NewConstMetric(desc, prometheus.GaugeValue, float64(point.Value), labelValues...)
 			if err != nil {
