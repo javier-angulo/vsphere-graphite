@@ -582,16 +582,18 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				vitags = append(vitags, tag.Key)
 			}
 		}
-		//find numcpu
-		var numcpu int32
-		if len(morToNumCPU) > 0 {
-			numcpu = morToNumCPU[pem.Entity]
-		}
-		//find memorysizemb
-		var memorysizemb int32
-		if len(morToMemorySizeMB) > 0 {
-			memorysizemb = morToMemorySizeMB[pem.Entity]
-		}
+		/*
+			//find numcpu
+			var numcpu int32
+			if len(morToNumCPU) > 0 {
+				numcpu = morToNumCPU[pem.Entity]
+			}
+			//find memorysizemb
+			var memorysizemb int32
+			if len(morToMemorySizeMB) > 0 {
+				memorysizemb = morToMemorySizeMB[pem.Entity]
+			}
+		*/
 		if len(pem.Value) == 0 {
 			errlog.Println("No values returned in query!")
 		}
@@ -613,9 +615,9 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			ResourcePool: resourcepool,
 			Folder:       folder,
 			ViTags:       vitags,
-			NumCPU:       numcpu,
-			MemorySizeMB: memorysizemb,
-			Timestamp:    timeStamp,
+			//NumCPU:       numcpu,
+			//MemorySizeMB: memorysizemb,
+			Timestamp: timeStamp,
 		}
 		//send disk infos
 		if diskInfos, ok := morToDiskInfos[pem.Entity]; ok {
@@ -648,6 +650,22 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				point.Value = int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity))))
 				*channel <- point
 			}
+		}
+		// send numcpu infos
+		if numcpu, ok := morToNumCPU[pem.Entity]; ok {
+			point.Group = "cpu"
+			point.Counter = "count"
+			point.Rollup = "latest"
+			point.Value = int64(numcpu)
+			*channel <- point
+		}
+		// send numcpu infos
+		if memorysizemb, ok := morToMemorySizeMB[pem.Entity]; ok {
+			point.Group = "mem"
+			point.Counter = "sizemb"
+			point.Rollup = "latest"
+			point.Value = int64(memorysizemb)
+			*channel <- point
 		}
 		valuescount = valuescount + len(pem.Value)
 		for _, baseserie := range pem.Value {
