@@ -280,6 +280,8 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 				}
 			}
 		}
+	case Prometheus:
+		// Prometheus doesn't need to send metrics
 	default:
 		errlog.Println("Backend " + backendType + " unknown.")
 	}
