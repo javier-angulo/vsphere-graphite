@@ -22,4 +22,7 @@ type Config struct {
 	influx       *influxclient.Client
 	thininfluxdb *thininfluxclient.ThinInfluxClient
 	elastic      *elastic.Client
+	channel      *chan bool
+	doneChannel  *chan bool
+	promMetrics  *chan Point
 }

@@ -242,3 +242,15 @@ func FindHostAndCluster(entity types.ManagedObjectReference,
 	}
 	return hostname, cluster, nil
 }
+
+// ConvertToKV converts a map[string]string to a csv with k=v pairs
+func ConvertToKV(values map[string]string) string {
+	var tmp []string
+	for key, val := range values {
+		if len(val) == 0 {
+			continue
+		}
+		tmp = append(tmp, fmt.Sprintf("%s=%s", key, val))
+	}
+	return strings.Join(tmp, ",")
+}

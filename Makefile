@@ -20,6 +20,7 @@ deps:
 	go get code.cloudfoundry.org/bytefmt
 	go get github.com/pquerna/ffjson
 	go get github.com/olivere/elastic
+	go get github.com/prometheus/client_golang/prometheus
 	go generate ./...
 
 build-windows-amd64:
