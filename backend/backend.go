@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -179,7 +180,7 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 				continue
 			}
 			//key := "vsphere." + vcName + "." + entityName + "." + name + "." + metricName
-			key := "vsphere." + point.VCenter + "." + point.ObjectType + "." + point.ObjectName + "." + point.Group + "." + point.Counter + "." + point.Rollup
+			key := fmt.Sprintf("vsphere.%s.%s.%s.%s.%s.%s", point.VCenter, point.ObjectType, point.ObjectName, point.Group, point.Counter, point.Rollup)
 			if len(point.Instance) > 0 {
 				key += "." + strings.ToLower(strings.Replace(point.Instance, ".", "_", -1))
 			}
@@ -208,7 +209,7 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 			if point == nil {
 				continue
 			}
-			key := point.Group + "_" + point.Counter + "_" + point.Rollup
+			key := fmt.Sprintf("%s_%s_%s", point.Group, point.Counter, point.Rollup)
 			tags := point.GetTags(backend.NoArray, "\\,")
 			fields := make(map[string]interface{})
 			fields[backend.ValueField] = point.Value
