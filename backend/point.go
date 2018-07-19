@@ -88,13 +88,13 @@ func (point *Point) GetTags(noarray bool, separator string) map[string]string {
 }
 
 // GetInfluxPoint : convert a point to an influxpoint
-func (p *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint {
+func (point *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint {
 	keyParts := make(map[int]string)
 	ip := InfluxPoint{
 		Fields: make(map[string]string),
 		Tags:   make(map[string]string),
 	}
-	v := reflect.ValueOf(p).Elem()
+	v := reflect.ValueOf(point).Elem()
 	for i := 0; i < v.NumField(); i++ {
 		vfield := v.Field(i)
 		tfield := v.Type().Field(i)
@@ -128,6 +128,6 @@ func (p *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint {
 
 // ToInflux serialises the data to be consumed by influx line protocol
 // see https://docs.influxdata.com/influxdb/v1.2/write_protocols/line_protocol_tutorial/
-func (p *Point) ToInflux(noarray bool, valuefield string) string {
-	return p.GetInfluxPoint(noarray, valuefield).ToInflux(noarray, valuefield)
+func (point *Point) ToInflux(noarray bool, valuefield string) string {
+	return point.GetInfluxPoint(noarray, valuefield).ToInflux(noarray, valuefield)
 }
