@@ -2,7 +2,6 @@ package backend
 
 import (
 	"reflect"
-	"strconv"
 	"strings"
 
 	"github.com/cblomart/vsphere-graphite/utils"
@@ -25,9 +24,9 @@ type Point struct {
 	ResourcePool string   `influx:"tag,resourcepool" json:",omitempty"`
 	Folder       string   `influx:"tag,folder" json:",omitempty"`
 	ViTags       []string `influx:"tag,vitags" json:",omitempty"`
-	NumCPU       int32    `influx:"tag,numcpu" json:",omitempty"`
-	MemorySizeMB int32    `influx:"tag,memorysizemb" json:",omitempty"`
-	Timestamp    int64    `influx:"time" elastic:"type:date,format:epoch_second"`
+	//NumCPU       int32    `influx:"tag,numcpu" json:",omitempty"`
+	//MemorySizeMB int32    `influx:"tag,memorysizemb" json:",omitempty"`
+	Timestamp int64 `influx:"time" elastic:"type:date,format:epoch_second"`
 }
 
 // GetTags returns the tags of point as a map of strings
@@ -78,12 +77,14 @@ func (point *Point) GetTags(noarray bool, separator string) map[string]string {
 			tags["vitags"] = strings.Join(point.ViTags, separator)
 		}
 	}
-	if point.NumCPU != 0 {
-		tags["numcpu"] = strconv.FormatInt(int64(point.NumCPU), 10)
-	}
-	if point.MemorySizeMB != 0 {
-		tags["memorysizemb"] = strconv.FormatInt(int64(point.MemorySizeMB), 10)
-	}
+	/*
+		if point.NumCPU != 0 {
+			tags["numcpu"] = strconv.FormatInt(int64(point.NumCPU), 10)
+		}
+		if point.MemorySizeMB != 0 {
+			tags["memorysizemb"] = strconv.FormatInt(int64(point.MemorySizeMB), 10)
+		}
+	*/
 	return tags
 }
 
