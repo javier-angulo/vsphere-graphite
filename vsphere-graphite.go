@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
@@ -96,7 +95,7 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	if conf.CPUProfiling {
-		f, err := ioutil.TempFile("/tmp", "vsphere-graphite-cpu.profile") // nolint: vetshadow
+		f, err := os.OpenFile("/tmp/vsphere-graphite-cpu.pb.gz", os.O_RDWR|os.O_CREATE, 0666) // nolint: vetshadow
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
@@ -176,15 +175,7 @@ func (service *Service) Manage() (string, error) {
 	var memstats runtime.MemStats
 	// timer to execute memory collection
 	memtimer := time.NewTimer(time.Second * time.Duration(10))
-	// Memory profiling
-	var mf *os.File
-	if conf.MEMProfiling {
-		mf, err = ioutil.TempFile("/tmp", "vsphere-graphite-mem.profile")
-		if err != nil {
-			log.Fatal("could not create MEM profile: ", err)
-		}
-		defer mf.Close() // nolint: errcheck
-	}
+
 	// buffer for points to send
 	pointbuffer := make([]*backend.Point, conf.FlushSize)
 	bufferindex := 0
@@ -229,8 +220,15 @@ func (service *Service) Manage() (string, error) {
 			runtime.ReadMemStats(&memstats)
 			stdlog.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
 			if conf.MEMProfiling {
-				stdlog.Println("Writing mem profiling to: ", mf.Name())
-				debug.WriteHeapDump(mf.Fd())
+				f, err := os.OpenFile("/tmp/vsphere-graphite-mem.pb.gz", os.O_RDWR|os.O_CREATE, 0666) // nolin.vetshaddow
+				defer f.Close()
+				if err != nil {
+					log.Fatal("could not create Mem profile: ", err)
+				}
+				stdlog.Println("Will write mem profiling to: ", f.Name())
+				if err := pprof.WriteHeapProfile(f); err != nil {
+					log.Fatal("could not write Mem profile: ", err)
+				}
 			}
 		case killSignal := <-interrupt:
 			stdlog.Println("Got signal:", killSignal)
