@@ -2,40 +2,40 @@ package vsphere
 
 // Properties describes know relation to properties to related objects and properties
 var Properties = map[string]map[string][]string{
-	"datastore": map[string][]string{
-		"Datastore":      []string{"name"},
-		"VirtualMachine": []string{"datastore"},
+	"datastore": {
+		"Datastore":      {"name"},
+		"VirtualMachine": {"datastore"},
 	},
-	"host": map[string][]string{
-		"HostSystem":     []string{"name", "parent"},
-		"VirtualMachine": []string{"name", "runtime.host"},
+	"host": {
+		"HostSystem":     {"name", "parent"},
+		"VirtualMachine": {"name", "runtime.host"},
 	},
-	"cluster": map[string][]string{
-		"ClusterComputeResource": []string{"name"},
+	"cluster": {
+		"ClusterComputeResource": {"name"},
 	},
-	"network": map[string][]string{
-		"DistributedVirtualPortgroup": []string{"name"},
-		"Network":                     []string{"name"},
-		"VirtualMachine":              []string{"network"},
+	"network": {
+		"DistributedVirtualPortgroup": {"name"},
+		"Network":                     {"name"},
+		"VirtualMachine":              {"network"},
 	},
-	"resourcepool": map[string][]string{
-		"ResourcePool": []string{"name", "parent", "vm"},
+	"resourcepool": {
+		"ResourcePool": {"name", "parent", "vm"},
 	},
-	"folder": map[string][]string{
-		"Folder":         []string{"name", "parent"},
-		"VirtualMachine": []string{"parent"},
+	"folder": {
+		"Folder":         {"name", "parent"},
+		"VirtualMachine": {"parent"},
 	},
-	"tags": map[string][]string{
-		"VirtualMachine": []string{"tag"},
-		"HostSystem":     []string{"tag"},
+	"tags": {
+		"VirtualMachine": {"tag"},
+		"HostSystem":     {"tag"},
 	},
-	"numcpu": map[string][]string{
-		"VirtualMachine": []string{"summary.config.numCpu"},
+	"numcpu": {
+		"VirtualMachine": {"summary.config.numCpu"},
 	},
-	"memorysizemb": map[string][]string{
-		"VirtualMachine": []string{"summary.config.memorySizeMB"},
+	"memorysizemb": {
+		"VirtualMachine": {"summary.config.memorySizeMB"},
 	},
-	"disks": map[string][]string{
-		"VirtualMachine": []string{"guest.disk"},
+	"disks": {
+		"VirtualMachine": {"guest.disk"},
 	},
 }
