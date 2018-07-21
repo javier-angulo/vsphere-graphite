@@ -629,43 +629,48 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				// format disk path
 				diskPath := strings.Replace(diskInfo.DiskPath, "\\", "/", -1)
 				// send free space
-				point.Group = "guestdisk"
-				point.Counter = "freespace"
-				point.Instance = diskPath
-				point.Rollup = "latest"
-				point.Value = diskInfo.FreeSpace
-				*channel <- point
+				p1 := point
+				p1.Group = "guestdisk"
+				p1.Counter = "freespace"
+				p1.Instance = diskPath
+				p1.Rollup = "latest"
+				p1.Value = diskInfo.FreeSpace
+				*channel <- p1
 				// send capacity
-				point.Group = "guestdisk"
-				point.Counter = "capacity"
-				point.Instance = diskPath
-				point.Rollup = "latest"
-				point.Value = diskInfo.Capacity
-				*channel <- point
+				p2 := point
+				p2.Group = "guestdisk"
+				p2.Counter = "capacity"
+				p2.Instance = diskPath
+				p2.Rollup = "latest"
+				p2.Value = diskInfo.Capacity
+				*channel <- p2
 				// send usage %
-				point.Group = "guestdisk"
-				point.Counter = "usage"
-				point.Instance = diskPath
-				point.Rollup = "latest"
-				point.Value = int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity))))
-				*channel <- point
+				p3 := point
+				p3.Group = "guestdisk"
+				p3.Counter = "usage"
+				p3.Instance = diskPath
+				p3.Rollup = "latest"
+				p3.Value = int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity))))
+				*channel <- p3
 			}
 		}
 		// send numcpu infos
 		if numcpu, ok := morToNumCPU[pem.Entity]; ok {
-			point.Group = "cpu"
-			point.Counter = "count"
-			point.Rollup = "latest"
-			point.Value = int64(numcpu)
-			*channel <- point
+			p := point
+			p.Group = "cpu"
+			p.Counter = "count"
+			p.Rollup = "latest"
+			p.Value = int64(numcpu)
+			*channel <- p
 		}
 		// send numcpu infos
 		if memorysizemb, ok := morToMemorySizeMB[pem.Entity]; ok {
-			point.Group = "mem"
-			point.Counter = "sizemb"
-			point.Rollup = "latest"
-			point.Value = int64(memorysizemb)
-			*channel <- point
+			p := point
+			p.Group = "mem"
+			p.Counter = "sizemb"
+			p.Rollup = "latest"
+			p.Value = int64(memorysizemb)
+			*channel <- p
 		}
 		valuescount = valuescount + len(pem.Value)
 		for _, baseserie := range pem.Value {
@@ -686,10 +691,11 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				value = utils.Sum(serie.Value...)
 			}
 			metricparts := strings.Split(metricName, ".")
-			point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
-			point.Instance = instanceName
-			point.Value = value
-			*channel <- point
+			p := point
+			p.Group, p.Counter, p.Rollup = metricparts[0], metricparts[1], metricparts[2]
+			p.Instance = instanceName
+			p.Value = value
+			*channel <- p
 		}
 	}
 	stdlog.Println("Got " + strconv.Itoa(returncount) + " results from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
