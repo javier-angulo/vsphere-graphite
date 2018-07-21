@@ -233,7 +233,7 @@ func FindHostAndCluster(entity *string,
 	if parmor, ok := morToParent[*host]; ok {
 		if strings.HasPrefix(*parmor, "cluster-") {
 			cluster = morToName[*parmor]
-		} else if strings.HasPrefix(*parmor, "domain-") {
+		} else if !strings.HasPrefix(*parmor, "domain-") {
 			// ComputeRessource parent denotes a standalong host
 			// Any other is weird
 			return hostname, nil, errors.New("No suitable parent for host " + *host + " to determine cluster")
