@@ -95,7 +95,7 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	if conf.CPUProfiling {
-		f, err := os.OpenFile("/tmp/vsphere-graphite-cpu.pb.gz", os.O_RDWR|os.O_CREATE, 0666) // nolint: vetshadow
+		f, err := os.OpenFile("/tmp/vsphere-graphite-cpu.pb.gz", os.O_RDWR|os.O_CREATE, 0600) // nolint: vetshadow
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
@@ -220,7 +220,7 @@ func (service *Service) Manage() (string, error) {
 			runtime.ReadMemStats(&memstats)
 			stdlog.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
 			if conf.MEMProfiling {
-				f, err := os.OpenFile("/tmp/vsphere-graphite-mem.pb.gz", os.O_RDWR|os.O_CREATE, 0666) // nolin.vetshaddow
+				f, err := os.OpenFile("/tmp/vsphere-graphite-mem.pb.gz", os.O_RDWR|os.O_CREATE, 0600) // nolin.vetshaddow
 				defer f.Close()
 				if err != nil {
 					log.Fatal("could not create Mem profile: ", err)
