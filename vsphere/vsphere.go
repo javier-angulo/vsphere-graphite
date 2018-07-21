@@ -520,15 +520,19 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 		//find host and cluster
 		var vmhost string
-		var cluster *string
+		var cluster string
 		if len(vmToHost) > 0 {
 			var hostname *string
-			hostname, cluster, err = utils.FindHostAndCluster(&pem.Entity.Value, vmToHost, morToParent, morToName)
+			var clusterpointer *string
+			hostname, clusterpointer, err = utils.FindHostAndCluster(&pem.Entity.Value, vmToHost, morToParent, morToName)
 			if err != nil {
 				errlog.Println(err)
 			}
 			if hostname != nil {
 				vmhost = strings.Replace(*hostname, domain, "", -1)
+			}
+			if clusterpointer != nil {
+				cluster = *clusterpointer
 			}
 		}
 		//find network
@@ -613,7 +617,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			ObjectName:   name,
 			Datastore:    datastore,
 			ESXi:         vmhost,
-			Cluster:      *cluster,
+			Cluster:      cluster,
 			Network:      network,
 			ResourcePool: resourcepool,
 			Folder:       folder,
