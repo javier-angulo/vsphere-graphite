@@ -71,36 +71,36 @@ func Average(n ...int64) int64 {
 }
 
 // MapObjRefs fills in object references into a map to another object reference
-func MapObjRefs(property string, sourceVal types.AnyType, dest map[types.ManagedObjectReference][]types.ManagedObjectReference, index types.ManagedObjectReference) error {
-	mors, ok := sourceVal.(types.ArrayOfManagedObjectReference)
+func MapObjRefs(property string, sourceVal *types.AnyType, dest map[string]*[]types.ManagedObjectReference, index string) error {
+	mors, ok := (*sourceVal).(types.ArrayOfManagedObjectReference)
 	if ok {
 		if len(mors.ManagedObjectReference) > 0 {
-			dest[index] = mors.ManagedObjectReference
+			dest[index] = &mors.ManagedObjectReference
 			return nil
 		}
-		return errors.New("Property " + property + " of " + index.String() + " didn't contain any object references")
+		return errors.New("Property " + property + " of " + index + " didn't contain any object references")
 	}
-	return errors.New("Property " + property + " of " + index.String() + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", sourceVal))
+	return errors.New("Property " + property + " of " + index + " was not a ManagedObjectReferences, it was " + fmt.Sprintf("%T", sourceVal))
 }
 
 // MapObjRef fills in object reference into a map to another object reference
-func MapObjRef(property string, sourceVal types.AnyType, dest map[types.ManagedObjectReference]types.ManagedObjectReference, index types.ManagedObjectReference) error {
-	mor, ok := sourceVal.(types.ManagedObjectReference)
+func MapObjRef(property string, sourceVal *types.AnyType, dest map[string]*string, index string) error {
+	mor, ok := (*sourceVal).(types.ManagedObjectReference)
 	if ok {
-		dest[index] = mor
+		dest[index] = &mor.Value
 		return nil
 	}
-	return errors.New("Property " + property + " of " + index.String() + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", sourceVal))
+	return errors.New("Property " + property + " of " + index + " was not a ManagedObjectReference, it was " + fmt.Sprintf("%T", sourceVal))
 }
 
 // MapObjInt32 fills in an int32 into a map to another object reference
-func MapObjInt32(property string, sourceVal types.AnyType, dest map[types.ManagedObjectReference]int32, index types.ManagedObjectReference) error {
-	val, ok := sourceVal.(int32)
+func MapObjInt32(property string, sourceVal *types.AnyType, dest map[string]*int32, index string) error {
+	val, ok := (*sourceVal).(int32)
 	if ok {
-		dest[index] = val
+		dest[index] = &val
 		return nil
 	}
-	return errors.New("Property " + property + " of " + index.String() + " was not an int32, it was " + fmt.Sprintf("%T", sourceVal))
+	return errors.New("Property " + property + " of " + index + " was not an int32, it was " + fmt.Sprintf("%T", sourceVal))
 }
 
 // StringMaptoString converts a string map to csv or get the first value
@@ -208,36 +208,35 @@ func MustAtoi(value string) int {
 }
 
 // FindHostAndCluster Find cluster for managed entity
-func FindHostAndCluster(entity types.ManagedObjectReference,
-	vmToHost map[types.ManagedObjectReference]types.ManagedObjectReference,
-	morToParent map[types.ManagedObjectReference]types.ManagedObjectReference,
-	morToName map[types.ManagedObjectReference]string) (string, string, error) {
+func FindHostAndCluster(entity *string,
+	vmToHost map[string]*string,
+	morToParent map[string]*string,
+	morToName map[string]*string) (*string, *string, error) {
 	// get host
-	var host types.ManagedObjectReference
-	hostname := ""
-	switch entity.Type {
-	case "VirtualMachine":
-		if vmhost, ok := vmToHost[entity]; ok {
+	var host *string
+	var hostname *string
+	var cluster *string
+	if strings.HasPrefix(*entity, "vm-") {
+		if vmhost, ok := vmToHost[*entity]; ok {
 			host = vmhost
-			if vmhostname, ok := morToName[host]; ok {
+			if vmhostname, ok := morToName[*host]; ok {
 				hostname = vmhostname
 			}
 		}
-	case "HostSystem":
+	} else if strings.HasPrefix(*entity, "host-") {
 		host = entity
 	}
 	// check if a host was found
-	if (types.ManagedObjectReference{}) == host {
-		return "", "", errors.New("No host found for " + entity.String())
+	if host == nil {
+		return nil, nil, errors.New("No host found for " + *entity)
 	}
-	cluster := ""
-	if parmor, ok := morToParent[host]; ok {
-		if parmor.Type == "ClusterComputeResource" {
-			cluster = morToName[parmor]
-		} else if parmor.Type != "ComputeResource" {
+	if parmor, ok := morToParent[*host]; ok {
+		if strings.HasPrefix(*parmor, "cluster-") {
+			cluster = morToName[*parmor]
+		} else if strings.HasPrefix(*parmor, "domain-") {
 			// ComputeRessource parent denotes a standalong host
 			// Any other is weird
-			return hostname, "", errors.New("No suitable parent for host " + host.String() + " to determine cluster")
+			return hostname, nil, errors.New("No suitable parent for host " + *host + " to determine cluster")
 		}
 	}
 	return hostname, cluster, nil
