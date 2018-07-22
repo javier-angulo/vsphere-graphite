@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"log"
 	"math"
 	"sort"
 	"strconv"
@@ -11,8 +12,7 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
-// Type generic type
-type Type int
+var stdlog, errlog *log.Logger
 
 // Min : get the minimum of values
 func Min(n ...int64) int64 {
@@ -271,11 +271,12 @@ func CleanStringMap(m map[string]*string, refs []string) {
 		found := false
 		for _, refmor := range refs {
 			if refmor == mor {
+				found = true
 				break
 			}
-			found = false
 		}
 		if !found {
+			stdlog.Println("removing mor from string map: " + mor)
 			delete(m, mor)
 		}
 	}
@@ -287,11 +288,12 @@ func CleanMorefsMap(m map[string]*[]types.ManagedObjectReference, refs []string)
 		found := false
 		for _, refmor := range refs {
 			if refmor == mor {
+				found = true
 				break
 			}
-			found = false
 		}
 		if !found {
+			stdlog.Println("removing mor from moref map: " + mor)
 			delete(m, mor)
 		}
 	}
@@ -303,11 +305,12 @@ func CleanInt32Map(m map[string]*int32, refs []string) {
 		found := false
 		for _, refmor := range refs {
 			if refmor == mor {
+				found = true
 				break
 			}
-			found = false
 		}
 		if !found {
+			stdlog.Println("removing mor from int map: " + mor)
 			delete(m, mor)
 		}
 	}
@@ -319,11 +322,12 @@ func CleanTagsMap(m map[string]*[]types.Tag, refs []string) {
 		found := false
 		for _, refmor := range refs {
 			if refmor == mor {
+				found = true
 				break
 			}
-			found = false
 		}
 		if !found {
+			stdlog.Println("removing mor from tags map: " + mor)
 			delete(m, mor)
 		}
 	}
@@ -335,11 +339,12 @@ func CleanDiskInfosMap(m map[string]*[]types.GuestDiskInfo, refs []string) {
 		found := false
 		for _, refmor := range refs {
 			if refmor == mor {
+				found = true
 				break
 			}
-			found = false
 		}
 		if !found {
+			stdlog.Println("removing mor from disk info map: " + mor)
 			delete(m, mor)
 		}
 	}
