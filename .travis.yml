@@ -35,10 +35,14 @@ jobs:
       script:   
       - make deps
       - make dist-windows-amd64
+      on:
+        tags: true
     - script:   
       - make deps
       - make dist-darwin-amd64
       name: "OSX amd64"
+      on:
+        tags: true
     - script:
       - make deps
       - make dist-linux-amd64
@@ -46,6 +50,8 @@ jobs:
     - script:
       - make deps
       - make dist-linux-arm
+      on:
+        tags: true
       name: "Linux ARM"
 #    - stage: Deploy        
 #      deploy:
