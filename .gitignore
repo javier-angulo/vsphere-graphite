@@ -3,6 +3,7 @@ vsphere-graphite.json
 
 # binary file if generated
 vsphere-graphite
+vsphere-graphite.exe
 
 # ignore ffjson generated files
 *_ffjson.go
