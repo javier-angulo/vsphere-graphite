@@ -90,8 +90,7 @@ jobs:
         on:
           tags: true
     - stage: Docker
-      script: true
-    - name: "Docker linux amd64"
+      name: "Docker linux amd64"
       if:
         tag IS present
       script:
@@ -103,7 +102,8 @@ jobs:
       - docker push cblomart/vsphere-graphite:$COMMIT
       - docker push cblomart/vsphere-graphite:$TRAVIS_TAG
       - docker push cblomart/vsphere-graphite:latest
-    - name: "Docker linux amd64 - all"
+    - stage: Docker
+      name: "Docker linux amd64 - all"
       if:
         tag IS blank
       script:
