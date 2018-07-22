@@ -622,7 +622,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 					paths = morpath
 					break
 				}
-				if !strings.HasPrefix(*current, "folder-") {
+				if !(strings.HasPrefix(*current, "folder-") || strings.HasPrefix(*current, "group-")) {
 					errlog.Println("Parent is not a folder for " + pem.Entity.Value + " | current: " + *current + " | paths: " + strings.Join(paths, ", "))
 					break
 				}
