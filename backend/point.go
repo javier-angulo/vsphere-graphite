@@ -118,7 +118,7 @@ func (point *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint
 			// need to escape " " and "," in tags
 			value = strings.Replace(value, ",", "\\,", -1)
 			value = strings.Replace(value, " ", "\\ ", -1)
-			ip.Tags[tagname] = utils.ValToString(vfield.Interface(), ",", noarray)
+			ip.Tags[tagname] = value
 		case "value":
 			ip.Fields[valuefield] = utils.ValToString(vfield.Interface(), ",", true) + "i"
 		case "time":
