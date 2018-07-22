@@ -35,24 +35,24 @@ jobs:
       script:   
       - make deps
       - make dist-windows-amd64
-      on:
-        tags: true
+      if:
+        tag IS present
     - script:   
       - make deps
       - make dist-darwin-amd64
       name: "OSX amd64"
-      on:
-        tags: true
-    - script:
+      if:
+        tag IS present
+    - script:goy
       - make deps
       - make dist-linux-amd64
       name: "Linux amd64"
     - script:
       - make deps
       - make dist-linux-arm
-      on:
-        tags: true
-      name: "Linux ARM"
+      name: "Linux arm7"
+      if:
+        tag IS present
 #    - stage: Deploy        
 #      deploy:
 #      skip_cleanup: true
