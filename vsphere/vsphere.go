@@ -615,7 +615,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 		//find folder path
 		paths := []string{}
-		if len(morToParent) > 0 {
+		if len(morToParent) > 0 && strings.HasPrefix(pem.Entity.Value, "vm-") {
 			current, ok := morToParent[pem.Entity.Value]
 			for ok {
 				if morpath, ok := morToFolderPath[*current]; ok {
@@ -623,7 +623,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 					break
 				}
 				if !strings.HasPrefix(*current, "folder-") {
-					errlog.Println("Parent is not a folder for " + *current)
+					errlog.Println("Parent is not a folder for " + pem.Entity.Value)
 					break
 				}
 				foldername, ok := morToName[*current]
