@@ -11,6 +11,9 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
+// Type generic type
+type Type int
+
 // Min : get the minimum of values
 func Min(n ...int64) int64 {
 	var min int64 = -1
@@ -252,4 +255,92 @@ func ConvertToKV(values map[string]string) string {
 		tmp = append(tmp, fmt.Sprintf("%s=%s", key, val))
 	}
 	return strings.Join(tmp, ",")
+}
+
+// Reverse reverses the values of an array
+func Reverse(array []string) {
+	for i := len(array)/2 - 1; i >= 0; i-- {
+		opp := len(array) - 1 - i
+		array[i], array[opp] = array[opp], array[i]
+	}
+}
+
+// CleanStringMap removes unkonw keys from a map of string
+func CleanStringMap(m map[string]*string, refs []string) {
+	for mor := range m {
+		found := false
+		for _, refmor := range refs {
+			if refmor == mor {
+				break
+			}
+			found = false
+		}
+		if !found {
+			delete(m, mor)
+		}
+	}
+}
+
+// CleanMorefsMap removes unkonw keys from a map of manged object references
+func CleanMorefsMap(m map[string]*[]types.ManagedObjectReference, refs []string) {
+	for mor := range m {
+		found := false
+		for _, refmor := range refs {
+			if refmor == mor {
+				break
+			}
+			found = false
+		}
+		if !found {
+			delete(m, mor)
+		}
+	}
+}
+
+// CleanInt32Map removes unkonw keys from a map of int32
+func CleanInt32Map(m map[string]*int32, refs []string) {
+	for mor := range m {
+		found := false
+		for _, refmor := range refs {
+			if refmor == mor {
+				break
+			}
+			found = false
+		}
+		if !found {
+			delete(m, mor)
+		}
+	}
+}
+
+// CleanTagsMap removes unkonw keys from a map of tag
+func CleanTagsMap(m map[string]*[]types.Tag, refs []string) {
+	for mor := range m {
+		found := false
+		for _, refmor := range refs {
+			if refmor == mor {
+				break
+			}
+			found = false
+		}
+		if !found {
+			delete(m, mor)
+		}
+	}
+}
+
+// CleanDiskInfosMap removes unkonw keys from a map of tag
+func CleanDiskInfosMap(m map[string]*[]types.GuestDiskInfo, refs []string) {
+	for mor := range m {
+		found := false
+		for _, refmor := range refs {
+			if refmor == mor {
+				break
+			}
+			found = false
+		}
+		if !found {
+			delete(m, mor)
+		}
+	}
 }

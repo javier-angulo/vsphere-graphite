@@ -137,6 +137,37 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 			}
 		}
 	}
+	// initialize maps
+	if morToName == nil {
+		morToName = make(map[string]*string)
+	}
+	if vmToDatastore == nil {
+		vmToDatastore = make(map[string]*[]types.ManagedObjectReference)
+	}
+	if vmToNetwork == nil {
+		vmToNetwork = make(map[string]*[]types.ManagedObjectReference)
+	}
+	if vmToHost == nil {
+		vmToHost = make(map[string]*string)
+	}
+	if morToParent == nil {
+		morToParent = make(map[string]*string)
+	}
+	if morToVms == nil {
+		morToVms = make(map[string]*[]types.ManagedObjectReference)
+	}
+	if morToTags == nil {
+		morToTags = make(map[string]*[]types.Tag)
+	}
+	if morToNumCPU == nil {
+		morToNumCPU = make(map[string]*int32)
+	}
+	if morToMemorySizeMB == nil {
+		morToMemorySizeMB = make(map[string]*int32)
+	}
+	if morToDiskInfos == nil {
+		morToDiskInfos = make(map[string]*[]types.GuestDiskInfo)
+	}
 }
 
 // Query : Query a vcenter
@@ -305,37 +336,40 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		return
 	}
 
-	//create a map to resolve object names
-	morToName := make(map[string]*string)
+	/*
+		//create a map to resolve object names
+		morToName := make(map[string]*string)
 
-	//create a map to resolve vm to datastore
-	vmToDatastore := make(map[string]*[]types.ManagedObjectReference)
+		//create a map to resolve vm to datastore
+		vmToDatastore := make(map[string]*[]types.ManagedObjectReference)
 
-	//create a map to resolve vm to network
-	vmToNetwork := make(map[string]*[]types.ManagedObjectReference)
+		//create a map to resolve vm to network
+		vmToNetwork := make(map[string]*[]types.ManagedObjectReference)
 
-	//create a map to resolve vm to host
-	vmToHost := make(map[string]*string)
+		//create a map to resolve vm to host
+		vmToHost := make(map[string]*string)
 
-	//create a map to resolve host to parent - in a cluster the parent should be a cluster
-	morToParent := make(map[string]*string)
+		//create a map to resolve host to parent - in a cluster the parent should be a cluster
+		morToParent := make(map[string]*string)
 
-	//create a map to resolve mor to vms - object that contains multiple vms as child objects
-	morToVms := make(map[string]*[]types.ManagedObjectReference)
+		//create a map to resolve mor to vms - object that contains multiple vms as child objects
+		morToVms := make(map[string]*[]types.ManagedObjectReference)
 
-	//create a map to resolve mor to tags
-	morToTags := make(map[string]*[]types.Tag)
+		//create a map to resolve mor to tags
+		morToTags := make(map[string]*[]types.Tag)
 
-	//create a map to resolve mor to numcpu
-	morToNumCPU := make(map[string]*int32)
+		//create a map to resolve mor to numcpu
+		morToNumCPU := make(map[string]*int32)
 
-	//create a map to resolve mor to memorysizemb
-	morToMemorySizeMB := make(map[string]*int32)
+		//create a map to resolve mor to memorysizemb
+		morToMemorySizeMB := make(map[string]*int32)
 
-	//create a map to resolve diskinfos
-	morToDiskInfos := make(map[string]*[]types.GuestDiskInfo)
-
+		//create a map to resolve diskinfos
+		morToDiskInfos := make(map[string]*[]types.GuestDiskInfo)
+	*/
+	refs := make([]string, len(propres.Returnval))
 	for _, objectContent := range propres.Returnval {
+		refs = append(refs, objectContent.Obj.Value)
 		for _, Property := range objectContent.PropSet {
 			switch propertyName := Property.Name; propertyName {
 			case "name":
@@ -402,6 +436,18 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 	}
 
+	// cleanup buffer
+	utils.CleanStringMap(morToName, refs)
+	utils.CleanMorefsMap(vmToDatastore, refs)
+	utils.CleanMorefsMap(vmToNetwork, refs)
+	utils.CleanStringMap(vmToHost, refs)
+	utils.CleanStringMap(morToParent, refs)
+	utils.CleanMorefsMap(morToVms, refs)
+	utils.CleanTagsMap(morToTags, refs)
+	utils.CleanInt32Map(morToNumCPU, refs)
+	utils.CleanInt32Map(morToMemorySizeMB, refs)
+	utils.CleanDiskInfosMap(morToDiskInfos, refs)
+
 	//create a map to resolve metric names
 	metricToName := make(map[int32]string)
 	for _, metricgroup := range vcenter.MetricGroups {
@@ -410,20 +456,27 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 	}
 
-	//create a map to resolve vm to their ressourcepool
-	vmToResourcePoolPath := make(map[string]*string)
+	//get the size of the maps to create
+	rpcount := 0
 	for mor, vmmors := range morToVms {
-		// not doing case sensitive as this could be extensive
+		if strings.HasPrefix(mor, "rp-") && len(*vmmors) > 0 {
+			rpcount++
+		}
+	}
+	//create a map to resolve vm to their ressourcepool
+	vmToResourcePoolPath := make(map[string]*string, rpcount)
+	for mor, vmmors := range morToVms {
+		// only parse resource pools
 		if strings.HasPrefix(mor, "rp-") {
 			// find the full path of the resource pool
 			var poolpath = ""
-			var poolmor = mor
-			var ok = true
-			for ok {
+			poolmor := mor
+			pools := []string{}
+			for true {
 				poolname, ok := morToName[poolmor]
 				if !ok {
 					// could not find name
-					errlog.Println("Could not find name for resourcepool " + mor)
+					errlog.Println("Could not find name for resourcepool " + poolmor)
 					break
 				}
 				if *poolname == "Resources" {
@@ -431,7 +484,8 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 					break
 				}
 				// add the name to the path
-				poolpath = fmt.Sprintf("%s/%s", *poolname, poolpath)
+				pools = append(pools, *poolname)
+				//poolpath = fmt.Sprintf("%s/%s", *poolname, poolpath)
 				newmor, ok := morToParent[poolmor]
 				if !ok {
 					// no parent pool found
@@ -439,11 +493,12 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 					break
 				}
 				poolmor = *newmor
-				if strings.HasPrefix(poolmor, "rp-") {
+				if !strings.HasPrefix(poolmor, "rp-") {
 					break
 				}
 			}
-			poolpath = strings.Trim(poolpath, "/")
+			utils.Reverse(pools)
+			poolpath = strings.Join(pools, "/")
 			for _, vmmor := range *vmmors {
 				if vmmor.Type == "VirtualMachine" {
 					vmToResourcePoolPath[vmmor.Value] = &poolpath
@@ -453,10 +508,9 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	}
 
 	// Create a map from folder to path
-	folderMorToPath := make(map[string]*string)
+	//folderMorToPath := make(map[string]*string)
 
 	// Create Queries from interesting objects and requested metrics
-
 	queries := []types.PerfQuerySpec{}
 
 	// Common parameters
@@ -506,6 +560,8 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	if returncount == 0 {
 		errlog.Println("No result returned by queries.")
 	}
+	// create an array to store vm to folder path resolution
+	morToFolderPath := make(map[string][]string)
 	valuescount := 0
 	for _, base := range perfres.Returnval {
 		pem := base.(*types.PerfEntityMetric)
@@ -552,36 +608,38 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			}
 		}
 		//find folder path
+		paths := []string{}
 		if len(morToParent) > 0 {
-			if folders, ok := folderMorToPath[pem.Entity.Value]; !ok {
-				if pem.Entity.Type != "HostSystem" {
-					current, ok := morToParent[pem.Entity.Value]
-					for ok {
-						if !strings.HasPrefix(*current, "folder-") {
-							errlog.Println("Parent is not a folder for " + *current)
-							break
-						}
-						foldername, ok := morToName[*current]
-						if !ok {
-							errlog.Println("Folder name not found for " + *current)
-							break
-						}
-						if *foldername == "vm" {
-							break
-						}
-						folderpath := fmt.Sprintf("%s/%s", *foldername, *folders)
-						folders = &folderpath
-						newcurrent, ok := morToParent[*current]
-						if !ok {
-							errlog.Println("No parent found for folder " + *current)
-							break
-						}
-						current = newcurrent
-					}
+			current, ok := morToParent[pem.Entity.Value]
+			for ok {
+				if morpath, ok := morToFolderPath[*current]; ok {
+					paths = morpath
+					break
 				}
-				folderMorToPath[pem.Entity.Value] = folders
+				if !strings.HasPrefix(*current, "folder-") {
+					errlog.Println("Parent is not a folder for " + *current)
+					break
+				}
+				foldername, ok := morToName[*current]
+				if !ok {
+					errlog.Println("Folder name not found for " + *current)
+					break
+				}
+				if *foldername == "vm" {
+					break
+				}
+				paths = append(paths, *foldername)
+				morToFolderPath[*current] = paths
+				newcurrent, ok := morToParent[*current]
+				if !ok {
+					errlog.Println("No parent found for folder " + *current)
+					break
+				}
+				current = newcurrent
 			}
 		}
+		utils.Reverse(paths)
+		folderpath := strings.Join(paths, "/")
 		//find tags
 		vitags := []string{}
 		if tags, ok := morToTags[pem.Entity.Value]; ok {
@@ -604,13 +662,15 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		if len(pem.Value) == 0 {
 			errlog.Println("No values returned in query!")
 		}
-		//find folder
-		folder := folderMorToPath[pem.Entity.Value]
-		folderpath := ""
-		if folder != nil {
-			folderpath = strings.Replace(*folder, " ", "\\ ", -1)
-			folderpath = strings.Replace(folderpath, ",", "\\,", -1)
-		}
+		/*
+			//find folder
+			folder := folderMorToPath[pem.Entity.Value]
+			folderpath := ""
+			if folder != nil {
+				folderpath = strings.Replace(*folder, " ", "\\ ", -1)
+				folderpath = strings.Replace(folderpath, ",", "\\,", -1)
+			}
+		*/
 		objType := strings.ToLower(pem.Entity.Type)
 		timeStamp := endTime.Unix()
 		// prepare basic informaitons of point
