@@ -472,7 +472,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			var poolpath = ""
 			poolmor := mor
 			pools := []string{}
-			for true {
+			for {
 				poolname, ok := morToName[poolmor]
 				if !ok {
 					// could not find name
