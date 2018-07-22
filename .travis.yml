@@ -31,42 +31,94 @@ jobs:
       - make deps
       - make checks
     - stage: Build
-      name: "Windows amd64"
+      name: "Linux amd64"
       script:   
       - make deps
-      - make dist-windows-amd64
-      if:
-        tag IS present
+      - make dist-linux-amd64
+      deploy:
+        skip_cleanup: true
+        provider: releases
+        api_key:
+          secure: gQrD7qd+CrPyBrpOG8mVNLZtcjMAavW3y+vcavNdlb16Mf9aoEIHdiMhv4Peq5hzfkkS8DgtCY7WwFI2KFtCyQNIVM/G6qlaql2OndYRKwGbD+d3sMniPAOulLM1QJ8Kkm4vvTbxK7kqwyL2CmNFEGPk8tQifhmVRNwSCIo5T1BlBVqD9tmYQ5uOq1trXbyY+GyCQ2a4Ff6zZFja4gb8iMNf4Op33pRFnFJrV7di4+ylJpXKjicQ0H0xM74BASD7aT9jA6+Uk8fsr8h7QKeMdovKp491nhKlVvivKNtB8roB52yQFNgjHJM8TJu4/psx11YOYUZMWiBjCdbzb4/gQt153dduAfJXPP/sQWjsxLLlonHtxS/xKjAvEw2Ei+9gMvvzwlhibYna+PYWfvMXGSwyojfNoGiJiBX8bm30ARSfhLIZepDU9AVRE62CR2ZESSegWeOJoCxTClYcGjDeXoxECpEtqOwbrQRVROHlkH2pLg3eJAzb2rQRT0nnoGydg2LecUMDdxyqSvVct/7kZzWBhTEpHh2ZemPoTbe9YytPlCAKORdUe/u8p+gN92KHPx9TXSHY+k3iNvy+8n0Ot8gio7NTpwTOszVC/r3AtFoBlDEy5KpEbdtqv495F0n+ICZzEYnWVz1VgUhnViO0sExoTaWMB8Y7LmH/k+Ufp0Y=
+        file_glob: true
+        file: releases/linux/amd64/vsphere-graphite_*.tgz  
+        on:
+          tags: true
     - script:   
       - make deps
       - make dist-darwin-amd64
       name: "OSX amd64"
       if:
         tag IS present
+      deploy:
+        skip_cleanup: true
+        provider: releases
+        api_key:
+          secure: gQrD7qd+CrPyBrpOG8mVNLZtcjMAavW3y+vcavNdlb16Mf9aoEIHdiMhv4Peq5hzfkkS8DgtCY7WwFI2KFtCyQNIVM/G6qlaql2OndYRKwGbD+d3sMniPAOulLM1QJ8Kkm4vvTbxK7kqwyL2CmNFEGPk8tQifhmVRNwSCIo5T1BlBVqD9tmYQ5uOq1trXbyY+GyCQ2a4Ff6zZFja4gb8iMNf4Op33pRFnFJrV7di4+ylJpXKjicQ0H0xM74BASD7aT9jA6+Uk8fsr8h7QKeMdovKp491nhKlVvivKNtB8roB52yQFNgjHJM8TJu4/psx11YOYUZMWiBjCdbzb4/gQt153dduAfJXPP/sQWjsxLLlonHtxS/xKjAvEw2Ei+9gMvvzwlhibYna+PYWfvMXGSwyojfNoGiJiBX8bm30ARSfhLIZepDU9AVRE62CR2ZESSegWeOJoCxTClYcGjDeXoxECpEtqOwbrQRVROHlkH2pLg3eJAzb2rQRT0nnoGydg2LecUMDdxyqSvVct/7kZzWBhTEpHh2ZemPoTbe9YytPlCAKORdUe/u8p+gN92KHPx9TXSHY+k3iNvy+8n0Ot8gio7NTpwTOszVC/r3AtFoBlDEy5KpEbdtqv495F0n+ICZzEYnWVz1VgUhnViO0sExoTaWMB8Y7LmH/k+Ufp0Y=
+        file_glob: true
+        file: releases/darwin/amd64/vsphere-graphite_*.tgz  
+        on:
+          tags: true
     - script:
       - make deps
-      - make dist-linux-amd64
-      name: "Linux amd64"
+      - make dist-windows-amd64
+      name: "Windows amd64"
+      if:
+        tag IS present
+      deploy:
+        skip_cleanup: true
+        provider: releases
+        api_key:
+          secure: gQrD7qd+CrPyBrpOG8mVNLZtcjMAavW3y+vcavNdlb16Mf9aoEIHdiMhv4Peq5hzfkkS8DgtCY7WwFI2KFtCyQNIVM/G6qlaql2OndYRKwGbD+d3sMniPAOulLM1QJ8Kkm4vvTbxK7kqwyL2CmNFEGPk8tQifhmVRNwSCIo5T1BlBVqD9tmYQ5uOq1trXbyY+GyCQ2a4Ff6zZFja4gb8iMNf4Op33pRFnFJrV7di4+ylJpXKjicQ0H0xM74BASD7aT9jA6+Uk8fsr8h7QKeMdovKp491nhKlVvivKNtB8roB52yQFNgjHJM8TJu4/psx11YOYUZMWiBjCdbzb4/gQt153dduAfJXPP/sQWjsxLLlonHtxS/xKjAvEw2Ei+9gMvvzwlhibYna+PYWfvMXGSwyojfNoGiJiBX8bm30ARSfhLIZepDU9AVRE62CR2ZESSegWeOJoCxTClYcGjDeXoxECpEtqOwbrQRVROHlkH2pLg3eJAzb2rQRT0nnoGydg2LecUMDdxyqSvVct/7kZzWBhTEpHh2ZemPoTbe9YytPlCAKORdUe/u8p+gN92KHPx9TXSHY+k3iNvy+8n0Ot8gio7NTpwTOszVC/r3AtFoBlDEy5KpEbdtqv495F0n+ICZzEYnWVz1VgUhnViO0sExoTaWMB8Y7LmH/k+Ufp0Y=
+        file_glob: true
+        file: releases/windows/amd64/vsphere-graphite_*.tgz  
+        on:
+          tags: true
     - script:
       - make deps
       - make dist-linux-arm
       name: "Linux arm7"
       if:
         tag IS present
-#    - stage: Deploy        
-#      deploy:
-#      skip_cleanup: true
-#      provider: releases
-#      api_key:
-#        secure: gQrD7qd+CrPyBrpOG8mVNLZtcjMAavW3y+vcavNdlb16Mf9aoEIHdiMhv4Peq5hzfkkS8DgtCY7WwFI2KFtCyQNIVM/G6qlaql2OndYRKwGbD+d3sMniPAOulLM1QJ8Kkm4vvTbxK7kqwyL2CmNFEGPk8tQifhmVRNwSCIo5T1BlBVqD9tmYQ5uOq1trXbyY+GyCQ2a4Ff6zZFja4gb8iMNf4Op33pRFnFJrV7di4+ylJpXKjicQ0H0xM74BASD7aT9jA6+Uk8fsr8h7QKeMdovKp491nhKlVvivKNtB8roB52yQFNgjHJM8TJu4/psx11YOYUZMWiBjCdbzb4/gQt153dduAfJXPP/sQWjsxLLlonHtxS/xKjAvEw2Ei+9gMvvzwlhibYna+PYWfvMXGSwyojfNoGiJiBX8bm30ARSfhLIZepDU9AVRE62CR2ZESSegWeOJoCxTClYcGjDeXoxECpEtqOwbrQRVROHlkH2pLg3eJAzb2rQRT0nnoGydg2LecUMDdxyqSvVct/7kZzWBhTEpHh2ZemPoTbe9YytPlCAKORdUe/u8p+gN92KHPx9TXSHY+k3iNvy+8n0Ot8gio7NTpwTOszVC/r3AtFoBlDEy5KpEbdtqv495F0n+ICZzEYnWVz1VgUhnViO0sExoTaWMB8Y7LmH/k+Ufp0Y=
-#      file_glob: true
-#      file: /tmp/vsphere-graphite_*.tgz  
-#      on:
-#        tags: true
-#after_success:
-#- if [ "$BUILD_JOB" == "linux-amd64" ]; then DNAME="vsphere-graphite"; elif [ "$BUILD_JOB" == "linux-arm" ]; then DNAME="rpi-vsphere-graphite"; fi
-#- if [ "$TRAVIS_TAG" == "" -a "$TRAVIS_BRANCH" == "master" -a "$DNAME" != "" ]; then docker tag $DOCKER_USERNAME/$DNAME $DOCKER_USERNAME/$DNAME:$COMMIT; fi
-#- if [ "$TRAVIS_TAG" != "" -a "$DNAME" != "" ]; then docker tag $DOCKER_USERNAME/$DNAME $DOCKER_USERNAME/$DNAME:$TRAVIS_TAG; docker tag $DOCKER_USERNAME/$DNAME $DOCKER_USERNAME/$DNAME:latest; fi
-#- if [ "$DNAME" != "" ]; then docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD; fi
-#- if [ "$TRAVIS_TAG" == "" -a "$TRAVIS_BRANCH" == "master" -a "$DNAME" != "" ]; then docker push $DOCKER_USERNAME/$DNAME:$COMMIT; fi
-#- if [ "$TRAVIS_TAG" != "" -a "$DNAME" != "" ]; then docker push $DOCKER_USERNAME/$DNAME:$TRAVIS_TAG; docker push $DOCKER_USERNAME/$DNAME:latest; fi
+      deploy:
+        skip_cleanup: true
+        provider: releases
+        api_key:
+          secure: gQrD7qd+CrPyBrpOG8mVNLZtcjMAavW3y+vcavNdlb16Mf9aoEIHdiMhv4Peq5hzfkkS8DgtCY7WwFI2KFtCyQNIVM/G6qlaql2OndYRKwGbD+d3sMniPAOulLM1QJ8Kkm4vvTbxK7kqwyL2CmNFEGPk8tQifhmVRNwSCIo5T1BlBVqD9tmYQ5uOq1trXbyY+GyCQ2a4Ff6zZFja4gb8iMNf4Op33pRFnFJrV7di4+ylJpXKjicQ0H0xM74BASD7aT9jA6+Uk8fsr8h7QKeMdovKp491nhKlVvivKNtB8roB52yQFNgjHJM8TJu4/psx11YOYUZMWiBjCdbzb4/gQt153dduAfJXPP/sQWjsxLLlonHtxS/xKjAvEw2Ei+9gMvvzwlhibYna+PYWfvMXGSwyojfNoGiJiBX8bm30ARSfhLIZepDU9AVRE62CR2ZESSegWeOJoCxTClYcGjDeXoxECpEtqOwbrQRVROHlkH2pLg3eJAzb2rQRT0nnoGydg2LecUMDdxyqSvVct/7kZzWBhTEpHh2ZemPoTbe9YytPlCAKORdUe/u8p+gN92KHPx9TXSHY+k3iNvy+8n0Ot8gio7NTpwTOszVC/r3AtFoBlDEy5KpEbdtqv495F0n+ICZzEYnWVz1VgUhnViO0sExoTaWMB8Y7LmH/k+Ufp0Y=
+        file_glob: true
+        file: releases/linux/arm/vsphere-graphite_*.tgz  
+        on:
+          tags: true
+    - stage: Docker
+      name: "Docker linux amd64"
+      if:
+        tag IS present
+      script:
+      - make deps
+      - make docker-linux-amd64
+      - docker tag cblomart/vsphere-graphite cblomart/vsphere-graphite:$COMMIT
+      - docker tag cblomart/vsphere-graphite cblomart/vsphere-graphite:$TRAVIS_TAG
+      - docker tag cblomart/vsphere-graphite cblomart/vsphere-graphite:latest
+      - docker push cblomart/vsphere-graphite:$COMMIT
+      - docker push cblomart/vsphere-graphite:$TRAVIS_TAG
+      - docker push cblomart/vsphere-graphite:latest
+    - name: "Docker linux amd64 - all"
+      if:
+        tag IS blank
+      script:
+      - make deps
+      - make docker-linux-amd64
+      - docker tag cblomart/vsphere-graphite cblomart/vsphere-graphite:$COMMIT
+      - docker push cblomart/vsphere-graphite:$COMMIT
+    - name: "Docker linux arm"
+      if:
+        tag IS present
+      script:
+      - make deps
+      - make docker-linux-amd64
+      - docker tag cblomart/rpi-vsphere-graphite cblomart/rpi-vsphere-graphite:$COMMIT
+      - docker tag cblomart/rpi-vsphere-graphite cblomart/rpi-vsphere-graphite:$TRAVIS_TAG
+      - docker tag cblomart/rpi-vsphere-graphite cblomart/rpi-vsphere-graphite:latest
+      - docker push cblomart/rpi-vsphere-graphite:$COMMIT
+      - docker push cblomart/rpi-vsphere-graphite:$TRAVIS_TAG
+      - docker push cblomart/rpi-vsphere-graphite:latest
