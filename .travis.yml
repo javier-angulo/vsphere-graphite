@@ -26,14 +26,18 @@ jobs:
     - stage: Build
       name: "Windows amd64"
       script:   
+      - mage deps
       - make dist-windows-amd64
     - script:   
+      - make deps
       - make dist-darwin-amd64
       name: "OSX amd64"
     - script:
+      - make deps
       - make dist-linux-amd64
       name: "Linux amd64"
     - script:
+      - make deps
       - make dist-linux-arm
       name: "Linux ARM"
 #    - stage: Deploy        
