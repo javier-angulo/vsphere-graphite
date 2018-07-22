@@ -453,7 +453,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	}
 
 	// Create a map from folder to path
-	folderMorToPath := make(map[types.ManagedObjectReference]string)
+	folderMorToPath := make(map[string]*string)
 
 	// Create Queries from interesting objects and requested metrics
 
@@ -553,11 +553,11 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 		//find folder path
 		if len(morToParent) > 0 {
-			if folders, ok := folderMorToPath[pem.Entity]; !ok {
+			if folders, ok := folderMorToPath[pem.Entity.Value]; !ok {
 				if pem.Entity.Type != "HostSystem" {
 					current, ok := morToParent[pem.Entity.Value]
 					for ok {
-						if strings.HasPrefix(*current, "folder-") {
+						if !strings.HasPrefix(*current, "folder-") {
 							errlog.Println("Parent is not a folder for " + *current)
 							break
 						}
@@ -569,7 +569,8 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 						if *foldername == "vm" {
 							break
 						}
-						folders = fmt.Sprintf("%s/%s", *foldername, folders)
+						folderpath := fmt.Sprintf("%s/%s", *foldername, *folders)
+						folders = &folderpath
 						newcurrent, ok := morToParent[*current]
 						if !ok {
 							errlog.Println("No parent found for folder " + *current)
@@ -577,9 +578,8 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 						}
 						current = newcurrent
 					}
-					folders = strings.Trim(folders, "/")
 				}
-				folderMorToPath[pem.Entity] = folders
+				folderMorToPath[pem.Entity.Value] = folders
 			}
 		}
 		//find tags
@@ -605,9 +605,12 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			errlog.Println("No values returned in query!")
 		}
 		//find folder
-		folder := folderMorToPath[pem.Entity]
-		folder = strings.Replace(folder, " ", "\\ ", -1)
-		folder = strings.Replace(folder, ",", "\\,", -1)
+		folder := folderMorToPath[pem.Entity.Value]
+		folderpath := ""
+		if folder != nil {
+			folderpath = strings.Replace(*folder, " ", "\\ ", -1)
+			folderpath = strings.Replace(folderpath, ",", "\\,", -1)
+		}
 		objType := strings.ToLower(pem.Entity.Type)
 		timeStamp := endTime.Unix()
 		// prepare basic informaitons of point
@@ -620,7 +623,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			Cluster:      cluster,
 			Network:      network,
 			ResourcePool: resourcepool,
-			Folder:       folder,
+			Folder:       folderpath,
 			ViTags:       vitags,
 			//NumCPU:       numcpu,
 			//MemorySizeMB: memorysizemb,
