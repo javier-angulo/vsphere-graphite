@@ -623,7 +623,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 					break
 				}
 				if !strings.HasPrefix(*current, "folder-") {
-					errlog.Println("Parent is not a folder for " + pem.Entity.Value)
+					errlog.Println("Parent is not a folder for " + pem.Entity.Value + " | current: " + *current + " | paths: " + strings.Join(paths, ", "))
 					break
 				}
 				foldername, ok := morToName[*current]
