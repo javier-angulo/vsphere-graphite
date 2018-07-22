@@ -566,7 +566,13 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	for _, base := range perfres.Returnval {
 		pem := base.(*types.PerfEntityMetric)
 		//entityName := strings.ToLower(pem.Entity.Type)
-		name := strings.ToLower(strings.Replace(*morToName[pem.Entity.Value], domain, "", -1))
+		name := ""
+		if ptr, ok := morToName[pem.Entity.Value]; ok {
+			name = strings.ToLower(strings.Replace(*ptr, domain, "", -1))
+		} else {
+			stdlog.Println("VM name not found for: " + pem.Entity.Value)
+			continue
+		}
 		//find datastore
 		datastore := []string{}
 		if mors, ok := vmToDatastore[pem.Entity.Value]; ok {
