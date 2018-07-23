@@ -449,7 +449,11 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	utils.CleanDiskInfosMap(morToDiskInfos, refs)
 
 	//create a map to resolve metric names
-	metricToName := make(map[int32]string)
+	mncount := 0
+	for _, metricgroup := range vcenter.MetricGroups {
+		mncount += len(metricgroup.Metrics)
+	}
+	metricToName := make(map[int32]string, mncount)
 	for _, metricgroup := range vcenter.MetricGroups {
 		for _, metricdef := range metricgroup.Metrics {
 			metricToName[metricdef.Key] = metricdef.Metric
@@ -561,7 +565,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		errlog.Println("No result returned by queries.")
 	}
 	// create an array to store vm to folder path resolution
-	morToFolderPath := make(map[string][]string)
+	morToFolderPath := make(map[string][]string, len(perfres.Returnval))
 	valuescount := 0
 	for _, base := range perfres.Returnval {
 		pem := base.(*types.PerfEntityMetric)
