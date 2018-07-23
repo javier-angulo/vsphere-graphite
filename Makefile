@@ -61,7 +61,7 @@ docker-build: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite
 	fi
 
 docker-push:
-    docker push cblomart/$(PREFIX)vsphere-graphite:$(COMMIT)
+	docker push cblomart/$(PREFIX)vsphere-graphite:$(COMMIT)
 	if [ ! -z "$(TAG)"];then\
 		docker push cblomart/$(PREFIX)vsphere-graphite:($TAG);\
 		docker push cblomart/$(PREFIX)vsphere-graphite:latest;\
@@ -82,7 +82,7 @@ push-linux-amd64:
 	@$(MAKE) docker-push 
 
 push-linux-arm:
-    @$(MAKE) docker-push PREFIX=rpi-
+	@$(MAKE) docker-push PREFIX=rpi-
 
 checks:
 	go get honnef.co/go/tools/cmd/gosimple
