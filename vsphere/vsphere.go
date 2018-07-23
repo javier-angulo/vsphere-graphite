@@ -735,6 +735,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		if numcpu, ok := morToNumCPU[pem.Entity.Value]; ok {
 			point.Group = "cpu"
 			point.Counter = "count"
+			point.Instance = ""
 			point.Rollup = "latest"
 			point.Value = int64(*numcpu)
 			*channel <- point
@@ -743,6 +744,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		if memorysizemb, ok := morToMemorySizeMB[pem.Entity.Value]; ok {
 			point.Group = "mem"
 			point.Counter = "sizemb"
+			point.Instance = ""
 			point.Rollup = "latest"
 			point.Value = int64(*memorysizemb)
 			*channel <- point
