@@ -55,14 +55,14 @@ docker-build: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite
 	cp vsphere-graphite-example.json docker/etc/vsphere-graphite.json
 	docker build -f docker/Dockerfile -t cblomart/$(PREFIX)vsphere-graphite docker
 	docker tag cblomart/$(PREFIX)vsphere-graphite cblomart/$(PREFIX)vsphere-graphite:$(COMMIT)
-	if [ ! -z "$TAG"];then\
+	if [ ! -z "$(TAG)" ];then\
 		docker tag cblomart/$(PREFIX)vsphere-graphite cblomart/$(PREFIX)vsphere-graphite:$(TAG);\
 		docker tag cblomart/$(PREFIX)vsphere-graphite cblomart/$(PREFIX)vsphere-graphite:latest;\
 	fi
 
 docker-push:
     docker push cblomart/$(PREFIX)vsphere-graphite:$(COMMIT)
-	if [ ! -z "$TAG"];then\
+	if [ ! -z "$(TAG)"];then\
 		docker push cblomart/$(PREFIX)vsphere-graphite:($TAG);\
 		docker push cblomart/$(PREFIX)vsphere-graphite:latest;\
 	fi
