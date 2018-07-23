@@ -49,7 +49,7 @@ build-linux-arm:
 dist-linux-arm:
 	@$(MAKE) dist GOOS=linux GOARCH=arm GOARM=5
 
-docker: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite
+docker-build: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite
 	cp $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/* docker/
 	mkdir -p docker/etc
 	cp vsphere-graphite-example.json docker/etc/vsphere-graphite.json
@@ -69,10 +69,10 @@ push:
     
 
 docker-linux-amd64:
-	@$(MAKE) docker GOOS=linux GOARCH=amd64
+	@$(MAKE) docker-build GOOS=linux GOARCH=amd64
 
 docker-linux-arm:
-	@$(MAKE) docker GOOS=linux GOARCH=arm PREFIX=rpi-
+	@$(MAKE) docker-build GOOS=linux GOARCH=arm PREFIX=rpi-
 
 docker-darwin-amd64: ;
 
