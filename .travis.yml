@@ -37,7 +37,7 @@ jobs:
     script:
     - make deps
     - make dist-linux-amd64
-    - pip install awscli
+    - pip install --user awscli
     - aws cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json" 
     - aws cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
   - script:
@@ -59,14 +59,14 @@ jobs:
   - script:
     - make deps
     - make dist-linux-arm
-    - pip install awscli
+    - pip install --user awscli
     - aws cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json"
     - aws cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
     name: Linux arm
     if: tag IS present
   - stage: Deploy
     script:
-    - pip install awscli
+    - pip install --user awscli
     - aws cp  s3://vsphere-graphite/$COMMIT/ /tmp/ --recursive --exclude "*" --include "*.tgz"
     if: tag IS present
     deploy:
@@ -81,7 +81,7 @@ jobs:
   - stage: Docker
     name: Docker linux amd64
     script:
-    - pip install awscli
+    - pip install --user awscli
     - mkdir -p releases/linux/amd64
     - aws cp s3://vsphere-graphite/$COMMIT/bin/linux/amd64/vsphere-graphite releases/linux/amd64/
     - make docker-linux-amd64
@@ -90,7 +90,7 @@ jobs:
   - name: Docker linux arm
     if: tag IS present
     script:
-    - pip install awscli
+    - pip install --user awscli
     - mkdir -p releases/linux/arm
     - aws cp s3://vsphere-graphite/$COMMIT/bin/linux/arm/vsphere-graphite releases/linux/arm/
     - make docker-linux-arm
