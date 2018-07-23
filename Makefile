@@ -63,7 +63,7 @@ docker-build: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite
 docker-push:
 	docker push cblomart/$(PREFIX)vsphere-graphite:$(COMMIT)
 	if [ ! -z "$(TAG)"];then\
-		docker push cblomart/$(PREFIX)vsphere-graphite:($TAG);\
+		docker push cblomart/$(PREFIX)vsphere-graphite:$(TAG);\
 		docker push cblomart/$(PREFIX)vsphere-graphite:latest;\
 	fi
     
