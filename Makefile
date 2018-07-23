@@ -54,6 +54,19 @@ docker: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite
 	mkdir -p docker/etc
 	cp vsphere-graphite-example.json docker/etc/vsphere-graphite.json
 	docker build -f docker/Dockerfile -t cblomart/$(PREFIX)vsphere-graphite docker
+	docker tag cblomart/$(PREFIX)vsphere-graphite cblomart/$(PREFIX)vsphere-graphite:$COMMIT
+	if [ ! -z "$TAG"];then\
+		docker tag cblomart/$(PREFIX)vsphere-graphite cblomart/$(PREFIX)vsphere-graphite:$TAG;\
+		docker tag cblomart/$(PREFIX)vsphere-graphite cblomart/$(PREFIX)vsphere-graphite:latest;\
+	fi
+
+push:
+    docker push cblomart/$(PREFIX)vsphere-graphite:$COMMIT
+	if [ ! -z "$TAG"];then\
+		docker push cblomart/$(PREFIX)vsphere-graphite:$TAG;\
+		docker push cblomart/$(PREFIX)vsphere-graphite:latest;\
+	fi
+    
 
 docker-linux-amd64:
 	@$(MAKE) docker GOOS=linux GOARCH=amd64
@@ -64,6 +77,12 @@ docker-linux-arm:
 docker-darwin-amd64: ;
 
 docker-windows-amd64: ;
+
+push-linux-amd64:
+	@$(MAKE) push 
+
+push-linux-arm:
+    @$(MAKE) push PREFIX=rpi-
 
 checks:
 	go get honnef.co/go/tools/cmd/gosimple

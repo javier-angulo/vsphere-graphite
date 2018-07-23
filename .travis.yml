@@ -91,35 +91,16 @@ jobs:
           tags: true
     - stage: Docker
       name: "Docker linux amd64"
-      if:
-        tag IS present
       script:
       - make deps
       - make docker-linux-amd64
-      - docker tag cblomart/vsphere-graphite cblomart/vsphere-graphite:$COMMIT
-      - docker tag cblomart/vsphere-graphite cblomart/vsphere-graphite:$TRAVIS_TAG
-      - docker tag cblomart/vsphere-graphite cblomart/vsphere-graphite:latest
-      - docker push cblomart/vsphere-graphite:$COMMIT
-      - docker push cblomart/vsphere-graphite:$TRAVIS_TAG
-      - docker push cblomart/vsphere-graphite:latest
-    - stage: Docker
-      name: "Docker linux amd64 - all"
-      if:
-        tag IS blank
-      script:
-      - make deps
-      - make docker-linux-amd64
-      - docker tag cblomart/vsphere-graphite cblomart/vsphere-graphite:$COMMIT
-      - docker push cblomart/vsphere-graphite:$COMMIT
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - make push-linux-amd64
     - name: "Docker linux arm"
       if:
         tag IS present
       script:
       - make deps
-      - make docker-linux-amd64
-      - docker tag cblomart/rpi-vsphere-graphite cblomart/rpi-vsphere-graphite:$COMMIT
-      - docker tag cblomart/rpi-vsphere-graphite cblomart/rpi-vsphere-graphite:$TRAVIS_TAG
-      - docker tag cblomart/rpi-vsphere-graphite cblomart/rpi-vsphere-graphite:latest
-      - docker push cblomart/rpi-vsphere-graphite:$COMMIT
-      - docker push cblomart/rpi-vsphere-graphite:$TRAVIS_TAG
-      - docker push cblomart/rpi-vsphere-graphite:latest
+      - make docker-linux-arm
+      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+      - make push-linux-arm
