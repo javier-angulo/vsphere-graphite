@@ -39,32 +39,32 @@ jobs:
     script:
     - make deps
     - make dist-linux-amd64
-    - aws cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json" 
-    - aws cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
+    - aws s3 cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json" 
+    - aws s3 cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
   - script:
     - make deps
     - make dist-darwin-amd64
-    - aws cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json"
-    - aws cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
+    - aws s3 cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json"
+    - aws s3 cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
     name: OSX amd64
     if: tag IS present
   - script:
     - make deps
     - make dist-windows-amd64
-    - aws cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json"
-    - aws cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
+    - aws s3 cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json"
+    - aws s3 cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
     name: Windows amd64
     if: tag IS present
   - script:
     - make deps
     - make dist-linux-arm
-    - aws cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json"
-    - aws cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
+    - aws s3 cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json"
+    - aws s3 cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
     name: Linux arm
     if: tag IS present
   - stage: Deploy
     script:
-    - aws cp  s3://vsphere-graphite/$COMMIT/ /tmp/ --recursive --exclude "*" --include "*.tgz"
+    - aws s3 cp s3://vsphere-graphite/$COMMIT/ /tmp/ --recursive --exclude "*" --include "*.tgz"
     if: tag IS present
     deploy:
       skip_cleanup: true
@@ -79,7 +79,7 @@ jobs:
     name: Docker linux amd64
     script:
     - mkdir -p releases/linux/amd64
-    - aws cp s3://vsphere-graphite/$COMMIT/bin/linux/amd64/vsphere-graphite releases/linux/amd64/
+    - aws s3 cp s3://vsphere-graphite/$COMMIT/bin/linux/amd64/vsphere-graphite releases/linux/amd64/
     - make docker-linux-amd64
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     - make push-linux-amd64
@@ -87,7 +87,7 @@ jobs:
     if: tag IS present
     script:
     - mkdir -p releases/linux/arm
-    - aws cp s3://vsphere-graphite/$COMMIT/bin/linux/arm/vsphere-graphite releases/linux/arm/
+    - aws s3 cp s3://vsphere-graphite/$COMMIT/bin/linux/arm/vsphere-graphite releases/linux/arm/
     - make docker-linux-arm
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     - make push-linux-arm
