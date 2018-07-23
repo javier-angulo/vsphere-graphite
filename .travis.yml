@@ -1,6 +1,6 @@
 language: go
 go:
-- "1.10"
+- '1.10'
 sudo: required
 addons:
   apt:
@@ -14,7 +14,9 @@ env:
   - COMMIT=${TRAVIS_COMMIT::7}
   - TRAVIS_TAG=${TRAVIS_TAG}
   - DOCKER_USERNAME=cblomart
+  - AWS_ACCESS_KEY_ID=AKIAJI7KTLOL2U7WQAQA
   - secure: HdeMVcGgMn5eqQmlKfKY/BVKzsbn/vwAN/KozEG1zW4yI4TKR9slksPZf7Vc+zZllQbTkbc6LlV1OUFOPTxElOOLOAzpqvJ8wNhpMixrSfPEko+aDZEUArKgRDoJwpUgGvT4H5xcWEA530ugu15cpuu3OMoGX5BubZKzgQedS3I7XcxpmfpNMgfbYWhIzXCmETbdQ9rnihZc95rjiVx1CEen2T9JG8DeLJe1ek9cS5gBo5c4+vM6K0x6NNNpEgI3ux/zR1Akg35seoHIvRB51SkpwJgF9fwvAmVE0UbqN/HGSLjKGO/wA81QCzdSzKc+mdcmFnqoPzuPZT5iiOGvQCIrM1ORqjE5Wj6wZHeJC1dudjPoC8Xel2AVuhrlp4GwRsl7j6q+G2NPN6V2Rjqq3ts1gXNrDxRZcEoZvR72e8xkKHkNKsQDsD4DORYFV4y6fwXYyXkdPZIN5iYZnDIfBce4rguNWveAEprhdF25MUAr1m3u9O8U0mAuiBNIBH0cVsA0e0qMwvThBPdpA3xepkbD78v41Uoz7KT4hgeZPGxLN98N/8F+ilpcr2VLe0HMATaI0hX1LrlPITK5h5Gnz3sva931WbTQPfEhAiGcZKlrg6mVi9b6vjf8Rku5Z+PSmbKZo8B9SKMJduUwmH9N+0Q4+Cgiv0MQFfZh3z3Xq2Q=
+  - secure: Au0hrq98mPB4fwhDT+WodQmY+MUMt5fMQjB5Lf1h3p1mUDwvmhjZaJzlBqa2MaQr93clxzShjNobbtsDJVOEW9KpLUUCLyBRdKj8r8wj5tU8ckvUVGqazeYpKoqKSOiKT4uyBYaIRfpFPV+FmLLuZBvUBta+IcKOaME5ra6QnXQONZVdzta5mAKLCe0/8LYoF4VYj1SwqXYdb9p1F6v7HzMKUA77zFiYrGAMSOjWaD5zEyYzRze15QGcHU1fkcmZzWn23k9iPRUf8tl+SNldlioXcyirOY2ud0nIOJlOVdxZ9+hfPJvb0cuHYgRux7KfAKSEtxRcCp5h6vPM/jOBSdrygzC0v/HYrMi00Lqszgq+NejCO6VKddm4IgbwI4t45JuMC+9AfCt0VD/43wY7GtZxpANcMoFEecSYPLZddCU6j8x+HIb/A6jt8a/TALnG6FlKpO7X7j1cctebxX+uD4HAA9l+6/GKVqHg+cQwQD9coNTW3HFYaKzgt2t/VRGzjMPWsZUIB4apUTKlgXwoxBTR6bwirMrkt6XfLSg26zqL7zr9D3NFSMMLmmaqoHk90ggAuVDZdyZTyAIE3zvXs4Ydsd7RwYosx5/j/uyIi247xRT9UuRfBLrM4aerYKMjDcWK37QMXgFkjMfEFjBQIo4pPBH76eNm2JSLpB8JQ1M=
 services:
 - docker
 before_cache:
@@ -22,85 +24,68 @@ before_cache:
 - rm -rf $GOPATH/pkg/**/github.com/cblomart/vsphere-graphite
 cache:
   directories:
-    - $GOPATH/src
-    - $GOPATH/pkg
+  - "$GOPATH/src"
+  - "$GOPATH/pkg"
 jobs:
   include:
-    - stage: Checks
-      script:
-      - make deps
-      - make checks
-    - stage: Build
-      name: "Linux amd64"
-      script:   
-      - make deps
-      - make dist-linux-amd64
-      deploy:
-        skip_cleanup: true
-        provider: releases
-        api_key:
-          secure: gQrD7qd+CrPyBrpOG8mVNLZtcjMAavW3y+vcavNdlb16Mf9aoEIHdiMhv4Peq5hzfkkS8DgtCY7WwFI2KFtCyQNIVM/G6qlaql2OndYRKwGbD+d3sMniPAOulLM1QJ8Kkm4vvTbxK7kqwyL2CmNFEGPk8tQifhmVRNwSCIo5T1BlBVqD9tmYQ5uOq1trXbyY+GyCQ2a4Ff6zZFja4gb8iMNf4Op33pRFnFJrV7di4+ylJpXKjicQ0H0xM74BASD7aT9jA6+Uk8fsr8h7QKeMdovKp491nhKlVvivKNtB8roB52yQFNgjHJM8TJu4/psx11YOYUZMWiBjCdbzb4/gQt153dduAfJXPP/sQWjsxLLlonHtxS/xKjAvEw2Ei+9gMvvzwlhibYna+PYWfvMXGSwyojfNoGiJiBX8bm30ARSfhLIZepDU9AVRE62CR2ZESSegWeOJoCxTClYcGjDeXoxECpEtqOwbrQRVROHlkH2pLg3eJAzb2rQRT0nnoGydg2LecUMDdxyqSvVct/7kZzWBhTEpHh2ZemPoTbe9YytPlCAKORdUe/u8p+gN92KHPx9TXSHY+k3iNvy+8n0Ot8gio7NTpwTOszVC/r3AtFoBlDEy5KpEbdtqv495F0n+ICZzEYnWVz1VgUhnViO0sExoTaWMB8Y7LmH/k+Ufp0Y=
-        file_glob: true
-        file: releases/linux/amd64/vsphere-graphite_*.tgz  
-        on:
-          tags: true
-    - script:   
-      - make deps
-      - make dist-darwin-amd64
-      name: "OSX amd64"
-      if:
-        tag IS present
-      deploy:
-        skip_cleanup: true
-        provider: releases
-        api_key:
-          secure: gQrD7qd+CrPyBrpOG8mVNLZtcjMAavW3y+vcavNdlb16Mf9aoEIHdiMhv4Peq5hzfkkS8DgtCY7WwFI2KFtCyQNIVM/G6qlaql2OndYRKwGbD+d3sMniPAOulLM1QJ8Kkm4vvTbxK7kqwyL2CmNFEGPk8tQifhmVRNwSCIo5T1BlBVqD9tmYQ5uOq1trXbyY+GyCQ2a4Ff6zZFja4gb8iMNf4Op33pRFnFJrV7di4+ylJpXKjicQ0H0xM74BASD7aT9jA6+Uk8fsr8h7QKeMdovKp491nhKlVvivKNtB8roB52yQFNgjHJM8TJu4/psx11YOYUZMWiBjCdbzb4/gQt153dduAfJXPP/sQWjsxLLlonHtxS/xKjAvEw2Ei+9gMvvzwlhibYna+PYWfvMXGSwyojfNoGiJiBX8bm30ARSfhLIZepDU9AVRE62CR2ZESSegWeOJoCxTClYcGjDeXoxECpEtqOwbrQRVROHlkH2pLg3eJAzb2rQRT0nnoGydg2LecUMDdxyqSvVct/7kZzWBhTEpHh2ZemPoTbe9YytPlCAKORdUe/u8p+gN92KHPx9TXSHY+k3iNvy+8n0Ot8gio7NTpwTOszVC/r3AtFoBlDEy5KpEbdtqv495F0n+ICZzEYnWVz1VgUhnViO0sExoTaWMB8Y7LmH/k+Ufp0Y=
-        file_glob: true
-        file: releases/darwin/amd64/vsphere-graphite_*.tgz  
-        on:
-          tags: true
-    - script:
-      - make deps
-      - make dist-windows-amd64
-      name: "Windows amd64"
-      if:
-        tag IS present
-      deploy:
-        skip_cleanup: true
-        provider: releases
-        api_key:
-          secure: gQrD7qd+CrPyBrpOG8mVNLZtcjMAavW3y+vcavNdlb16Mf9aoEIHdiMhv4Peq5hzfkkS8DgtCY7WwFI2KFtCyQNIVM/G6qlaql2OndYRKwGbD+d3sMniPAOulLM1QJ8Kkm4vvTbxK7kqwyL2CmNFEGPk8tQifhmVRNwSCIo5T1BlBVqD9tmYQ5uOq1trXbyY+GyCQ2a4Ff6zZFja4gb8iMNf4Op33pRFnFJrV7di4+ylJpXKjicQ0H0xM74BASD7aT9jA6+Uk8fsr8h7QKeMdovKp491nhKlVvivKNtB8roB52yQFNgjHJM8TJu4/psx11YOYUZMWiBjCdbzb4/gQt153dduAfJXPP/sQWjsxLLlonHtxS/xKjAvEw2Ei+9gMvvzwlhibYna+PYWfvMXGSwyojfNoGiJiBX8bm30ARSfhLIZepDU9AVRE62CR2ZESSegWeOJoCxTClYcGjDeXoxECpEtqOwbrQRVROHlkH2pLg3eJAzb2rQRT0nnoGydg2LecUMDdxyqSvVct/7kZzWBhTEpHh2ZemPoTbe9YytPlCAKORdUe/u8p+gN92KHPx9TXSHY+k3iNvy+8n0Ot8gio7NTpwTOszVC/r3AtFoBlDEy5KpEbdtqv495F0n+ICZzEYnWVz1VgUhnViO0sExoTaWMB8Y7LmH/k+Ufp0Y=
-        file_glob: true
-        file: releases/windows/amd64/vsphere-graphite_*.tgz  
-        on:
-          tags: true
-    - script:
-      - make deps
-      - make dist-linux-arm
-      name: "Linux arm7"
-      if:
-        tag IS present
-      deploy:
-        skip_cleanup: true
-        provider: releases
-        api_key:
-          secure: gQrD7qd+CrPyBrpOG8mVNLZtcjMAavW3y+vcavNdlb16Mf9aoEIHdiMhv4Peq5hzfkkS8DgtCY7WwFI2KFtCyQNIVM/G6qlaql2OndYRKwGbD+d3sMniPAOulLM1QJ8Kkm4vvTbxK7kqwyL2CmNFEGPk8tQifhmVRNwSCIo5T1BlBVqD9tmYQ5uOq1trXbyY+GyCQ2a4Ff6zZFja4gb8iMNf4Op33pRFnFJrV7di4+ylJpXKjicQ0H0xM74BASD7aT9jA6+Uk8fsr8h7QKeMdovKp491nhKlVvivKNtB8roB52yQFNgjHJM8TJu4/psx11YOYUZMWiBjCdbzb4/gQt153dduAfJXPP/sQWjsxLLlonHtxS/xKjAvEw2Ei+9gMvvzwlhibYna+PYWfvMXGSwyojfNoGiJiBX8bm30ARSfhLIZepDU9AVRE62CR2ZESSegWeOJoCxTClYcGjDeXoxECpEtqOwbrQRVROHlkH2pLg3eJAzb2rQRT0nnoGydg2LecUMDdxyqSvVct/7kZzWBhTEpHh2ZemPoTbe9YytPlCAKORdUe/u8p+gN92KHPx9TXSHY+k3iNvy+8n0Ot8gio7NTpwTOszVC/r3AtFoBlDEy5KpEbdtqv495F0n+ICZzEYnWVz1VgUhnViO0sExoTaWMB8Y7LmH/k+Ufp0Y=
-        file_glob: true
-        file: releases/linux/arm/vsphere-graphite_*.tgz  
-        on:
-          tags: true
-    - stage: Docker
-      name: "Docker linux amd64"
-      script:
-      - make deps
-      - make docker-linux-amd64
-      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - make push-linux-amd64
-    - name: "Docker linux arm"
-      if:
-        tag IS present
-      script:
-      - make deps
-      - make docker-linux-arm
-      - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-      - make push-linux-arm
+  - stage: Checks
+    script:
+    - make deps
+    - make checks
+  - stage: Build
+    name: Linux amd64
+    script:
+    - make deps
+    - make dist-linux-amd64
+    - aws cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json" 
+    - aws cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
+  - script:
+    - make deps
+    - make dist-darwin-amd64
+    - aws cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json"
+    - aws cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
+    name: OSX amd64
+    if: tag IS present
+  - script:
+    - make deps
+    - make dist-windows-amd64
+    - aws cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json"
+    - aws cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
+    name: Windows amd64
+    if: tag IS present
+  - script:
+    - make deps
+    - make dist-linux-arm
+    - aws cp releases/ s3://vsphere-graphite/$COMMIT/bin/ --recursive --exclude "*.json"
+    - aws cp /tmp/ s3://vsphere-graphite/$COMMIT/ --recursive --exclude "*" --include "*.tgz"
+    name: Linux arm
+    if: tag IS present
+  - stage: Deploy
+    script:
+    - aws cp  s3://vsphere-graphite/$COMMIT/ /tmp/ --recursive --exclude "*" --include "*.tgz"
+    if: tag IS present
+    deploy:
+      skip_cleanup: true
+      provider: releases
+      api_key:
+        secure: gQrD7qd+CrPyBrpOG8mVNLZtcjMAavW3y+vcavNdlb16Mf9aoEIHdiMhv4Peq5hzfkkS8DgtCY7WwFI2KFtCyQNIVM/G6qlaql2OndYRKwGbD+d3sMniPAOulLM1QJ8Kkm4vvTbxK7kqwyL2CmNFEGPk8tQifhmVRNwSCIo5T1BlBVqD9tmYQ5uOq1trXbyY+GyCQ2a4Ff6zZFja4gb8iMNf4Op33pRFnFJrV7di4+ylJpXKjicQ0H0xM74BASD7aT9jA6+Uk8fsr8h7QKeMdovKp491nhKlVvivKNtB8roB52yQFNgjHJM8TJu4/psx11YOYUZMWiBjCdbzb4/gQt153dduAfJXPP/sQWjsxLLlonHtxS/xKjAvEw2Ei+9gMvvzwlhibYna+PYWfvMXGSwyojfNoGiJiBX8bm30ARSfhLIZepDU9AVRE62CR2ZESSegWeOJoCxTClYcGjDeXoxECpEtqOwbrQRVROHlkH2pLg3eJAzb2rQRT0nnoGydg2LecUMDdxyqSvVct/7kZzWBhTEpHh2ZemPoTbe9YytPlCAKORdUe/u8p+gN92KHPx9TXSHY+k3iNvy+8n0Ot8gio7NTpwTOszVC/r3AtFoBlDEy5KpEbdtqv495F0n+ICZzEYnWVz1VgUhnViO0sExoTaWMB8Y7LmH/k+Ufp0Y=
+      file_glob: true
+      file: /tmp/vsphere-graphite_*.tgz
+      on:
+        tags: true
+  - stage: Docker
+    name: Docker linux amd64
+    script:
+    - mkdir -p releases/linux/amd64
+    - aws cp s3://vsphere-graphite/$COMMIT/bin/linux/amd64/vsphere-graphite releases/linux/amd64/
+    - make docker-linux-amd64
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - make push-linux-amd64
+  - name: Docker linux arm
+    if: tag IS present
+    script:
+    - mkdir -p releases/linux/arm
+    - aws cp s3://vsphere-graphite/$COMMIT/bin/linux/arm/vsphere-graphite releases/linux/arm/
+    - make docker-linux-arm
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - make push-linux-arm
