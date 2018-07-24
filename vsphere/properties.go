@@ -39,3 +39,17 @@ var Properties = map[string]map[string][]string{
 		"VirtualMachine": {"guest.disk"},
 	},
 }
+
+// PropertiesSections represent the mapping of attributes to sections in the cache
+var PropertiesSections = map[string]string{
+	"name":         "names",
+	"datastore":    "datastores",
+	"network":      "networks",
+	"runtime.host": "hosts",
+	"parent":       "parents",
+	"vm":           "vms",
+	"tag":          "tags",
+	"summary.config.numCpu":       "cpus",
+	"summary.config.memorySizeMB": "memories",
+	"guest.disks":                 "disks",
+}
