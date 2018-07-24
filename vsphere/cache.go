@@ -91,11 +91,14 @@ var (
 // Gets an index
 func index(vcenter, section, i string) string {
 	var buffer bytes.Buffer
-	buffer.WriteString(vcenter)
-	buffer.WriteString("|")
-	buffer.WriteString(section)
-	buffer.WriteString("|")
-	buffer.WriteString(i)
+	err := buffer.WriteString(vcenter)
+	err = buffer.WriteString("|")
+	err = buffer.WriteString(section)
+	err = buffer.WriteString("|")
+	err = buffer.WriteString(i)
+	if err {
+		return ""
+	}
 	return buffer.String()
 }
 
