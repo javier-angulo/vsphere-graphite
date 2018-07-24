@@ -92,9 +92,21 @@ var (
 func index(vcenter, section, i string) string {
 	var buffer bytes.Buffer
 	_, err := buffer.WriteString(vcenter)
+	if err != nil {
+		return ""
+	}
 	_, err = buffer.WriteString("|")
+	if err != nil {
+		return ""
+	}
 	_, err = buffer.WriteString(section)
+	if err != nil {
+		return ""
+	}
 	_, err = buffer.WriteString("|")
+	if err != nil {
+		return ""
+	}
 	_, err = buffer.WriteString(i)
 	if err != nil {
 		return ""
