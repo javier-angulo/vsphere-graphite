@@ -32,4 +32,10 @@ var (
 
 	//create a map to resolve diskinfos
 	morToDiskInfos map[string]*[]types.GuestDiskInfo
+
+	//resolve metrics to name
+	metricToName map[int32]*string
+
+	//crate a ma to resolve folders
+	morToFolderPath map[string]*[]string
 )

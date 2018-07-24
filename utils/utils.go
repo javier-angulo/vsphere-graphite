@@ -349,3 +349,20 @@ func CleanDiskInfosMap(m map[string]*[]types.GuestDiskInfo, refs []string) {
 		}
 	}
 }
+
+// CleanInt32StringMap removes unkonw keys from a map of tag
+func CleanInt32StringMap(m map[int32]*string, refs []int32) {
+	for e := range m {
+		found := false
+		for _, ref := range refs {
+			if ref == e {
+				found = true
+				break
+			}
+		}
+		if !found {
+			stdlog.Println("removing mor from int32 string map: " + strconv.FormatInt(int64(e), 10))
+			delete(m, e)
+		}
+	}
+}

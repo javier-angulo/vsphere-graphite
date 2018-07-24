@@ -168,6 +168,12 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 	if morToDiskInfos == nil {
 		morToDiskInfos = make(map[string]*[]types.GuestDiskInfo)
 	}
+	if metricToName == nil {
+		metricToName = make(map[int32]*string)
+	}
+	if morToFolderPath == nil {
+		morToFolderPath = make(map[string]*[]string)
+	}
 }
 
 // Query : Query a vcenter
@@ -448,17 +454,16 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	utils.CleanInt32Map(morToMemorySizeMB, refs)
 	utils.CleanDiskInfosMap(morToDiskInfos, refs)
 
-	//create a map to resolve metric names
-	mncount := 0
-	for _, metricgroup := range vcenter.MetricGroups {
-		mncount += len(metricgroup.Metrics)
-	}
-	metricToName := make(map[int32]string, mncount)
+	// create a map to resolve metric names
+	metricKeys := []int32{}
 	for _, metricgroup := range vcenter.MetricGroups {
 		for _, metricdef := range metricgroup.Metrics {
-			metricToName[metricdef.Key] = metricdef.Metric
+			metricToName[metricdef.Key] = &metricdef.Metric
+			metricKeys = append(metricKeys, metricdef.Key)
 		}
 	}
+	// empty metric to names
+	utils.CleanInt32StringMap(metricToName, metricKeys)
 
 	//get the size of the maps to create
 	rpcount := 0
@@ -565,8 +570,10 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		errlog.Println("No result returned by queries.")
 	}
 	// create an array to store vm to folder path resolution
-	morToFolderPath := make(map[string][]string, len(perfres.Returnval))
 	valuescount := 0
+	for key := range morToFolderPath {
+		delete(morToFolderPath, key)
+	}
 	for _, base := range perfres.Returnval {
 		pem := base.(*types.PerfEntityMetric)
 		//entityName := strings.ToLower(pem.Entity.Type)
@@ -623,8 +630,10 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			current, ok := morToParent[pem.Entity.Value]
 			for ok {
 				if morpath, ok := morToFolderPath[*current]; ok {
-					paths = morpath
-					break
+					if morpath != nil {
+						paths = *morpath
+						break
+					}
 				}
 				if !(strings.HasPrefix(*current, "folder-") || strings.HasPrefix(*current, "group-")) {
 					errlog.Println("Parent is not a folder for " + pem.Entity.Value + " | current: " + *current + " | paths: " + strings.Join(paths, ", "))
@@ -639,7 +648,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 					break
 				}
 				paths = append(paths, *foldername)
-				morToFolderPath[*current] = paths
+				morToFolderPath[*current] = &paths
 				newcurrent, ok := morToParent[*current]
 				if !ok {
 					errlog.Println("No parent found for folder " + *current)
@@ -752,7 +761,10 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		valuescount = valuescount + len(pem.Value)
 		for _, baseserie := range pem.Value {
 			serie := baseserie.(*types.PerfMetricIntSeries)
-			metricName := strings.ToLower(metricToName[serie.Id.CounterId])
+			metricName := ""
+			if metricToName[serie.Id.CounterId] != nil {
+				metricName = strings.ToLower(*metricToName[serie.Id.CounterId])
+			}
 			instanceName := serie.Id.Instance
 			var value int64 = -1
 			switch {
