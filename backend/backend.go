@@ -71,8 +71,12 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 	case InfluxDB:
 		//Initialize Influx DB
 		stdlog.Println("Intializing " + backendType + " backend")
+		protocol := "http"
+		if backend.Encrypted {
+			protocol = "https"
+		}
 		influxclt, err := influxclient.NewHTTPClient(influxclient.HTTPConfig{
-			Addr:     "http://" + backend.Hostname + ":" + strconv.Itoa(backend.Port),
+			Addr:     fmt.Sprintf("%s://%s:%d", protocol, backend.Hostname, backend.Port),
 			Username: backend.Username,
 			Password: backend.Password,
 		})
