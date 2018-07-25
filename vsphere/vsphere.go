@@ -101,8 +101,7 @@ func InitMetrics(metrics []*Metric, perfmanager *mo.PerformanceManager) {
 
 // Init : initialize vcenter
 func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorLogs *log.Logger) {
-	stdlog = standardLogs
-	errlog = errorLogs
+	log.Printf("Initalizing vCenter %s\n", vcenter.Hostname)
 	// connect to vcenter
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -113,6 +112,7 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 		return
 	}
 	defer func() {
+		stdlog.Println("disconnecting from vcenter:", vcenter.Hostname)
 		err := client.Logout(ctx) // nolint: vetshadow
 		if err != nil {
 			errlog.Println("Error loging out of vcenter: ", vcenter.Hostname)

@@ -176,6 +176,8 @@ func (service *Service) Manage() (string, error) {
 	var memstats runtime.MemStats
 	// timer to execute memory collection
 	memtimer := time.NewTimer(time.Second * time.Duration(10))
+	// channel to cleanup
+	cleanup := make(chan bool, 1)
 
 	// buffer for points to send
 	pointbuffer := make([]*backend.Point, conf.FlushSize)
@@ -209,18 +211,23 @@ func (service *Service) Manage() (string, error) {
 			}
 			wg.Wait()
 			doneQuery <- true
-			memtimer.C <- time.Now()
+			cleanup <- true
 		case <-ticker.C:
 			stdlog.Println("Scheduled metric retrieval")
 			for _, vcenter := range conf.VCenters {
 				go queryVCenter(*vcenter, conf, &metricsProm, nil)
 			}
 		case <-memtimer.C:
-			// sent remaining values
-			conf.Backend.SendMetrics(pointbuffer)
-			stdlog.Printf("Sent %d logs to backend", bufferindex)
-			bufferindex = 0
-			ClearBuffer(pointbuffer)
+			if conf.Backend.Type != "prometheus" {
+				// sent remaining values
+				conf.Backend.SendMetrics(pointbuffer)
+				stdlog.Printf("Sent %d logs to backend", bufferindex)
+				// empty point buffer
+				bufferindex = 0
+				ClearBuffer(pointbuffer)
+			}
+			cleanup <- true
+		case <-cleanup:
 			runtime.GC()
 			debug.FreeOSMemory()
 			runtime.ReadMemStats(&memstats)
