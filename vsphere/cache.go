@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"log"
 	"strings"
+	"sync"
 
 	"github.com/cblomart/vsphere-graphite/utils"
 
@@ -12,6 +13,8 @@ import (
 
 // Cache will hold some informations in memory
 type Cache map[string]interface{}
+
+var lock = sync.RWMutex{}
 
 // Gets an index
 func index(vcenter, section, i string) string {
@@ -74,6 +77,8 @@ func (c *Cache) Add(vcenter, section, i string, v interface{}) {
 
 // add to the cache without type check
 func (c *Cache) add(vcenter, section, i string, v interface{}) {
+	lock.Lock()
+	defer lock.Unlock()
 	if v != nil {
 		(*c)[index(vcenter, section, i)] = v
 	}
@@ -81,6 +86,8 @@ func (c *Cache) add(vcenter, section, i string, v interface{}) {
 
 // get a value from the cache
 func (c *Cache) get(vcenter, section, i string) interface{} {
+	lock.RLock()
+	defer lock.RUnlock()
 	if v, ok := (*c)[index(vcenter, section, i)]; ok {
 		return v
 	}
@@ -145,6 +152,8 @@ func (c *Cache) GetDiskInfos(vcenter, section, i string) *[]types.GuestDiskInfo 
 
 // Clean cache of unknows references
 func (c *Cache) Clean(vcenter string, section string, refs []string) {
+	lock.Lock()
+	defer lock.Unlock()
 	for e := range *c {
 		// get back index parts
 		m := strings.Split(e, "|")
@@ -175,6 +184,8 @@ func (c *Cache) Clean(vcenter string, section string, refs []string) {
 // CleanAll cleans all sections of unknown references
 // poolpaths and metrics are ignored as they will be cleaned real time
 func (c *Cache) CleanAll(vcenter string, refs []string) {
+	lock.Lock()
+	defer lock.Unlock()
 	for e := range *c {
 		// get back index parts
 		m := strings.Split(e, "|")
@@ -204,6 +215,8 @@ func (c *Cache) CleanAll(vcenter string, refs []string) {
 
 // Purge purges a section of the cache
 func (c *Cache) Purge(vcenter, section string) {
+	lock.Lock()
+	defer lock.Unlock()
 	for e := range *c {
 		// get back index parts
 		m := strings.Split(e, "|")
@@ -221,6 +234,8 @@ func (c *Cache) Purge(vcenter, section string) {
 
 // lookup items in the cache
 func (c *Cache) lookup(vcenter, section string) *map[string]interface{} {
+	lock.RLock()
+	defer lock.RUnlock()
 	result := make(map[string]interface{})
 	for e := range *c {
 		// get back index parts
