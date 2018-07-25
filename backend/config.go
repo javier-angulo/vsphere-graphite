@@ -2,6 +2,7 @@ package backend
 
 import (
 	"github.com/cblomart/vsphere-graphite/backend/thininfluxclient"
+	"github.com/fluent/fluent-logger-golang/fluent"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	graphite "github.com/marpaia/graphite-golang"
 	"github.com/olivere/elastic"
@@ -15,6 +16,7 @@ type Config struct {
 	Username     string
 	Password     string
 	Type         string
+	Tag          string
 	Port         int
 	NoArray      bool
 	Encrypted    bool
@@ -22,6 +24,7 @@ type Config struct {
 	influx       *influxclient.Client
 	thininfluxdb *thininfluxclient.ThinInfluxClient
 	elastic      *elastic.Client
+	fluent       *fluent.Fluent
 	channel      *chan bool
 	doneChannel  *chan bool
 	promMetrics  *chan Point
