@@ -158,12 +158,12 @@ func (service *Service) Manage() (string, error) {
 
 	// Set up a ticker to collect metrics at givent interval (except for Prometheus which is Pull)
 	if conf.Backend.Type == "prometheus" {
+		ticker.Stop()
 		stdlog.Println("Init Prometheus")
 		err = conf.Backend.InitPrometheus(&runQuery, &doneQuery, &metricsProm)
 		if err != nil {
 			return "Init Prometheus failed", err
 		}
-		ticker.Stop()
 	} else {
 		// Start retriveing and sending metrics
 		stdlog.Println("Retrieving metrics")
@@ -209,6 +209,7 @@ func (service *Service) Manage() (string, error) {
 			}
 			wg.Wait()
 			doneQuery <- true
+			memtimer.C <- time.Now()
 		case <-ticker.C:
 			stdlog.Println("Scheduled metric retrieval")
 			for _, vcenter := range conf.VCenters {
