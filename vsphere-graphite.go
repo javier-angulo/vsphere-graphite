@@ -202,9 +202,12 @@ func (service *Service) Manage() (string, error) {
 			}
 		case <-runQuery:
 			stdlog.Println("Adhoc metric retrieval")
+			var wg sync.WaitGroup
+			wg.Add(len(conf.VCenters))
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &metricsProm, nil)
+				go queryVCenter(*vcenter, conf, &metricsProm, *wg)
 			}
+			wg.Wait()
 			doneQuery <- true
 		case <-ticker.C:
 			stdlog.Println("Scheduled metric retrieval")
