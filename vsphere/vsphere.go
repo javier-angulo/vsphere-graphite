@@ -316,7 +316,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		refs = append(refs, objectContent.Obj.Value)
 		for _, Property := range objectContent.PropSet {
 			if section, ok := PropertiesSections[Property.Name]; ok {
-				cache.Add(vcName, section, objectContent.Obj.Value, &Property.Val)
+				cache.Add(vcName, section, objectContent.Obj.Value, Property.Val)
 			} else {
 				errlog.Printf("Unhandled property '%s' for %s whose type is '%T'\n", Property.Name, objectContent.Obj.Value, Property.Val)
 			}
