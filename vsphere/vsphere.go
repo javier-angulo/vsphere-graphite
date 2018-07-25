@@ -376,7 +376,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				}
 			}
 			utils.Reverse(pools)
-			poolpath = strings.Join(pools, "/")
+			poolpath := strings.Join(pools, "/")
 			for _, vmmor := range *vmmors {
 				if vmmor.Type == "VirtualMachine" {
 					poolvms = append(poolvms, vmmor.Value)
