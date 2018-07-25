@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/cblomart/vsphere-graphite/backend"
@@ -146,7 +147,7 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 }
 
 // Query : Query a vcenter
-func (vcenter *VCenter) Query(interval int, domain string, properties []string, channel *chan backend.Point, done *chan bool) {
+func (vcenter *VCenter) Query(interval int, domain string, properties []string, channel *chan backend.Point, wg *sync.WaitGroup) {
 	stdlog.Println("Setting up query inventory of vcenter: ", vcenter.Hostname)
 
 	// Create the contect
@@ -586,5 +587,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 	}
 	stdlog.Println("Got " + strconv.Itoa(returncount) + " results from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
-	*done <- true
+	if wg != nil {
+		wg.Done()
+	}
 }

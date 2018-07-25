@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cblomart/vsphere-graphite/utils"
+
 	"net/http"
 
 	"github.com/cblomart/vsphere-graphite/backend/thininfluxclient"
@@ -133,7 +135,14 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 
 		http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
 		go func() error {
-			err := http.ListenAndServe(":9155", nil)
+			address := "*"
+			if len(backend.Hostname) > 0 {
+				address = backend.Hostname
+			}
+			if backend.Port > 0 {
+				address += ":" + utils.ValToString(backend.Port, "", false)
+			}
+			err := http.ListenAndServe(address, nil)
 			if err != nil {
 				errlog.Println("Error creating Prometheus listener")
 				return err

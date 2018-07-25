@@ -13,6 +13,7 @@ import (
 	"runtime/pprof"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -42,8 +43,8 @@ type Service struct {
 	daemon.Daemon
 }
 
-func queryVCenter(vcenter vsphere.VCenter, conf config.Configuration, channel *chan backend.Point, done *chan bool) {
-	vcenter.Query(conf.Interval, conf.Domain, conf.Properties, channel, done)
+func queryVCenter(vcenter vsphere.VCenter, conf config.Configuration, channel *chan backend.Point, wg *sync.WaitGroup) {
+	vcenter.Query(conf.Interval, conf.Domain, conf.Properties, channel, wg)
 }
 
 // Manage by daemon commands or run the daemon
@@ -166,9 +167,13 @@ func (service *Service) Manage() (string, error) {
 	} else {
 		// Start retriveing and sending metrics
 		stdlog.Println("Retrieving metrics")
+		var wg sync.WaitGroup
+		wg.Add(len(conf.VCenters))
 		for _, vcenter := range conf.VCenters {
-			go queryVCenter(*vcenter, conf, &metrics, &doneQuery)
+			go queryVCenter(*vcenter, conf, &metrics, &wg)
 		}
+		wg.Wait()
+		doneQuery <- true
 	}
 
 	// Memory statisctics
@@ -201,14 +206,22 @@ func (service *Service) Manage() (string, error) {
 			}
 		case <-runQuery:
 			stdlog.Println("Retrieving metrics")
+			var wg sync.WaitGroup
+			wg.Add(2)
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &metricsProm, &doneQuery)
+				go queryVCenter(*vcenter, conf, &metricsProm, &wg)
 			}
+			wg.Wait()
+			doneQuery <- true
 		case <-ticker.C:
 			stdlog.Println("Retrieving metrics")
+			var wg sync.WaitGroup
+			wg.Add(2)
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &metrics, &doneQuery)
+				go queryVCenter(*vcenter, conf, &metricsProm, &wg)
 			}
+			wg.Wait()
+			doneQuery <- true
 		case <-memtimer.C:
 			// sent remaining values
 			conf.Backend.SendMetrics(pointbuffer)
