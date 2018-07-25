@@ -55,7 +55,7 @@ func (c *Cache) Add(vcenter, section, i string, v interface{}) {
 			c.add(vcenter, section, i, &typed)
 		}
 	case int32:
-		c.add(vcenter, section, i, v)
+		c.add(vcenter, section, i, &typed)
 	case types.ManagedObjectReference:
 		c.add(vcenter, section, i, &(typed.Value))
 	case types.ArrayOfManagedObjectReference:
