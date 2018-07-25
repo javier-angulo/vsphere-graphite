@@ -334,14 +334,14 @@ func (c *Cache) FindName(vcenter, section, moref string) string {
 
 // FindNames finds objects in cache and resolves their names
 func (c *Cache) FindNames(vcenter, section, moref string) []string {
+	names := []string{}
 	ptr := cache.GetMorefs(vcenter, section, moref)
 	if ptr == nil {
-		return []string{}
+		return names
 	}
 	if len(*ptr) == 0 {
-		return []string{}
+		return names
 	}
-	names := make([]string)
 	for _, mor := range *ptr {
 		nptr := cache.GetString(vcenter, "names", mor.Value)
 		if nptr == nil {
@@ -357,14 +357,14 @@ func (c *Cache) FindNames(vcenter, section, moref string) []string {
 
 // FindTags finds objects in cachee and create a tag array
 func (c *Cache) FindTags(vcenter, moref string) []string {
+	tags := []string{}
 	ptr := cache.GetTags(vcenter, "tags", moref)
 	if ptr == nil {
-		return []string{}
+		return tags
 	}
 	if len(*ptr) == 0 {
-		return []string{}
+		return tags
 	}
-	tags := make([]string)
 	for _, tag := range *ptr {
 		tags = append(tags, tag.Key)
 	}
