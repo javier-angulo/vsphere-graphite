@@ -205,7 +205,7 @@ func (service *Service) Manage() (string, error) {
 			var wg sync.WaitGroup
 			wg.Add(len(conf.VCenters))
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &metricsProm, *wg)
+				go queryVCenter(*vcenter, conf, &metricsProm, &wg)
 			}
 			wg.Wait()
 			doneQuery <- true
