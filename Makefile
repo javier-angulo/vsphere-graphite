@@ -23,7 +23,7 @@ deps:
 	go get github.com/pquerna/ffjson
 	go get github.com/olivere/elastic
 	go get github.com/prometheus/client_golang/prometheus
-	github.com/fluent/fluent-logger-golang/fluent
+	go get github.com/fluent/fluent-logger-golang/fluent
 	go generate ./...
 
 build-windows-amd64:
