@@ -3,6 +3,7 @@ package backend
 // InitPrometheus : Set some channels to notify other theads when using Prometheus
 import (
 	"fmt"
+	"log"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -23,7 +24,7 @@ func (backend *Config) Describe(ch chan<- *prometheus.Desc) {
 // Collect : Implementation of Prometheus Collector.Collect
 func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 
-	stdlog.Println("Requested Metrics!")
+	log.Println("Requested Metrics!")
 
 	*backend.channel <- true
 
@@ -43,7 +44,7 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 			desc := prometheus.NewDesc(key, "vSphere collected metric", labelNames, nil)
 			metric, err := prometheus.NewConstMetric(desc, prometheus.GaugeValue, float64(point.Value), labelValues...)
 			if err != nil {
-				errlog.Println("Error creating prometheus metric")
+				log.Println("Error creating prometheus metric")
 			}
 			ch <- metric
 		case <-*backend.doneChannel:

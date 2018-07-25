@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"reflect"
 	"strings"
 
@@ -14,7 +15,7 @@ func CreateIndexIfNotExists(e *elastic.Client, index string) error {
 	// Use the IndexExists service to check if a specified index exists.
 	exists, err := e.IndexExists(index).Do(context.Background())
 	if err != nil {
-		errlog.Println("Unable to check if Elastic Index exists: ", err)
+		log.Println("Unable to check if Elastic Index exists: ", err)
 		return err
 	}
 
@@ -47,17 +48,17 @@ func CreateIndexIfNotExists(e *elastic.Client, index string) error {
 		mappingJSON, err := json.Marshal(mapping)
 
 		if err != nil {
-			errlog.Println("Error on Json Marshal")
+			log.Println("Error on Json Marshal")
 			return err
 		}
 
 		_, err = e.CreateIndex(index).BodyString(string(mappingJSON)).Do(context.Background())
 
 		if err != nil {
-			errlog.Println("Error creating Elastic Index:" + index)
+			log.Println("Error creating Elastic Index:" + index)
 			return err
 		}
-		stdlog.Println("Elastic Index created: " + index)
+		log.Println("Elastic Index created: " + index)
 	}
 	return nil
 }

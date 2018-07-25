@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"log"
 	"reflect"
 	"strings"
 
@@ -102,7 +103,7 @@ func (point *Point) GetInfluxPoint(noarray bool, valuefield string) *InfluxPoint
 		tag := tfield.Tag.Get(InfluxTag)
 		tagfields := strings.Split(tag, ",")
 		if len(tagfields) == 0 || len(tagfields) > 2 {
-			stdlog.Println("tag field ignored: " + tag)
+			log.Println("tag field ignored: " + tag)
 			continue
 		}
 		tagtype := tagfields[0]
