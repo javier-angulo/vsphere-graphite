@@ -53,7 +53,7 @@ You can select the extra data collected by using the "Properties" property:
 
 ### Backend parameters
 
-* Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" (embeded influx client) or "elasticsearch"
+* Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" (embeded influx client), "elastic", and "fluentd"
 * Hostname (BACKEND_HOSTNAME): hostname were the backend is running
 * Port (BACKEND_PORT): port to connect to for the backend
 * Encrypted (BACKEND_ENCRYPTED): enable or disable TLS to backend (true, false)
@@ -61,6 +61,7 @@ You can select the extra data collected by using the "Properties" property:
 * Password (BACKEND_PASSWORD): password to connect to the backend (influxdb and optionally for thinfluxdb & elasticsearch)
 * Database (BACKEND_DATABASE): database to use in the backend (influxdb, thinfluxdb, elasticsearch)
 * NoArray (BACKEND_NOARRAY): don't use csv 'array' as tags, only the first element is used (influxdb, thinfluxdb)
+* Tag (BACKEND_TAG): tag to use in the backend (fluent)
 
 ## Execute vsphere-graphite as a container
 

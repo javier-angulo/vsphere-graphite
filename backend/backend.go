@@ -14,6 +14,7 @@ import (
 	"net/http"
 
 	"github.com/cblomart/vsphere-graphite/backend/thininfluxclient"
+	"github.com/fluent/fluent-logger-golang/fluent"
 	influxclient "github.com/influxdata/influxdb/client/v2"
 	"github.com/marpaia/graphite-golang"
 	"github.com/olivere/elastic"
@@ -44,6 +45,8 @@ const (
 	Elastic = "elastic"
 	// Prometheus name of the prometheus backend
 	Prometheus = "prometheus"
+	// Fluentd name of the fluentd backend
+	Fluentd = "fluentd"
 )
 
 var stdlog, errlog *log.Logger
@@ -151,6 +154,21 @@ func (backend *Config) Init() error {
 			return nil
 		}()
 		return nil
+	case Fluentd:
+		//Initialize Influx DB
+		log.Println("Initializing " + backendType + " backend")
+
+		if backend.Tag == nil {
+			log.Println("backend.Tag not specified in vsphere-graphite.json")
+		}
+		fluentclt, err := fluent.New(fluent.Config{FluentPort: backend.Port, FluentHost: backend.Hostname, MarshalAsJSON: true})
+		if err != nil {
+			log.Println("Error connecting to Fluentd")
+			return err
+		}
+		backend.fluent = fluentclt
+		return nil
+
 	default:
 		log.Println("Backend " + backendType + " unknown.")
 		return errors.New("Backend " + backendType + " unknown.")
@@ -179,6 +197,9 @@ func (backend *Config) Disconnect() {
 	case Prometheus:
 		// Stop Exporting Prometheus Metrics
 		log.Println("Stopping exporter")
+	case Fluentd:
+		// Disconnect from Elastic
+		log.Println("Disconnecting from fluent")
 	default:
 		log.Println("Backend " + backendType + " unknown.")
 	}
@@ -296,6 +317,15 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 		}
 	case Prometheus:
 		// Prometheus doesn't need to send metrics
+	case Fluentd:
+		for _, point := range metrics {
+			if point != nil {
+				err := backend.fluent.Post(backend.Tag, *point)
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		}
 	default:
 		log.Println("Backend " + backendType + " unknown.")
 	}
