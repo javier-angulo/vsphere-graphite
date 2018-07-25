@@ -135,7 +135,7 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 
 		http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
 		go func() error {
-			address := "*"
+			address := ""
 			if len(backend.Hostname) > 0 {
 				address = backend.Hostname
 			}
