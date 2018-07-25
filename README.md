@@ -135,9 +135,16 @@ No open source projects would live and thrive without common effort. Here is the
 * [MnrGreg](https://github.com/mnrgreg)
 * [fdmsantos](https://github.com/fdmsantos)
 * [dupondje](https://github.com/dupondje)
+* [jlothian](https://github.com/jlothian)
 
 Also keep in mind that if you can't contribute code, issues and imporvement request are also a key part of a project evolution!
 So don't hesitate and tell us what doens't work or what you miss.
+
+## Donations
+
+This project is largely alive because of the forementioned contributors. Our time is precious bet it is even more precious to us when we can spend it on our beloved projects. So don't hesitate to make a donation:
+
+Bitcoin address: 1BQqpYfQc9NqykaK4rEH5bFsik1VffKHmQ
 
 ## License
 
