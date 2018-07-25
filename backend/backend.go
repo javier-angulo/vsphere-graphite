@@ -147,6 +147,7 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 				errlog.Println("Error creating Prometheus listener")
 				return err
 			}
+			stdlog.Printf("Prometheus lisenting at http://%s/metrics\n", address)
 			return nil
 		}()
 		return nil
