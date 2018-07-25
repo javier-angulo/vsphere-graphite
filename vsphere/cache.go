@@ -153,7 +153,7 @@ func (c *Cache) Clean(vcenter string, section string, refs []string) {
 			delete(*c, e)
 		}
 		// check vcenter
-		if m[0] != vcenter && m[1] != section {
+		if m[0] != vcenter || m[1] != section {
 			continue
 		}
 		// find the value in the range
