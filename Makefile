@@ -23,6 +23,7 @@ deps:
 	go get github.com/pquerna/ffjson
 	go get github.com/olivere/elastic
 	go get github.com/prometheus/client_golang/prometheus
+	go get github.com/fluent/fluent-logger-golang/fluent
 	go generate ./...
 
 build-windows-amd64:
@@ -42,7 +43,7 @@ build-darwin-amd64:
 
 dist-darwin-amd64:
 	@$(MAKE) dist GOOS=darwin GOARCH=amd64
-    
+
 build-linux-arm:
 	@$(MAKE) build GOOS=linux GOARCH=arm GOARM=5
 
@@ -66,7 +67,7 @@ docker-push:
 		docker push cblomart/$(PREFIX)vsphere-graphite:$(TAG);\
 		docker push cblomart/$(PREFIX)vsphere-graphite:latest;\
 	fi
-    
+
 
 docker-linux-amd64:
 	@$(MAKE) docker-build GOOS=linux GOARCH=amd64
@@ -79,7 +80,7 @@ docker-darwin-amd64: ;
 docker-windows-amd64: ;
 
 push-linux-amd64:
-	@$(MAKE) docker-push 
+	@$(MAKE) docker-push
 
 push-linux-arm:
 	@$(MAKE) docker-push PREFIX=rpi-
@@ -123,9 +124,9 @@ dev:
 	git pull
 	@$(MAKE) clean
 	@$(MAKE) build-linux-amd64
-	
+
 all:
-	@$(MAKE) dist-windows-amd64 
+	@$(MAKE) dist-windows-amd64
 	@$(MAKE) dist-linux-amd64
 	@$(MAKE) dist-darwin-amd64
 	@$(MAKE) dist-linux-arm

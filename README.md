@@ -53,7 +53,7 @@ You can select the extra data collected by using the "Properties" property:
 
 ### Backend parameters
 
-* Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" (embeded influx client) or "elasticsearch"
+* Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" (embeded influx client), "elastic", and "fluentd"
 * Hostname (BACKEND_HOSTNAME): hostname were the backend is running
 * Port (BACKEND_PORT): port to connect to for the backend
 * Encrypted (BACKEND_ENCRYPTED): enable or disable TLS to backend (true, false)
@@ -61,6 +61,7 @@ You can select the extra data collected by using the "Properties" property:
 * Password (BACKEND_PASSWORD): password to connect to the backend (influxdb and optionally for thinfluxdb & elasticsearch)
 * Database (BACKEND_DATABASE): database to use in the backend (influxdb, thinfluxdb, elasticsearch)
 * NoArray (BACKEND_NOARRAY): don't use csv 'array' as tags, only the first element is used (influxdb, thinfluxdb)
+* Tag (BACKEND_TAG): tag to use in the backend (fluent)
 
 ## Execute vsphere-graphite as a container
 
@@ -134,9 +135,16 @@ No open source projects would live and thrive without common effort. Here is the
 * [MnrGreg](https://github.com/mnrgreg)
 * [fdmsantos](https://github.com/fdmsantos)
 * [dupondje](https://github.com/dupondje)
+* [jlothian](https://github.com/jlothian)
 
 Also keep in mind that if you can't contribute code, issues and imporvement request are also a key part of a project evolution!
 So don't hesitate and tell us what doens't work or what you miss.
+
+## Donations
+
+This project is largely alive because of the forementioned contributors. Our time is precious bet it is even more precious to us when we can spend it on our beloved projects. So don't hesitate to make a donation:
+
+Bitcoin address: 1BQqpYfQc9NqykaK4rEH5bFsik1VffKHmQ
 
 ## License
 

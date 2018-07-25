@@ -89,8 +89,14 @@ func (service *Service) Manage() (string, error) {
 		conf.Properties = []string{"all"}
 	}
 
+	// default flush size 1000
 	if conf.FlushSize == 0 {
 		conf.FlushSize = 1000
+	}
+
+	// default backend prefix to "vsphere"
+	if len(conf.Backend.Prefix) == 0 {
+		conf.Backend.Prefix = "vsphere"
 	}
 
 	if conf.CPUProfiling {
