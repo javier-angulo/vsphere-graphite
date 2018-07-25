@@ -158,7 +158,7 @@ func (backend *Config) Init() error {
 		//Initialize Influx DB
 		log.Println("Initializing " + backendType + " backend")
 
-		if backend.Tag == "" {
+		if len(backend.Tag) == 0 {
 			log.Println("backend.Tag not specified in vsphere-graphite.json")
 		}
 		fluentclt, err := fluent.New(fluent.Config{FluentPort: backend.Port, FluentHost: backend.Hostname, MarshalAsJSON: true})
