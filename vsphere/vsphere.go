@@ -21,8 +21,6 @@ import (
 	"github.com/vmware/govmomi/vim25/types"
 )
 
-var stdlog, errlog *log.Logger
-
 var cache Cache
 
 // VCenter description
@@ -63,19 +61,19 @@ func (vcenter *VCenter) Connect() (*govmomi.Client, error) {
 	// Prepare vCenter Connections
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	stdlog.Println("connecting to vcenter: " + vcenter.Hostname)
+	log.Println("connecting to vcenter: " + vcenter.Hostname)
 	username := url.QueryEscape(vcenter.Username)
 	password := url.QueryEscape(vcenter.Password)
 	u, err := url.Parse("https://" + username + ":" + password + "@" + vcenter.Hostname + "/sdk")
 	if err != nil {
-		errlog.Println("Could not parse vcenter url: ", vcenter.Hostname)
-		errlog.Println("Error: ", err)
+		log.Println("Could not parse vcenter url: ", vcenter.Hostname)
+		log.Println("Error: ", err)
 		return nil, err
 	}
 	client, err := govmomi.NewClient(ctx, u, true)
 	if err != nil {
-		errlog.Println("Could not connect to vcenter: ", vcenter.Hostname)
-		errlog.Println("Error: ", err)
+		log.Println("Could not connect to vcenter: ", vcenter.Hostname)
+		log.Println("Error: ", err)
 		return nil, err
 	}
 	return client, nil
@@ -100,31 +98,31 @@ func InitMetrics(metrics []*Metric, perfmanager *mo.PerformanceManager) {
 }
 
 // Init : initialize vcenter
-func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorLogs *log.Logger) {
+func (vcenter *VCenter) Init(metrics []*Metric) {
 	log.Printf("Initalizing vCenter %s\n", vcenter.Hostname)
 	// connect to vcenter
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	client, err := vcenter.Connect()
 	if err != nil {
-		errlog.Println("Could not connect to vcenter: ", vcenter.Hostname)
-		errlog.Println("Error: ", err)
+		log.Println("Could not connect to vcenter: ", vcenter.Hostname)
+		log.Println("Error: ", err)
 		return
 	}
 	defer func() {
-		stdlog.Println("disconnecting from vcenter:", vcenter.Hostname)
+		log.Println("disconnecting from vcenter:", vcenter.Hostname)
 		err := client.Logout(ctx) // nolint: vetshadow
 		if err != nil {
-			errlog.Println("Error loging out of vcenter: ", vcenter.Hostname)
-			errlog.Println("Error: ", err)
+			log.Println("Error loging out of vcenter: ", vcenter.Hostname)
+			log.Println("Error: ", err)
 		}
 	}()
 	// get the performance manager
 	var perfmanager mo.PerformanceManager
 	err = client.RetrieveOne(ctx, *client.ServiceContent.PerfManager, nil, &perfmanager)
 	if err != nil {
-		errlog.Println("Could not get performance manager")
-		errlog.Println("Error: ", err)
+		log.Println("Could not get performance manager")
+		log.Println("Error: ", err)
 		return
 	}
 	InitMetrics(metrics, &perfmanager)
@@ -132,7 +130,7 @@ func (vcenter *VCenter) Init(metrics []*Metric, standardLogs *log.Logger, errorL
 	for _, metric := range metrics {
 		for _, metricdef := range metric.Definition {
 			if metricdef.Key == 0 {
-				stdlog.Println("Metric key was not found for " + metricdef.Metric)
+				log.Println("Metric key was not found for " + metricdef.Metric)
 				continue
 			}
 			for _, mtype := range metric.ObjectType {
@@ -154,7 +152,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 	}()
 
-	stdlog.Println("Setting up query inventory of vcenter: ", vcenter.Hostname)
+	log.Println("Setting up query inventory of vcenter: ", vcenter.Hostname)
 
 	// Create the contect
 	ctx, cancel := context.WithCancel(context.Background())
@@ -163,18 +161,18 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	// Get the client
 	client, err := vcenter.Connect()
 	if err != nil {
-		errlog.Println("Could not connect to vcenter: ", vcenter.Hostname)
-		errlog.Println("Error: ", err)
+		log.Println("Could not connect to vcenter: ", vcenter.Hostname)
+		log.Println("Error: ", err)
 		return
 	}
 
 	// wait to be properly connected to defer logout
 	defer func() {
-		stdlog.Println("disconnecting from vcenter:", vcenter.Hostname)
+		log.Println("disconnecting from vcenter:", vcenter.Hostname)
 		err := client.Logout(ctx) // nolint: vetshadow
 		if err != nil {
-			errlog.Println("Error loging out of vcenter: ", vcenter.Hostname)
-			errlog.Println("Error: ", err)
+			log.Println("Error loging out of vcenter: ", vcenter.Hostname)
+			log.Println("Error: ", err)
 		}
 	}()
 
@@ -182,8 +180,8 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	var viewManager mo.ViewManager
 	err = client.RetrieveOne(ctx, *client.ServiceContent.ViewManager, nil, &viewManager)
 	if err != nil {
-		errlog.Println("Could not get view manager from vcenter: " + vcenter.Hostname)
-		errlog.Println("Error: ", err)
+		log.Println("Could not get view manager from vcenter: " + vcenter.Hostname)
+		log.Println("Error: ", err)
 		return
 	}
 
@@ -192,8 +190,8 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	finder := find.NewFinder(client.Client, true)
 	dcs, err := finder.DatacenterList(ctx, "*")
 	if err != nil {
-		errlog.Println("Could not find a datacenter: ", vcenter.Hostname)
-		errlog.Println("Error: ", err)
+		log.Println("Could not find a datacenter: ", vcenter.Hostname)
+		log.Println("Error: ", err)
 		return
 	}
 	for _, child := range dcs {
@@ -247,16 +245,16 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		req := types.CreateContainerView{This: viewManager.Reference(), Container: datacenter, Type: objectTypes, Recursive: true}
 		res, err := methods.CreateContainerView(ctx, client.RoundTripper, &req) // nolint: vetshadow
 		if err != nil {
-			errlog.Println("Could not create container view from vcenter: " + vcenter.Hostname)
-			errlog.Println("Error: ", err)
+			log.Println("Could not create container view from vcenter: " + vcenter.Hostname)
+			log.Println("Error: ", err)
 			continue
 		}
 		// Retrieve the created ContentView
 		var containerView mo.ContainerView
 		err = client.RetrieveOne(ctx, res.Returnval, nil, &containerView)
 		if err != nil {
-			errlog.Println("Could not get container view from vcenter: " + vcenter.Hostname)
-			errlog.Println("Error: ", err)
+			log.Println("Could not get container view from vcenter: " + vcenter.Hostname)
+			log.Println("Error: ", err)
 			continue
 		}
 		// Add found object to object list
@@ -264,7 +262,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	}
 
 	if len(mors) == 0 {
-		errlog.Printf("No object of intereset in types %s\n", strings.Join(objectTypes, ", "))
+		log.Printf("No object of intereset in types %s\n", strings.Join(objectTypes, ", "))
 		return
 	}
 
@@ -309,8 +307,8 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	propreq := types.RetrieveProperties{SpecSet: []types.PropertyFilterSpec{{ObjectSet: objectSet, PropSet: propSet}}}
 	propres, err := client.PropertyCollector().RetrieveProperties(ctx, propreq)
 	if err != nil {
-		errlog.Println("Could not retrieve object names from vcenter: " + vcenter.Hostname)
-		errlog.Println("Error: ", err)
+		log.Println("Could not retrieve object names from vcenter: " + vcenter.Hostname)
+		log.Println("Error: ", err)
 		return
 	}
 
@@ -325,7 +323,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			if section, ok := PropertiesSections[Property.Name]; ok {
 				cache.Add(vcName, section, objectContent.Obj.Value, Property.Val)
 			} else {
-				errlog.Printf("Unhandled property '%s' for %s whose type is '%T'\n", Property.Name, objectContent.Obj.Value, Property.Val)
+				log.Printf("Unhandled property '%s' for %s whose type is '%T'\n", Property.Name, objectContent.Obj.Value, Property.Val)
 			}
 		}
 	}
@@ -358,7 +356,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				poolname := cache.GetString(vcName, "names", poolmor)
 				if len(*poolname) == 0 {
 					// could not find name
-					errlog.Println("Could not find name for resourcepool " + poolmor)
+					log.Println("Could not find name for resourcepool " + poolmor)
 					break
 				}
 				if *poolname == "Resources" {
@@ -370,7 +368,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				newmor := cache.GetString(vcName, "parents", poolmor)
 				if len(*newmor) == 0 {
 					// no parent pool found
-					errlog.Println("Could not find parent for resourcepool " + *poolname)
+					log.Println("Could not find parent for resourcepool " + *poolname)
 					break
 				}
 				poolmor = *newmor
@@ -425,28 +423,28 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	// Check that there is something to query
 	querycount := len(queries)
 	if querycount == 0 {
-		errlog.Println("No queries created!")
+		log.Println("No queries created!")
 		return
 	}
 	metriccount := 0
 	for _, query := range queries {
 		metriccount = metriccount + len(query.MetricId)
 	}
-	stdlog.Printf("Issuing %d queries to vcenter %s requesting %d metrics.\n", querycount, vcName, metriccount)
+	log.Printf("Issuing %d queries to vcenter %s requesting %d metrics.\n", querycount, vcName, metriccount)
 
 	// Query the performances
 	perfreq := types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries}
 	perfres, err := methods.QueryPerf(ctx, client.RoundTripper, &perfreq)
 	if err != nil {
-		errlog.Println("Could not request perfs from vcenter: " + vcName)
-		errlog.Println("Error: ", err)
+		log.Println("Could not request perfs from vcenter: " + vcName)
+		log.Println("Error: ", err)
 		return
 	}
 
 	// Get the result
 	returncount := len(perfres.Returnval)
 	if returncount == 0 {
-		errlog.Println("No result returned by queries.")
+		log.Println("No result returned by queries.")
 	}
 	// create an array to store vm to folder path resolution
 	valuescount := 0
@@ -478,7 +476,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 				}
 				foldername := cache.GetString(vcName, "names", *current)
 				if foldername == nil {
-					errlog.Println("Folder name not found for " + *current)
+					log.Println("Folder name not found for " + *current)
 					break
 				}
 				if *foldername == "vm" {
@@ -493,7 +491,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		//find tags
 		vitags := cache.FindTags(vcName, pem.Entity.Value)
 		if len(pem.Value) == 0 {
-			errlog.Println("No values returned in query!")
+			log.Println("No values returned in query!")
 		}
 		objType := strings.ToLower(pem.Entity.Type)
 		timeStamp := endTime.Unix()
@@ -592,5 +590,5 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			*channel <- point
 		}
 	}
-	stdlog.Println("Got " + strconv.Itoa(returncount) + " results from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
+	log.Println("Got " + strconv.Itoa(returncount) + " results from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
 }

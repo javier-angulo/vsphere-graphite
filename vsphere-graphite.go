@@ -34,8 +34,6 @@ const (
 
 var dependencies = []string{}
 
-var stdlog, errlog *log.Logger
-
 var commit, tag string
 
 // Service has embedded daemon
@@ -72,7 +70,7 @@ func (service *Service) Manage() (string, error) {
 		return text, err
 	}
 
-	stdlog.Println("Starting daemon:", path.Base(os.Args[0]))
+	log.Println("Starting daemon:", path.Base(os.Args[0]))
 
 	// read the configuration
 	file, err := os.Open("/etc/" + path.Base(os.Args[0]) + ".json")
@@ -100,7 +98,7 @@ func (service *Service) Manage() (string, error) {
 		if err != nil {
 			log.Fatal("could not create CPU profile: ", err)
 		}
-		stdlog.Println("Will write cpu profiling to: ", f.Name())
+		log.Println("Will write cpu profiling to: ", f.Name())
 		if err := pprof.StartCPUProfile(f); err != nil {
 			log.Fatal("could not start CPU profile: ", err)
 		}
@@ -132,10 +130,10 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	for _, vcenter := range conf.VCenters {
-		vcenter.Init(conf.Metrics, stdlog, errlog)
+		vcenter.Init(conf.Metrics)
 	}
 
-	err = conf.Backend.Init(stdlog, errlog)
+	err = conf.Backend.Init()
 	if err != nil {
 		return "Could not initialize backend", err
 	}
@@ -159,14 +157,14 @@ func (service *Service) Manage() (string, error) {
 	// Set up a ticker to collect metrics at givent interval (except for Prometheus which is Pull)
 	if conf.Backend.Type == "prometheus" {
 		ticker.Stop()
-		stdlog.Println("Init Prometheus")
+		log.Println("Init Prometheus")
 		err = conf.Backend.InitPrometheus(&runQuery, &doneQuery, &metricsProm)
 		if err != nil {
 			return "Init Prometheus failed", err
 		}
 	} else {
 		// Start retriveing and sending metrics
-		stdlog.Println("Retrieving metrics")
+		log.Println("Retrieving metrics")
 		for _, vcenter := range conf.VCenters {
 			go queryVCenter(*vcenter, conf, &metrics, nil)
 		}
@@ -198,12 +196,12 @@ func (service *Service) Manage() (string, error) {
 			bufferindex++
 			if bufferindex == len(pointbuffer) {
 				conf.Backend.SendMetrics(pointbuffer)
-				stdlog.Printf("Sent %d logs to backend", bufferindex)
+				log.Printf("Sent %d logs to backend", bufferindex)
 				ClearBuffer(pointbuffer)
 				bufferindex = 0
 			}
 		case <-runQuery:
-			stdlog.Println("Adhoc metric retrieval")
+			log.Println("Adhoc metric retrieval")
 			var wg sync.WaitGroup
 			wg.Add(len(conf.VCenters))
 			for _, vcenter := range conf.VCenters {
@@ -213,7 +211,7 @@ func (service *Service) Manage() (string, error) {
 			doneQuery <- true
 			cleanup <- true
 		case <-ticker.C:
-			stdlog.Println("Scheduled metric retrieval")
+			log.Println("Scheduled metric retrieval")
 			for _, vcenter := range conf.VCenters {
 				go queryVCenter(*vcenter, conf, &metricsProm, nil)
 			}
@@ -221,7 +219,7 @@ func (service *Service) Manage() (string, error) {
 			if conf.Backend.Type != "prometheus" {
 				// sent remaining values
 				conf.Backend.SendMetrics(pointbuffer)
-				stdlog.Printf("Sent %d logs to backend", bufferindex)
+				log.Printf("Sent %d logs to backend", bufferindex)
 				// empty point buffer
 				bufferindex = 0
 				ClearBuffer(pointbuffer)
@@ -231,23 +229,23 @@ func (service *Service) Manage() (string, error) {
 			runtime.GC()
 			debug.FreeOSMemory()
 			runtime.ReadMemStats(&memstats)
-			stdlog.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
+			log.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
 			if conf.MEMProfiling {
 				f, err := os.OpenFile("/tmp/vsphere-graphite-mem.pb.gz", os.O_RDWR|os.O_CREATE, 0600) // nolin.vetshaddow
 				defer f.Close()
 				if err != nil {
 					log.Fatal("could not create Mem profile: ", err)
 				}
-				stdlog.Println("Will write mem profiling to: ", f.Name())
+				log.Println("Will write mem profiling to: ", f.Name())
 				if err := pprof.WriteHeapProfile(f); err != nil {
 					log.Fatal("could not write Mem profile: ", err)
 				}
 			}
 		case killSignal := <-interrupt:
-			stdlog.Println("Got signal:", killSignal)
+			log.Println("Got signal:", killSignal)
 			if bufferindex > 0 {
 				conf.Backend.SendMetrics(pointbuffer[:bufferindex])
-				stdlog.Printf("Sent %d logs to backend", bufferindex)
+				log.Printf("Sent %d logs to backend", bufferindex)
 			}
 			if killSignal == os.Interrupt {
 				return "Daemon was interrupted by system signal", nil
@@ -264,33 +262,28 @@ func ClearBuffer(buffer []*backend.Point) {
 	}
 }
 
-func init() {
-	stdlog = log.New(os.Stdout, "", log.Ldate|log.Ltime)
-	errlog = log.New(os.Stderr, "", log.Ldate|log.Ltime)
-}
-
 func main() {
 	if len(commit) == 0 && len(tag) == 0 {
-		stdlog.Println("No version information")
+		log.Println("No version information")
 	} else {
-		stdlog.Print("Version information")
+		log.Print("Version information")
 		if len(commit) > 0 {
-			stdlog.Print(" - Commit: ", commit)
+			log.Print(" - Commit: ", commit)
 		}
 		if len(tag) > 0 {
-			stdlog.Println(" - Version: ", tag)
+			log.Println(" - Version: ", tag)
 		}
-		stdlog.Print("\n")
+		log.Print("\n")
 	}
 	srv, err := daemon.New(name, description, dependencies...)
 	if err != nil {
-		errlog.Println("Error: ", err)
+		log.Println("Error: ", err)
 		os.Exit(1)
 	}
 	service := &Service{srv}
 	status, err := service.Manage()
 	if err != nil {
-		errlog.Println(status, "Error: ", err)
+		log.Println(status, "Error: ", err)
 		os.Exit(1)
 	}
 	fmt.Println(status)

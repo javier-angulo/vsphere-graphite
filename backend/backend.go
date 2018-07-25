@@ -49,9 +49,7 @@ const (
 var stdlog, errlog *log.Logger
 
 // Init : initialize a backend
-func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) error {
-	stdlog = standardLogs
-	errlog = errorLogs
+func (backend *Config) Init() error {
 	if len(backend.ValueField) == 0 {
 		// for compatibility reason with previous version
 		// can now be changed in the config file.
@@ -62,17 +60,17 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		// Initialize Graphite
-		stdlog.Println("Intializing " + backendType + " backend")
+		log.Println("Intializing " + backendType + " backend")
 		carbon, err := graphite.NewGraphite(backend.Hostname, backend.Port)
 		if err != nil {
-			errlog.Println("Error connecting to graphite")
+			log.Println("Error connecting to graphite")
 			return err
 		}
 		backend.carbon = carbon
 		return nil
 	case InfluxDB:
 		//Initialize Influx DB
-		stdlog.Println("Intializing " + backendType + " backend")
+		log.Println("Intializing " + backendType + " backend")
 		protocol := "http"
 		if backend.Encrypted {
 			protocol = "https"
@@ -83,17 +81,17 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 			Password: backend.Password,
 		})
 		if err != nil {
-			errlog.Println("Error connecting to InfluxDB")
+			log.Println("Error connecting to InfluxDB")
 			return err
 		}
 		backend.influx = &influxclt
 		return nil
 	case ThinInfluxDB:
 		//Initialize thin Influx DB client
-		stdlog.Println("Initializing " + backendType + " backend")
+		log.Println("Initializing " + backendType + " backend")
 		thininfluxclt, err := thininfluxclient.NewThinInlfuxClient(backend.Hostname, backend.Port, backend.Database, backend.Username, backend.Password, "s", backend.Encrypted)
 		if err != nil {
-			errlog.Println("Error creating thin InfluxDB client")
+			log.Println("Error creating thin InfluxDB client")
 			return err
 		}
 		backend.thininfluxdb = &thininfluxclt
@@ -104,9 +102,9 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 		if len(elasticindex) > 0 {
 			elasticindex = elasticindex + "-" + time.Now().Format("2006.01.02")
 		} else {
-			errlog.Println("backend.Database (used as Elastic Index name) not specified in vsphere-graphite.json")
+			log.Println("backend.Database (used as Elastic Index name) not specified in vsphere-graphite.json")
 		}
-		stdlog.Println("Initializing " + backendType + " backend " + backend.Hostname + ":" + strconv.Itoa(backend.Port) + "/" + elasticindex)
+		log.Println("Initializing " + backendType + " backend " + backend.Hostname + ":" + strconv.Itoa(backend.Port) + "/" + elasticindex)
 		protocol := "http"
 		if backend.Encrypted {
 			protocol = "https"
@@ -117,19 +115,19 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 			elastic.SetScheme(protocol),
 			elastic.SetBasicAuth(backend.Username, backend.Password))
 		if err != nil {
-			errlog.Println("Error creating Elastic client")
+			log.Println("Error creating Elastic client")
 			return err
 		}
 		backend.elastic = elasticclt
 		return CreateIndexIfNotExists(backend.elastic, elasticindex)
 	case Prometheus:
 		//Initialize Prometheus client
-		stdlog.Println("Initializing " + backendType + " backend")
+		log.Println("Initializing " + backendType + " backend")
 
 		registry := prometheus.NewRegistry()
 		err := registry.Register(backend)
 		if err != nil {
-			errlog.Println("Error creating Prometheus Registry")
+			log.Println("Error creating Prometheus Registry")
 			return err
 		}
 
@@ -146,7 +144,7 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 			}
 			err := http.ListenAndServe(address, nil)
 			if err != nil {
-				errlog.Println("Error creating Prometheus listener")
+				log.Println("Error creating Prometheus listener")
 				return err
 			}
 			log.Printf("Prometheus lisenting at http://%s/metrics\n", address)
@@ -154,7 +152,7 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 		}()
 		return nil
 	default:
-		errlog.Println("Backend " + backendType + " unknown.")
+		log.Println("Backend " + backendType + " unknown.")
 		return errors.New("Backend " + backendType + " unknown.")
 	}
 }
@@ -164,25 +162,25 @@ func (backend *Config) Disconnect() {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		// Disconnect from graphite
-		stdlog.Println("Disconnecting from graphite")
+		log.Println("Disconnecting from graphite")
 		err := backend.carbon.Disconnect()
 		if err != nil {
-			errlog.Println("Error disconnecting from graphite: ", err)
+			log.Println("Error disconnecting from graphite: ", err)
 		}
 	case InfluxDB:
 		// Disconnect from influxdb
-		stdlog.Println("Disconnecting from influxdb")
+		log.Println("Disconnecting from influxdb")
 	case ThinInfluxDB:
 		// Disconnect from thin influx db
-		errlog.Println("Disconnecting from thininfluxdb")
+		log.Println("Disconnecting from thininfluxdb")
 	case Elastic:
 		// Disconnect from Elastic
-		errlog.Println("Disconnecting from elastic")
+		log.Println("Disconnecting from elastic")
 	case Prometheus:
 		// Stop Exporting Prometheus Metrics
-		errlog.Println("Stopping exporter")
+		log.Println("Stopping exporter")
 	default:
-		errlog.Println("Backend " + backendType + " unknown.")
+		log.Println("Backend " + backendType + " unknown.")
 	}
 }
 
@@ -204,10 +202,10 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 		}
 		err := backend.carbon.SendMetrics(graphiteMetrics)
 		if err != nil {
-			errlog.Println("Error sending metrics (trying to reconnect): ", err)
+			log.Println("Error sending metrics (trying to reconnect): ", err)
 			err := backend.carbon.Connect()
 			if err != nil {
-				errlog.Println("could not connect to graphite: ", err)
+				log.Println("could not connect to graphite: ", err)
 			}
 		}
 	case InfluxDB:
@@ -217,8 +215,8 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 			Precision: "s",
 		})
 		if err != nil {
-			errlog.Println("Error creating influx batchpoint")
-			errlog.Println(err)
+			log.Println("Error creating influx batchpoint")
+			log.Println(err)
 			return
 		}
 		for _, point := range metrics {
@@ -231,15 +229,15 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 			fields[backend.ValueField] = point.Value
 			pt, err := influxclient.NewPoint(key, tags, fields, time.Unix(point.Timestamp, 0)) // nolint: vetshadow
 			if err != nil {
-				errlog.Println("Could not create influxdb point")
-				errlog.Println(err)
+				log.Println("Could not create influxdb point")
+				log.Println(err)
 				continue
 			}
 			bp.AddPoint(pt)
 		}
 		err = (*backend.influx).Write(bp)
 		if err != nil {
-			errlog.Println("Error sending metrics: ", err)
+			log.Println("Error sending metrics: ", err)
 		}
 	case ThinInfluxDB:
 		lines := []string{}
@@ -253,9 +251,9 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 		for count > 0 {
 			err := backend.thininfluxdb.Send(lines)
 			if err != nil {
-				errlog.Println("Error sending metrics: ", err)
+				log.Println("Error sending metrics: ", err)
 				if err.Error() == "Server Busy: timeout" {
-					errlog.Println("waiting .5 second to continue")
+					log.Println("waiting .5 second to continue")
 					time.Sleep(500 * time.Millisecond)
 					count--
 				} else {
@@ -267,13 +265,13 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 		}
 		err := backend.thininfluxdb.Send(lines)
 		if err != nil {
-			errlog.Println("Error sendg metrics: ", err)
+			log.Println("Error sendg metrics: ", err)
 		}
 	case Elastic:
 		elasticindex := backend.Database + "-" + time.Now().Format("2006.01.02")
 		err := CreateIndexIfNotExists(backend.elastic, elasticindex)
 		if err != nil {
-			errlog.Println(err)
+			log.Println(err)
 		} else {
 			bulkRequest := backend.elastic.Bulk()
 			for _, point := range metrics {
@@ -283,22 +281,22 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 			bulkResponse, err := bulkRequest.Do(context.Background())
 			if err != nil {
 				// Handle error
-				errlog.Println(err)
+				log.Println(err)
 			} else {
 				// Succeeded actions
 				succeeded := bulkResponse.Succeeded()
-				stdlog.Println("Logs successfully indexed: ", len(succeeded))
+				log.Println("Logs successfully indexed: ", len(succeeded))
 				_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
 				if err != nil {
 					panic(err)
 				} else {
-					stdlog.Println("Elastic Indexing flushed")
+					log.Println("Elastic Indexing flushed")
 				}
 			}
 		}
 	case Prometheus:
 		// Prometheus doesn't need to send metrics
 	default:
-		errlog.Println("Backend " + backendType + " unknown.")
+		log.Println("Backend " + backendType + " unknown.")
 	}
 }
