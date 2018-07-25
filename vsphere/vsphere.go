@@ -384,7 +384,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 						}
 					}
 					// assign it
-					cache.Add(vcName, "poolpaths", vmmor.Value, &poolpath)
+					cache.Add(vcName, "poolpaths", vmmor.Value, poolpath)
 				}
 			}
 		}
