@@ -118,6 +118,11 @@ build: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX)
 
 clean:
 	rm -rf $(RELEASE_DIR)
+
+dev:
+	git pull
+	@$(MAKE) clean
+	@$(MAKE) build-linux-amd64
 	
 all:
 	@$(MAKE) dist-windows-amd64 
