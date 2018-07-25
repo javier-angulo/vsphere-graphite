@@ -44,32 +44,71 @@ func (c *Cache) Add(vcenter, section, i string, v interface{}) {
 	if len(vcenter) == 0 || len(section) == 0 || len(i) == 0 || v == nil {
 		return
 	}
-	switch typed := v.(type) {
-	case *string:
-		c.add(vcenter, section, i, v)
-	case *[]string:
+	if typed, ok := v.(*string); ok {
+		c.add(vcenter, section, i, typed)
+		return
+	}
+	if typed, ok := v.(*[]string); ok {
 		if len(*typed) > 0 {
-			c.add(vcenter, section, i, v)
+			c.add(vcenter, section, i, typed)
+			return
 		}
-	case *int32:
-		c.add(vcenter, section, i, v)
-	case *types.ManagedObjectReference:
+	}
+	if typed, ok := v.(*int32); ok {
+		c.add(vcenter, section, i, typed)
+		return
+	}
+	if typed, ok := v.(*types.ManagedObjectReference); ok {
 		c.add(vcenter, section, i, &((*typed).Value))
-	case *types.ArrayOfManagedObjectReference:
+		return
+	}
+	if typed, ok := v.(*types.ArrayOfManagedObjectReference); ok {
 		if len((*typed).ManagedObjectReference) > 0 {
 			c.add(vcenter, section, i, &((*typed).ManagedObjectReference))
+			return
 		}
-	case *types.ArrayOfTag:
+	}
+	if typed, ok := v.(*types.ArrayOfTag); ok {
 		if len((*typed).Tag) > 0 {
 			c.add(vcenter, section, i, &((*typed).Tag))
+			return
 		}
-	case *types.ArrayOfGuestDiskInfo:
+	}
+	if typed, ok := v.(*types.ArrayOfGuestDiskInfo); ok {
 		if len((*typed).GuestDiskInfo) > 0 {
 			c.add(vcenter, section, i, &((*typed).GuestDiskInfo))
+			return
 		}
-	default:
-		log.Printf("Adding a unhandled type %T to cache for %s section %s and ref %s\n", v, vcenter, section, i)
 	}
+	log.Printf("Adding a unhandled type %T to cache for %s section %s and ref %s\n", v, vcenter, section, i)
+	/*
+		switch typed := v.(type) {
+		case *string:
+			c.add(vcenter, section, i, v)
+		case *[]string:
+			if len(*typed) > 0 {
+				c.add(vcenter, section, i, v)
+			}
+		case *int32:
+			c.add(vcenter, section, i, v)
+		case *types.ManagedObjectReference:
+			c.add(vcenter, section, i, &((*typed).Value))
+		case *types.ArrayOfManagedObjectReference:
+			if len((*typed).ManagedObjectReference) > 0 {
+				c.add(vcenter, section, i, &((*typed).ManagedObjectReference))
+			}
+		case *types.ArrayOfTag:
+			if len((*typed).Tag) > 0 {
+				c.add(vcenter, section, i, &((*typed).Tag))
+			}
+		case *types.ArrayOfGuestDiskInfo:
+			if len((*typed).GuestDiskInfo) > 0 {
+				c.add(vcenter, section, i, &((*typed).GuestDiskInfo))
+			}
+		default:
+			log.Printf("Adding a unhandled type %T to cache for %s section %s and ref %s\n", v, vcenter, section, i)
+		}
+	*/
 }
 
 // add to the cache without type check
