@@ -141,6 +141,8 @@ func (backend *Config) Init(standardLogs *log.Logger, errorLogs *log.Logger) err
 			}
 			if backend.Port > 0 {
 				address += ":" + utils.ValToString(backend.Port, "", false)
+			} else {
+				address += ":9155"
 			}
 			err := http.ListenAndServe(address, nil)
 			if err != nil {
