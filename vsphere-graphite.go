@@ -213,7 +213,7 @@ func (service *Service) Manage() (string, error) {
 		case <-ticker.C:
 			log.Println("Scheduled metric retrieval")
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &metricsProm, nil)
+				go queryVCenter(*vcenter, conf, &metrics, nil)
 			}
 		case <-memtimer.C:
 			if conf.Backend.Type != "prometheus" {
