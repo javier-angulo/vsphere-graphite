@@ -341,7 +341,7 @@ func (c *Cache) FindNames(vcenter, section, moref string) []string {
 	if len(*ptr) == 0 {
 		return []string{}
 	}
-	names := make([]string, len(*ptr))
+	names := make([]string)
 	for _, mor := range *ptr {
 		nptr := cache.GetString(vcenter, "names", mor.Value)
 		if nptr == nil {
@@ -364,7 +364,7 @@ func (c *Cache) FindTags(vcenter, moref string) []string {
 	if len(*ptr) == 0 {
 		return []string{}
 	}
-	tags := make([]string, len(*ptr))
+	tags := make([]string)
 	for _, tag := range *ptr {
 		tags = append(tags, tag.Key)
 	}
