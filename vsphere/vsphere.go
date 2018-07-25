@@ -331,7 +331,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	for _, metricgroup := range vcenter.MetricGroups {
 		for _, metricdef := range metricgroup.Metrics {
 			i := utils.ValToString(metricdef.Key, "", true)
-			cache.Add(vcName, "metrics", i, &metricdef.Metric)
+			cache.Add(vcName, "metrics", i, metricdef.Metric)
 			metricKeys = append(metricKeys, i)
 		}
 	}
