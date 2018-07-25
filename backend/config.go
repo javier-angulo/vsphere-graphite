@@ -16,7 +16,7 @@ type Config struct {
 	Username     string
 	Password     string
 	Type         string
-	Tag          string
+	Prefix       string
 	Port         int
 	NoArray      bool
 	Encrypted    bool

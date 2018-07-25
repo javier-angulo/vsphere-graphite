@@ -157,10 +157,6 @@ func (backend *Config) Init() error {
 	case Fluentd:
 		//Initialize Influx DB
 		log.Println("Initializing " + backendType + " backend")
-
-		if len(backend.Tag) == 0 {
-			log.Println("backend.Tag not specified in vsphere-graphite.json")
-		}
 		fluentclt, err := fluent.New(fluent.Config{FluentPort: backend.Port, FluentHost: backend.Hostname, MarshalAsJSON: true})
 		if err != nil {
 			log.Println("Error connecting to Fluentd")
@@ -215,7 +211,7 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 				continue
 			}
 			//key := "vsphere." + vcName + "." + entityName + "." + name + "." + metricName
-			key := fmt.Sprintf("vsphere.%s.%s.%s.%s.%s.%s", point.VCenter, point.ObjectType, point.ObjectName, point.Group, point.Counter, point.Rollup)
+			key := fmt.Sprintf("%s.%s.%s.%s.%s.%s.%s", backend.Prefix, point.VCenter, point.ObjectType, point.ObjectName, point.Group, point.Counter, point.Rollup)
 			if len(point.Instance) > 0 {
 				key += "." + strings.ToLower(strings.Replace(point.Instance, ".", "_", -1))
 			}
@@ -320,7 +316,7 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 	case Fluentd:
 		for _, point := range metrics {
 			if point != nil {
-				err := backend.fluent.Post(backend.Tag, *point)
+				err := backend.fluent.Post(backend.Prefix, *point)
 				if err != nil {
 					log.Println(err)
 				}

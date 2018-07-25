@@ -40,7 +40,7 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 				labelValues[i] = value
 				i++
 			}
-			key := fmt.Sprintf("vsphere_%s_%s_%s", point.Group, point.Counter, point.Rollup)
+			key := fmt.Sprintf("%s_%s_%s_%s", backend.Prefix, point.Group, point.Counter, point.Rollup)
 			desc := prometheus.NewDesc(key, "vSphere collected metric", labelNames, nil)
 			metric, err := prometheus.NewConstMetric(desc, prometheus.GaugeValue, float64(point.Value), labelValues...)
 			if err != nil {
