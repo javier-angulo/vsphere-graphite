@@ -167,13 +167,9 @@ func (service *Service) Manage() (string, error) {
 	} else {
 		// Start retriveing and sending metrics
 		stdlog.Println("Retrieving metrics")
-		var wg sync.WaitGroup
-		wg.Add(len(conf.VCenters))
 		for _, vcenter := range conf.VCenters {
-			go queryVCenter(*vcenter, conf, &metrics, &wg)
+			go queryVCenter(*vcenter, conf, &metrics, nil)
 		}
-		wg.Wait()
-		doneQuery <- true
 	}
 
 	// Memory statisctics
@@ -205,23 +201,16 @@ func (service *Service) Manage() (string, error) {
 				bufferindex = 0
 			}
 		case <-runQuery:
-			stdlog.Println("Retrieving metrics")
-			var wg sync.WaitGroup
-			wg.Add(2)
+			stdlog.Println("Adhoc metric retrieval")
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &metricsProm, &wg)
+				go queryVCenter(*vcenter, conf, &metricsProm, nil)
 			}
-			wg.Wait()
 			doneQuery <- true
 		case <-ticker.C:
-			stdlog.Println("Retrieving metrics")
-			var wg sync.WaitGroup
-			wg.Add(2)
+			stdlog.Println("Scheduled metric retrieval")
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &metricsProm, &wg)
+				go queryVCenter(*vcenter, conf, &metricsProm, nil)
 			}
-			wg.Wait()
-			doneQuery <- true
 		case <-memtimer.C:
 			// sent remaining values
 			conf.Backend.SendMetrics(pointbuffer)
