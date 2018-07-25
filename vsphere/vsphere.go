@@ -349,7 +349,6 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		// only parse resource pools
 		if strings.HasPrefix(mor, "rp-") {
 			// find the full path of the resource pool
-			var poolpath = ""
 			poolmor := mor
 			pools := []string{}
 			for {
