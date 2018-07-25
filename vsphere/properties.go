@@ -51,5 +51,5 @@ var PropertiesSections = map[string]string{
 	"tag":          "tags",
 	"summary.config.numCpu":       "cpus",
 	"summary.config.memorySizeMB": "memories",
-	"guest.disks":                 "disks",
+	"guest.disk":                  "disks",
 }
