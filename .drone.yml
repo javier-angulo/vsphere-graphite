@@ -6,29 +6,34 @@ pipeline:
   deps:
     image: golang:alpine
     commands:
+    - apk add --no-cache make git
     - make deps
   checkups:
     image: golang:alpine
     commands:
+    - apk add --no-cache make git
     - make checks
   buildlin:
     group: build
     image: golang:alpine
     commands:
-    - apk add --no-cache upx
+    - apk add --no-cache upx make git
     - make build-linux-amd64
   buildwin:
     group: build
     image: golang:alpine
     commands:
+    - apk add --no-cache make git
     - make build-windows-amd64
   buildosx:
     group: build
     image: golang:alpine
     commands:
+    - apk add --no-cache make git
     - make build-darwin-amd64
   buildarm:
     group: build
     image: golang:alpine
     commands:
+    - apk add --no-cache make git
     - make build-linux-arm
