@@ -4,6 +4,8 @@ workspace:
 
 pipeline:
   supportvm:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     image: alpine
     commands:
     - apk add --no-cache docker
