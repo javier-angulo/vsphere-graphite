@@ -5,6 +5,7 @@ workspace:
 # Build vsphere-graphite with drone.
 
 pipeline:
+  # perpare a helper image with necessary tooling deps included
   supportvm:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -12,14 +13,12 @@ pipeline:
     commands:
     - apk add --no-cache docker
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/main
-  deps:
-    image: cblomart/helper-vsphere-graphite
-    commands:
-    - make deps
+  # do the checkups
   checkups:
     image: cblomart/helper-vsphere-graphite
     commands:
     - make checks
+  # buils
   buildlin:
     group: build
     image: cblomart/helper-vsphere-graphite
