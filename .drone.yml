@@ -33,13 +33,19 @@ pipeline:
     image: cblomart/helper-vsphere-graphite
     commands:
     - make build-windows-amd64
+    when:
+      event: [ tag ]
   buildosx:
     group: build
     image: cblomart/helper-vsphere-graphite
     commands:
     - make build-darwin-amd64
+    when:
+      event: [ tag ]
   buildarm:
     group: build
     image: cblomart/helper-vsphere-graphite
     commands:
     - make build-linux-arm
+    when:
+      event: [ tag ]
