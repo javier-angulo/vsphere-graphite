@@ -4,30 +4,31 @@ workspace:
 
 pipeline:
   deps:
-    image: cblomart/gobasebuild
+    image: golang:alpine
     commands:
     - make deps
   checkups:
-    image: cblomart/gobasebuild
+    image: golang:alpine
     commands:
     - make checks
   buildlin:
     group: build
-    image: cblomart/gobasebuild
+    image: golang:alpine
     commands:
+    - apk add --no-cache upx
     - make build-linux-amd64
   buildwin:
     group: build
-    image: cblomart/gobasebuild
+    image: golang:alpine
     commands:
     - make build-windows-amd64
   buildosx:
     group: build
-    image: cblomart/gobasebuild
+    image: golang:alpine
     commands:
     - make build-darwin-amd64
   buildarm:
     group: build
-    image: cblomart/gobasebuild
+    image: golang:alpine
     commands:
     - make build-linux-arm
