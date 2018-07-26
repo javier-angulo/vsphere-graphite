@@ -2,6 +2,8 @@ workspace:
   base: /go
   path: src/github.com/cblomart/vsphere-graphite
 
+# Build vsphere-graphite with drone.
+
 pipeline:
   supportvm:
     volumes:
