@@ -8,7 +8,7 @@ Written in go to achieve fast sampling rates and high throughput sink. Successfu
 
 Travis: [![Travis Build Status](https://travis-ci.org/cblomart/vsphere-graphite.svg?branch=master)](https://travis-ci.org/cblomart/vsphere-graphite)
 
-Drone: [![Drone Build Status](https://drone.blomart.net/api/badges/cblomart/vsphere-graphite/status.svg)](https://bot.blomart.net/cblomart/vsphere-graphite)
+Drone: [![Drone Build Status](https://drone.blomart.net/api/badges/cblomart/vsphere-graphite/status.svg)](https://done.blomart.net/cblomart/vsphere-graphite)
 
 ## Code report
 
