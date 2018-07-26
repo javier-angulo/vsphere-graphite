@@ -2,11 +2,6 @@ workspace:
   base: /go
   path: src/github.com/cblomart/vsphere-graphite
 
-clone:
-  git:
-    image: plugins/git
-    tags: true
-
 pipeline:
   supportvm:
     volumes:
