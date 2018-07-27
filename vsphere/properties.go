@@ -6,6 +6,9 @@ var Properties = map[string]map[string][]string{
 		"Datastore":      {"name"},
 		"VirtualMachine": {"datastore"},
 	},
+	"urls": {
+		"Datastore": {"summary.url"},
+	},
 	"host": {
 		"HostSystem":     {"name", "parent"},
 		"VirtualMachine": {"name", "runtime.host"},
@@ -42,6 +45,7 @@ var Properties = map[string]map[string][]string{
 
 // PropertiesSections represent the mapping of attributes to sections in the cache
 var PropertiesSections = map[string]string{
+	"summary.url":  "urls",
 	"name":         "names",
 	"datastore":    "datastores",
 	"network":      "networks",

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -396,6 +397,25 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	// cleanup poolpaths
 	cache.Clean(vcName, "poolpaths", poolvms)
 
+	// create a map to resolve datastore ids to their names
+	datastoreids := []string{}
+	for mor, dsurl := range *cache.LookupString(vcName, "urls") {
+		// find the datastore id
+		regex := regexp.MustCompile("/([A-Za-z0-9-]+)/$")
+		matches := regex.FindAllString(*dsurl, 1)
+		datastoreid := ""
+		if len(matches) == 1 {
+			datastoreid = strings.Trim(matches[0], "/")
+		}
+		// if an id is found, search for the name
+		name := cache.GetString(vcName, "names", mor)
+		// add the value to the index of ids
+		datastoreids = append(datastoreids, datastoreid)
+		// add the value to the cache
+		cache.Add(vcName, "datastoreids", datastoreid, name)
+	}
+	cache.Clean(vcName, "datastoreids", datastoreids)
+
 	// Create Queries from interesting objects and requested metrics
 	queries := []types.PerfQuerySpec{}
 
@@ -506,9 +526,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			ResourcePool: resourcepool,
 			Folder:       folderpath,
 			ViTags:       vitags,
-			//NumCPU:       numcpu,
-			//MemorySizeMB: memorysizemb,
-			Timestamp: timeStamp,
+			Timestamp:    timeStamp,
 		}
 		//send disk infos
 		diskInfos := cache.GetDiskInfos(vcName, "disks", pem.Entity.Value)
@@ -569,6 +587,13 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			metricName := cache.FindMetricName(vcName, serie.Id.CounterId)
 			metricName = strings.ToLower(metricName)
 			instanceName := serie.Id.Instance
+			if len(instanceName) > 0 && point.Group == "datastore" {
+				point.Datastore = []string{}
+				newDatastore := cache.GetString(vcName, "datastoreids", instanceName)
+				if newDatastore != nil {
+					point.Datastore = append(point.Datastore, *newDatastore)
+				}
+			}
 			var value int64 = -1
 			switch {
 			case strings.HasSuffix(metricName, ".average"):

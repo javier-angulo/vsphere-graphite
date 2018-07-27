@@ -25,9 +25,7 @@ type Point struct {
 	ResourcePool string   `influx:"tag,resourcepool" json:",omitempty"`
 	Folder       string   `influx:"tag,folder" json:",omitempty"`
 	ViTags       []string `influx:"tag,vitags" json:",omitempty"`
-	//NumCPU       int32    `influx:"tag,numcpu" json:",omitempty"`
-	//MemorySizeMB int32    `influx:"tag,memorysizemb" json:",omitempty"`
-	Timestamp int64 `influx:"time" elastic:"type:date,format:epoch_second"`
+	Timestamp    int64    `influx:"time" elastic:"type:date,format:epoch_second"`
 }
 
 // GetTags returns the tags of point as a map of strings

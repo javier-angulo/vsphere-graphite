@@ -194,7 +194,7 @@ func (c *Cache) CleanAll(vcenter string, refs []string) {
 			delete(*c, e)
 		}
 		// check vcenter and ignored sections
-		if m[0] != vcenter || m[1] == "metrics" || m[1] == "poolpaths" {
+		if m[0] != vcenter || m[1] == "metrics" || m[1] == "poolpaths" || m[1] == "datastoreids" {
 			continue
 		}
 		// find the value in the range
