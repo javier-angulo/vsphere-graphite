@@ -401,7 +401,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	datastoreids := []string{}
 	for mor, dsurl := range *cache.LookupString(vcName, "urls") {
 		// find the datastore id
-		regex := regexp.MustCompile("/([A-Za-z0-9-]+)/$")
+		regex := regexp.MustCompile("/([A-Fa-f0-9-]+)/$")
 		matches := regex.FindAllString(*dsurl, 1)
 		datastoreid := ""
 		if len(matches) == 1 {
