@@ -15,4 +15,7 @@ RUN go get -u golang.org/x/sys/windows/registry;\
 	go get -u github.com/olivere/elastic;\
 	go get -u github.com/prometheus/client_golang/prometheus;\
 	go get -u github.com/fluent/fluent-logger-golang/fluent;\
-    go clean -cache
+    go get -u honnef.co/go/tools/cmd/gosimple;\
+	go get -u golang.org/x/lint/golint;\
+	go get -u github.com/gordonklaus/ineffassign;\
+	go get -u github.com/securego/gosec/cmd/gosec/...

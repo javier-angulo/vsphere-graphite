@@ -86,10 +86,10 @@ push-linux-arm:
 	@$(MAKE) docker-push PREFIX=rpi-
 
 checks:
-	go get honnef.co/go/tools/cmd/gosimple
-	go get golang.org/x/lint/golint
-	go get github.com/gordonklaus/ineffassign
-	go get github.com/securego/gosec/cmd/gosec/...
+	go get -u honnef.co/go/tools/cmd/gosimple
+	go get -u golang.org/x/lint/golint
+	go get -u github.com/gordonklaus/ineffassign
+	go get -u github.com/securego/gosec/cmd/gosec/...
 	gosimple ./...
 	gofmt -s -d .
 	go vet ./...
