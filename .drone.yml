@@ -12,6 +12,7 @@ pipeline:
     image: alpine
     commands:
     - apk add --no-cache docker
+    - cp Makefile docker/helper/
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/main
   # do the checkups
   checkups:
