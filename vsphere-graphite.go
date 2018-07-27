@@ -246,7 +246,9 @@ func (service *Service) Manage() (string, error) {
 				if err := pprof.WriteHeapProfile(f); err != nil {
 					log.Fatal("could not write Mem profile: ", err)
 				}
-				f.Close()
+				if err := f.Close(); err != nil {
+					log.Fatal("could close Mem profile: ", err)
+				}
 			}
 		case killSignal := <-interrupt:
 			log.Println("Got signal:", killSignal)
