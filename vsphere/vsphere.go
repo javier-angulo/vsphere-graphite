@@ -412,6 +412,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		// add the value to the index of ids
 		datastoreids = append(datastoreids, datastoreid)
 		// add the value to the cache
+		log.Printf("Adding datastore ref %s -> %s", datastoreid, *name)
 		cache.Add(vcName, "datastoreids", datastoreid, name)
 	}
 	cache.Clean(vcName, "datastoreids", datastoreids)
