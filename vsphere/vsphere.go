@@ -99,7 +99,7 @@ func InitMetrics(metrics []*Metric, perfmanager *mo.PerformanceManager) {
 
 // Init : initialize vcenter
 func (vcenter *VCenter) Init(metrics []*Metric) {
-	log.Printf("Initalizing vCenter %s\n", vcenter.Hostname)
+	log.Printf("Initializing vCenter %s\n", vcenter.Hostname)
 	// connect to vcenter
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
