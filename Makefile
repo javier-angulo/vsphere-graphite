@@ -23,7 +23,11 @@ deps:
 	go get -u github.com/pquerna/ffjson
 	go get -u github.com/olivere/elastic
 	go get -u github.com/prometheus/client_golang/prometheus
-	go get -u github.com/fluent/fluent-logger-golang/fluent
+	go get -u github.com/fluent/fluent-logger-golang/fluent	
+	go get -u honnef.co/go/tools/cmd/gosimple
+	go get -u golang.org/x/lint/golint
+	go get -u github.com/gordonklaus/ineffassign
+	go get -u github.com/securego/gosec/cmd/gosec/...
 	go generate ./...
 
 build-windows-amd64:
@@ -86,10 +90,6 @@ push-linux-arm:
 	@$(MAKE) docker-push PREFIX=rpi-
 
 checks:
-	go get -u honnef.co/go/tools/cmd/gosimple
-	go get -u golang.org/x/lint/golint
-	go get -u github.com/gordonklaus/ineffassign
-	go get -u github.com/securego/gosec/cmd/gosec/...
 	gosimple ./...
 	gofmt -s -d .
 	go vet ./...

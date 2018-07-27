@@ -15,6 +15,10 @@ pipeline:
     - cp Makefile docker/helper/
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/main
   # do the checkups
+  dependancies:
+    image: cblomart/helper-vsphere-graphite
+    commands:
+    - make deps 
   checkups:
     image: cblomart/helper-vsphere-graphite
     commands:
