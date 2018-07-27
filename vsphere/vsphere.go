@@ -409,11 +409,12 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 		// if an id is found, search for the name
 		name := cache.GetString(vcName, "names", mor)
-		// add the value to the index of ids
-		datastoreids = append(datastoreids, datastoreid)
-		// add the value to the cache
-		log.Printf("Adding datastore ref %s -> %s", datastoreid, *name)
-		cache.Add(vcName, "datastoreids", datastoreid, name)
+		if name != nil {
+			// add the value to the index of ids
+			datastoreids = append(datastoreids, datastoreid)
+			// add the value to the cache
+			cache.Add(vcName, "datastoreids", datastoreid, *name)
+		}
 	}
 	cache.Clean(vcName, "datastoreids", datastoreids)
 
