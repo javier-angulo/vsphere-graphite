@@ -588,12 +588,15 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			serie := baseserie.(*types.PerfMetricIntSeries)
 			metricName := cache.FindMetricName(vcName, serie.Id.CounterId)
 			metricName = strings.ToLower(metricName)
-			instanceName := serie.Id.Instance
-			if len(instanceName) > 0 && point.Group == "datastore" {
-				point.Datastore = []string{}
-				newDatastore := cache.GetString(vcName, "datastoreids", instanceName)
+			metricparts := strings.Split(metricName, ".")
+			point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
+			point.Instance = serie.Id.Instance
+			if len(point.Instance) > 0 && point.Group == "datastore" {
+				newDatastore := cache.GetString(vcName, "datastoreids", point.Instance)
 				if newDatastore != nil {
-					point.Datastore = append(point.Datastore, *newDatastore)
+					point.Datastore = []string{ *newDatastore }
+				} else {
+					point.Datastore = []string{}
 				}
 			}
 			var value int64 = -1
@@ -609,9 +612,6 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			case strings.HasSuffix(metricName, ".summation"):
 				value = utils.Sum(serie.Value...)
 			}
-			metricparts := strings.Split(metricName, ".")
-			point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
-			point.Instance = instanceName
 			point.Value = value
 			*channel <- point
 		}
