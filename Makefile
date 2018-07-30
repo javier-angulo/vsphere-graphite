@@ -12,7 +12,7 @@ MUSL_CC=musl-gcc
 MUSL_CCGLAGS="-static"
 
 deps:
-    go get -u github.com/cblomart/git-version
+	go get -u github.com/cblomart/git-version
 	go get -u golang.org/x/sys/windows/registry
 	go get -u github.com/takama/daemon
 	go get -u golang.org/x/net/context
