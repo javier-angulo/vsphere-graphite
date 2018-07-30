@@ -20,3 +20,6 @@ README.pdf
 #vendor folder
 vendor/
 ca-certificates.crt
+
+#ignore generated version
+version.go
