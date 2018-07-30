@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -396,6 +397,27 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 	// cleanup poolpaths
 	cache.Clean(vcName, "poolpaths", poolvms)
 
+	// create a map to resolve datastore ids to their names
+	datastoreids := []string{}
+	for mor, dsurl := range *cache.LookupString(vcName, "urls") {
+		// find the datastore id
+		regex := regexp.MustCompile("/([A-Fa-f0-9-]+)/$")
+		matches := regex.FindAllString(*dsurl, 1)
+		datastoreid := ""
+		if len(matches) == 1 {
+			datastoreid = strings.Trim(matches[0], "/")
+		}
+		// if an id is found, search for the name
+		name := cache.GetString(vcName, "names", mor)
+		if name != nil {
+			// add the value to the index of ids
+			datastoreids = append(datastoreids, datastoreid)
+			// add the value to the cache
+			cache.Add(vcName, "datastoreids", datastoreid, *name)
+		}
+	}
+	cache.Clean(vcName, "datastoreids", datastoreids)
+
 	// Create Queries from interesting objects and requested metrics
 	queries := []types.PerfQuerySpec{}
 
@@ -506,9 +528,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			ResourcePool: resourcepool,
 			Folder:       folderpath,
 			ViTags:       vitags,
-			//NumCPU:       numcpu,
-			//MemorySizeMB: memorysizemb,
-			Timestamp: timeStamp,
+			Timestamp:    timeStamp,
 		}
 		//send disk infos
 		diskInfos := cache.GetDiskInfos(vcName, "disks", pem.Entity.Value)
@@ -568,7 +588,17 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			serie := baseserie.(*types.PerfMetricIntSeries)
 			metricName := cache.FindMetricName(vcName, serie.Id.CounterId)
 			metricName = strings.ToLower(metricName)
-			instanceName := serie.Id.Instance
+			metricparts := strings.Split(metricName, ".")
+			point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
+			point.Instance = serie.Id.Instance
+			if len(point.Instance) > 0 && point.Group == "datastore" {
+				newDatastore := cache.GetString(vcName, "datastoreids", point.Instance)
+				if newDatastore != nil {
+					point.Datastore = []string{ *newDatastore }
+				} else {
+					point.Datastore = []string{}
+				}
+			}
 			var value int64 = -1
 			switch {
 			case strings.HasSuffix(metricName, ".average"):
@@ -582,9 +612,6 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			case strings.HasSuffix(metricName, ".summation"):
 				value = utils.Sum(serie.Value...)
 			}
-			metricparts := strings.Split(metricName, ".")
-			point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
-			point.Instance = instanceName
 			point.Value = value
 			*channel <- point
 		}
