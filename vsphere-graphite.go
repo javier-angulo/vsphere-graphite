@@ -1,5 +1,7 @@
 package main
 
+//go:generate git-version
+
 import (
 	"encoding/json"
 	"fmt"
@@ -272,18 +274,7 @@ func ClearBuffer(buffer []*backend.Point) {
 }
 
 func main() {
-	if len(commit) == 0 && len(tag) == 0 {
-		log.Println("No version information")
-	} else {
-		log.Print("Version information")
-		if len(commit) > 0 {
-			log.Print(" - Commit: ", commit)
-		}
-		if len(tag) > 0 {
-			log.Println(" - Version: ", tag)
-		}
-		log.Print("\n")
-	}
+	log.Printf("Version information: %s - %s (%s)", gitTag, gitShortCommit, gitStatus)
 	srv, err := daemon.New(name, description, dependencies...)
 	if err != nil {
 		log.Println("Error: ", err)
