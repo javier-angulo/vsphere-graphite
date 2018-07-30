@@ -79,9 +79,8 @@ jobs:
     name: Docker linux amd64
     script:
     - mkdir -p releases/linux/amd64
-    - aws s3 cp s3://vsphere-graphite/$COMMIT/bin/linux/amd64/vsphere-graphite releases/linux/amd64/vsphere-graphite
-    - chmod +x releases/linux/amd64/vsphere-graphite
-    - touch releases/linux/amd64/vsphere-graphite
+    - aws s3 cp s3://vsphere-graphite/$COMMIT/vsphere-graphite_linux_amd64.tgz /tmp/vsphere-graphite_linux_amd64.tgz
+    - tar -zxf /tmp/vsphere-graphite_linux_amd64.tgz -C ./releases/linux/amd64/
     - make docker-linux-amd64
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
     - make push-linux-amd64
