@@ -55,21 +55,28 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	// start the queries
 	*query <- true
 	// start a timeout
-	timeout := time.After(10 * time.Second)
+	timeout := time.NewTimer(10 * time.Second)
 	// wait for the results
 	wait := true
 	for wait {
 		select {
 		case point := <-*metrics:
 			// reset timer
-			timeout = time.After(10 * time.Second)
+			if !timeout.Stop() {
+				<-timeout.C
+			}
+			timeout.Reset(10 * time.Second)
 			// add point to the buffer
 			addToThinPrometheusBuffer(buffer, &point)
 		case <-*done:
 			// finish consuming metrics and break loop
 			log.Println("Thin Prometheus was signaled the end of the collection")
 			wait = false
-		case <-timeout:
+		case <-timeout.C:
+			// stop timer
+			if !timeout.Stop() {
+				<-timeout.C
+			}
 			log.Println("Thin Prometheus was signaled a timeout")
 			wait = false
 		}
