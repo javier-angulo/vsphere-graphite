@@ -8,14 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// InitPrometheus : initialize prometheus
-func (backend *Config) InitPrometheus(channel *chan bool, doneChannel *chan bool, promMetrics *chan Point) error {
-	backend.channel = channel
-	backend.doneChannel = doneChannel
-	backend.promMetrics = promMetrics
-	return nil
-}
-
 // Describe : Implementation of Prometheus Collector.Describe
 func (backend *Config) Describe(ch chan<- *prometheus.Desc) {
 	prometheus.NewGauge(prometheus.GaugeOpts{Name: "Dummy", Help: "Dummy"}).Describe(ch)
@@ -26,29 +18,39 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 
 	log.Println("Requested Metrics!")
 
-	*backend.channel <- true
+	*query <- true
 
 	for {
 		select {
-		case point := <-*backend.promMetrics:
-			tags := point.GetTags(backend.NoArray, ",")
-			labelNames := make([]string, len(tags))
-			labelValues := make([]string, len(tags))
-			i := 0
-			for key, value := range tags {
-				labelNames[i] = key
-				labelValues[i] = value
-				i++
+		case point := <-*metrics:
+			backend.PrometheusSend(ch, point)
+		case <-*done:
+			// be sure to empty metrics before exiting
+			// the metric channel has a large buffer so there might still be values in there
+			for point := range *metrics {
+				backend.PrometheusSend(ch, point)
 			}
-			key := fmt.Sprintf("%s_%s_%s_%s", backend.Prefix, point.Group, point.Counter, point.Rollup)
-			desc := prometheus.NewDesc(key, "vSphere collected metric", labelNames, nil)
-			metric, err := prometheus.NewConstMetric(desc, prometheus.GaugeValue, float64(point.Value), labelValues...)
-			if err != nil {
-				log.Println("Error creating prometheus metric")
-			}
-			ch <- metric
-		case <-*backend.doneChannel:
 			return
 		}
 	}
+}
+
+//PrometheusSend sends a point to prometheus
+func (backend *Config) PrometheusSend(ch chan<- prometheus.Metric, point Point) {
+	tags := point.GetTags(backend.NoArray, ",")
+	labelNames := make([]string, len(tags))
+	labelValues := make([]string, len(tags))
+	i := 0
+	for key, value := range tags {
+		labelNames[i] = key
+		labelValues[i] = value
+		i++
+	}
+	key := fmt.Sprintf("%s_%s_%s_%s", backend.Prefix, point.Group, point.Counter, point.Rollup)
+	desc := prometheus.NewDesc(key, "vSphere collected metric", labelNames, nil)
+	metric, err := prometheus.NewConstMetric(desc, prometheus.GaugeValue, float64(point.Value), labelValues...)
+	if err != nil {
+		log.Println("Error creating prometheus metric")
+	}
+	ch <- metric
 }

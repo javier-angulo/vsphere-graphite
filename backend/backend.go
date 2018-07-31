@@ -47,12 +47,19 @@ const (
 	Prometheus = "prometheus"
 	// Fluentd name of the fluentd backend
 	Fluentd = "fluentd"
+	// ThinPrometheus name of the thin prometheus backend
+	ThinPrometheus = "thinprometheus"
 )
 
-var stdlog, errlog *log.Logger
+var (
+	query, done *chan bool
+	metrics     *chan Point
+	prefix      string
+)
 
 // Init : initialize a backend
 func (backend *Config) Init() error {
+	prefix = backend.Prefix
 	if len(backend.ValueField) == 0 {
 		// for compatibility reason with previous version
 		// can now be changed in the config file.
@@ -164,6 +171,18 @@ func (backend *Config) Init() error {
 		}
 		backend.fluent = fluentclt
 		return nil
+	case ThinPrometheus:
+		//Initialize Thin Prometheus
+		log.Printf("Initializing %s backend\n", backendType)
+		client, err := NewThinPrometheusClient(backend.Hostname, backend.Port)
+		if err != nil {
+			log.Println("Error connecting to Thin prometheus")
+			return err
+		}
+		go func() {
+			client.ListenAndServe()
+		}()
+		return nil
 	default:
 		log.Println("Backend " + backendType + " unknown.")
 		return errors.New("Backend " + backendType + " unknown.")
@@ -191,10 +210,13 @@ func (backend *Config) Disconnect() {
 		log.Println("Disconnecting from elastic")
 	case Prometheus:
 		// Stop Exporting Prometheus Metrics
-		log.Println("Stopping exporter")
+		log.Println("Stopping Prometheus exporter")
 	case Fluentd:
 		// Disconnect from Elastic
 		log.Println("Disconnecting from fluent")
+	case ThinPrometheus:
+		// Stop exporting Prometheus metrics
+		log.Println("Disconnect ThinPrometheus exporter")
 	default:
 		log.Println("Backend " + backendType + " unknown.")
 	}
@@ -321,7 +343,28 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 				}
 			}
 		}
+	case ThinPrometheus:
+		// Thin Prometheus doesn't need to send metrics
 	default:
 		log.Println("Backend " + backendType + " unknown.")
+	}
+}
+
+// InitChannels initiates channels for pull backends
+func (backend *Config) InitChannels(initquery *chan bool, initdone *chan bool, initmetrics *chan Point) {
+	done = initdone
+	query = initquery
+	metrics = initmetrics
+}
+
+// Scheduled indicates that the metric collection needs to be scheduled for the backend
+func (backend *Config) Scheduled() bool {
+	switch backendType := strings.ToLower(backend.Type); backendType {
+	case Prometheus:
+		return false
+	case ThinPrometheus:
+		return false
+	default:
+		return true
 	}
 }

@@ -155,21 +155,17 @@ func (service *Service) Manage() (string, error) {
 
 	// Set up a channel to receive the metrics
 	metrics := make(chan backend.Point, conf.FlushSize)
-	runQuery := make(chan bool, 1)
-	doneQuery := make(chan bool, 1)
-	metricsProm := make(chan backend.Point)
+	runQueries := make(chan bool, 1)
+	doneQueries := make(chan bool, 1)
+	resultMetrics := make(chan backend.Point)
+	conf.Backend.InitChannels(&runQueries, &doneQueries, &resultMetrics)
 
 	ticker := time.NewTicker(time.Second * time.Duration(conf.Interval))
 	defer ticker.Stop()
 
-	// Set up a ticker to collect metrics at givent interval (except for Prometheus which is Pull)
-	if conf.Backend.Type == "prometheus" {
+	// Set up a ticker to collect metrics at givent interval (except for non scheduled backend)
+	if conf.Backend.Scheduled() {
 		ticker.Stop()
-		log.Println("Init Prometheus")
-		err = conf.Backend.InitPrometheus(&runQuery, &doneQuery, &metricsProm)
-		if err != nil {
-			return "Init Prometheus failed", err
-		}
 	} else {
 		// Start retriveing and sending metrics
 		log.Println("Retrieving metrics")
@@ -208,15 +204,15 @@ func (service *Service) Manage() (string, error) {
 				ClearBuffer(pointbuffer)
 				bufferindex = 0
 			}
-		case <-runQuery:
+		case <-runQueries:
 			log.Println("Adhoc metric retrieval")
 			var wg sync.WaitGroup
 			wg.Add(len(conf.VCenters))
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &metricsProm, &wg)
+				go queryVCenter(*vcenter, conf, &resultMetrics, &wg)
 			}
 			wg.Wait()
-			doneQuery <- true
+			doneQueries <- true
 			cleanup <- true
 		case <-ticker.C:
 			log.Println("Scheduled metric retrieval")
