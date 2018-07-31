@@ -180,7 +180,10 @@ func (backend *Config) Init() error {
 			return err
 		}
 		go func() {
-			client.ListenAndServe()
+			err := client.ListenAndServe()
+			if err != nil {
+				log.Printf("Error Starting Prometheus listener: %s", err)
+			}
 		}()
 		return nil
 	default:

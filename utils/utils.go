@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	"fmt"
-	"log"
 	"math"
 	"sort"
 	"strconv"
@@ -11,8 +10,6 @@ import (
 
 	"github.com/vmware/govmomi/vim25/types"
 )
-
-var stdlog, errlog *log.Logger
 
 // Min : get the minimum of values
 func Min(n ...int64) int64 {

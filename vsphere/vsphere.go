@@ -594,7 +594,7 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 			if len(point.Instance) > 0 && point.Group == "datastore" {
 				newDatastore := cache.GetString(vcName, "datastoreids", point.Instance)
 				if newDatastore != nil {
-					point.Datastore = []string{ *newDatastore }
+					point.Datastore = []string{*newDatastore}
 				} else {
 					point.Datastore = []string{}
 				}
