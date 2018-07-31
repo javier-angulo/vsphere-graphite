@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
@@ -8,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cblomart/vsphere-graphite/utils"
 	"github.com/valyala/fasthttp"
 )
 
@@ -38,7 +40,7 @@ func NewThinPrometheusClient(server string, port int) (ThinPrometheusClient, err
 
 // ListenAndServe will start the listen thead for metric requests
 func (client *ThinPrometheusClient) ListenAndServe() error {
-	log.Printf("Start listening for metric reauest at %s\n", client.address)
+	log.Printf("Start listening for metric request at %s\n", client.address)
 	return fasthttp.ListenAndServe(client.address, fasthttp.CompressHandlerLevel(requestHandler, 9))
 }
 
@@ -83,18 +85,38 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		}
 	}
 	ctx.SetContentType("text/plain; charset=utf8")
+	var outbuff bytes.Buffer
 	for key, vals := range buffer {
-		fmt.Fprintf(ctx, "#HELP %s %s\n", key, strings.Replace(key, "_", " ", -1))
-		fmt.Fprintf(ctx, "#TYPE %s gauge\n", key)
+		utils.MustWriteString(&outbuff, "#HELP ")
+		utils.MustWriteString(&outbuff, key)
+		utils.MustWriteString(&outbuff, " ")
+		utils.MustWriteString(&outbuff, strings.Replace(key, "_", " ", -1))
+		utils.MustWriteString(&outbuff, "\n")
+		utils.MustWriteString(&outbuff, "#TYPE ")
+		utils.MustWriteString(&outbuff, key)
+		utils.MustWriteString(&outbuff, " gauge\n")
 		for _, val := range vals {
-			fmt.Fprintf(ctx, "%s%s\n", key, val)
+			utils.MustWriteString(&outbuff, key)
+			utils.MustWriteString(&outbuff, val)
+			utils.MustWriteString(&outbuff, "\n")
 		}
+		ctx.Write(outbuff.Bytes())
+		outbuff.Reset()
 	}
 	log.Println("Thin Prometheus Sended Response to request")
 }
 
-func addToThinPrometheusBuffer(buffer map[string][]string, point *Point) {
-	metric := fmt.Sprintf("%s_%s_%s_%s", prefix, point.Group, point.Counter, point.Rollup)
+func addToThinPrometheusBuffer(metrics map[string][]string, point *Point) {
+	var buffer bytes.Buffer
+	utils.MustWriteString(&buffer, prefix)
+	utils.MustWriteString(&buffer, "_")
+	utils.MustWriteString(&buffer, point.Group)
+	utils.MustWriteString(&buffer, "_")
+	utils.MustWriteString(&buffer, point.Counter)
+	utils.MustWriteString(&buffer, "_")
+	utils.MustWriteString(&buffer, point.Rollup)
+	metric := buffer.String()
+	buffer.Reset()
 	tags := point.GetTags(false, ",")
 	var keys = make([]string, len(tags))
 	for key := range tags {
@@ -106,12 +128,23 @@ func addToThinPrometheusBuffer(buffer map[string][]string, point *Point) {
 		if len(tags[key]) == 0 {
 			continue
 		}
-		tmp = append(tmp, fmt.Sprintf("%s=\"%s\"", key, tags[key]))
+		utils.MustWriteString(&buffer, key)
+		utils.MustWriteString(&buffer, "=\"")
+		utils.MustWriteString(&buffer, tags[key])
+		utils.MustWriteString(&buffer, "\"")
+		tmp = append(tmp, buffer.String())
+		buffer.Reset()
 	}
 	strtags := strings.Join(tmp, ",")
-	if buffer[metric] == nil {
-		buffer[metric] = []string{fmt.Sprintf("{%s} %d", strtags, point.Value)}
+	utils.MustWriteString(&buffer, "{")
+	utils.MustWriteString(&buffer, strtags)
+	utils.MustWriteString(&buffer, "} ")
+	utils.MustWriteString(&buffer, utils.ValToString(point.Value, ",", false))
+
+	if metrics[metric] == nil {
+		metrics[metric] = []string{buffer.String()}
 	} else {
-		buffer[metric] = append(buffer[metric], fmt.Sprintf("{%s} %d", strtags, point.Value))
+		metrics[metric] = append(metrics[metric], buffer.String())
 	}
+	buffer.Reset()
 }

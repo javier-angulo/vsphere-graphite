@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"math"
@@ -259,5 +260,13 @@ func Reverse(array []string) {
 	for i := len(array)/2 - 1; i >= 0; i-- {
 		opp := len(array) - 1 - i
 		array[i], array[opp] = array[opp], array[i]
+	}
+}
+
+// MustWriteString writes to a buffer and panics on error
+func MustWriteString(buffer *bytes.Buffer, s string) {
+	_, err := buffer.WriteString(s)
+	if err != nil {
+		panic(err)
 	}
 }
