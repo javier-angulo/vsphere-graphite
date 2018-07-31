@@ -25,6 +25,7 @@ deps:
 	go get -u github.com/olivere/elastic
 	go get -u github.com/prometheus/client_golang/prometheus
 	go get -u github.com/fluent/fluent-logger-golang/fluent	
+	go get -u github.com/valyala/fasthttp
 	go get -u honnef.co/go/tools/cmd/gosimple
 	go get -u golang.org/x/lint/golint
 	go get -u github.com/gordonklaus/ineffassign
