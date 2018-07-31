@@ -52,12 +52,14 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	}
 	// create a buffer to organise metrics per type
 	buffer := map[string][]string{}
+	log.Println("Thin Prometheus Sending Query Request")
 	// start the queries
 	*query <- true
 	// start a timeout
 	timeout := time.NewTimer(10 * time.Second)
 	// wait for the results
 	wait := true
+	log.Println("Thin Prometheus is waiting for query results")
 	for wait {
 		select {
 		case point := <-*metrics:
@@ -74,9 +76,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			wait = false
 		case <-timeout.C:
 			// stop timer
-			if !timeout.Stop() {
-				<-timeout.C
-			}
+			timeout.Stop()
 			log.Println("Thin Prometheus was signaled a timeout")
 			wait = false
 		}
@@ -89,6 +89,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			fmt.Fprintf(ctx, "%s%s\n", key, val)
 		}
 	}
+	log.Println("Thin Prometheus Sended Response to request")
 }
 
 func addToThinPrometheusBuffer(buffer map[string][]string, point *Point) {
