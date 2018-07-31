@@ -100,7 +100,10 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			utils.MustWriteString(&outbuff, val)
 			utils.MustWriteString(&outbuff, "\n")
 		}
-		ctx.Write(outbuff.Bytes())
+		_, err := ctx.Write(outbuff.Bytes())
+		if err != nil {
+			log.Printf("Error writing to buffer %s\n", err)
+		}
 		outbuff.Reset()
 	}
 	log.Println("Thin Prometheus Sended Response to request")
