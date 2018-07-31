@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"sort"
 	"strings"
 	"time"
 
@@ -95,17 +96,22 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 func addToThinPrometheusBuffer(buffer map[string][]string, point *Point) {
 	metric := fmt.Sprintf("%s_%s_%s_%s", prefix, point.Group, point.Counter, point.Rollup)
 	tags := point.GetTags(false, ",")
+	var keys = make([]string, len(tags))
+	for key := range tags {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
 	var tmp []string
-	for key, val := range tags {
-		if len(val) == 0 {
+	for _, key := range keys {
+		if len(tags[key]) == 0 {
 			continue
 		}
-		tmp = append(tmp, fmt.Sprintf("%s=\"%s\"", key, val))
+		tmp = append(tmp, fmt.Sprintf("%s=\"%s\"", key, tags[key]))
 	}
 	strtags := strings.Join(tmp, ",")
 	if buffer[metric] == nil {
-		buffer[metric] = []string{fmt.Sprintf("{%s}%d", strtags, point.Value)}
+		buffer[metric] = []string{fmt.Sprintf("{%s} %d", strtags, point.Value)}
 	} else {
-		buffer[metric] = append(buffer[metric], fmt.Sprintf("{%s}%d", strtags, point.Value))
+		buffer[metric] = append(buffer[metric], fmt.Sprintf("{%s} %d", strtags, point.Value))
 	}
 }
