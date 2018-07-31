@@ -38,7 +38,7 @@ func NewThinPrometheusClient(server string, port int) (ThinPrometheusClient, err
 // ListenAndServe will start the listen thead for metric requests
 func (client *ThinPrometheusClient) ListenAndServe() error {
 	log.Printf("Start listening for metric reauest at %s\n", client.address)
-	return fasthttp.ListenAndServe(client.address, fasthttp.CompressHandler(requestHandler))
+	return fasthttp.ListenAndServe(client.address, fasthttp.CompressHandlerLevel(requestHandler, 9))
 }
 
 func requestHandler(ctx *fasthttp.RequestCtx) {
