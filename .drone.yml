@@ -18,6 +18,7 @@ pipeline:
   dependancies:
     image: cblomart/helper-vsphere-graphite
     commands:
+    - echo $GOPATH
     - make deps 
   checkups:
     image: cblomart/helper-vsphere-graphite

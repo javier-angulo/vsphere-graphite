@@ -164,7 +164,6 @@ func (backend *Config) Init() error {
 		}
 		backend.fluent = fluentclt
 		return nil
-
 	default:
 		log.Println("Backend " + backendType + " unknown.")
 		return errors.New("Backend " + backendType + " unknown.")
