@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"strconv"
 	"strings"
 	"time"
 
@@ -32,7 +31,7 @@ func NewThinPrometheusClient(server string, port int) (ThinPrometheusClient, err
 	if len(server) > 0 {
 		address = server
 	}
-	address = address + strconv.Itoa(port)
+	address = fmt.Sprintf("%s:%d", address, port)
 	return ThinPrometheusClient{Hostname: server, Port: port, address: address}, nil
 }
 

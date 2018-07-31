@@ -164,7 +164,7 @@ func (service *Service) Manage() (string, error) {
 	defer ticker.Stop()
 
 	// Set up a ticker to collect metrics at givent interval (except for non scheduled backend)
-	if conf.Backend.Scheduled() {
+	if !conf.Backend.Scheduled() {
 		ticker.Stop()
 	} else {
 		// Start retriveing and sending metrics
