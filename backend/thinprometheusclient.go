@@ -60,25 +60,18 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	wait := true
 	for wait {
 		select {
-		case <-*done:
-			// finish consuming metrics and break loop
-			log.Println("Thin Prometheus was signaled the end of the collection")
-			for point := range *metrics {
-				addToThinPrometheusBuffer(buffer, &point)
-			}
-			wait = false
-		case <-timeout:
-			log.Println("Thin Prometheus was signaled a timeout")
-			// finish consuming metrics and break loop
-			for point := range *metrics {
-				addToThinPrometheusBuffer(buffer, &point)
-			}
-			wait = false
 		case point := <-*metrics:
 			// reset timer
 			timeout = time.After(10 * time.Second)
 			// add point to the buffer
 			addToThinPrometheusBuffer(buffer, &point)
+		case <-*done:
+			// finish consuming metrics and break loop
+			log.Println("Thin Prometheus was signaled the end of the collection")
+			wait = false
+		case <-timeout:
+			log.Println("Thin Prometheus was signaled a timeout")
+			wait = false
 		}
 	}
 	ctx.SetContentType("text/plain; charset=utf8")

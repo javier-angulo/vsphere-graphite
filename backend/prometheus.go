@@ -25,11 +25,6 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 		case point := <-*metrics:
 			backend.PrometheusSend(ch, point)
 		case <-*done:
-			// be sure to empty metrics before exiting
-			// the metric channel has a large buffer so there might still be values in there
-			for point := range *metrics {
-				backend.PrometheusSend(ch, point)
-			}
 			return
 		}
 	}

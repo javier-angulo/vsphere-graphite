@@ -220,7 +220,7 @@ func (service *Service) Manage() (string, error) {
 				go queryVCenter(*vcenter, conf, &metrics, nil)
 			}
 		case <-memtimer.C:
-			if conf.Backend.Type != "prometheus" {
+			if conf.Backend.Scheduled() {
 				// sent remaining values
 				conf.Backend.SendMetrics(pointbuffer)
 				log.Printf("Sent %d logs to backend", bufferindex)
