@@ -24,8 +24,8 @@ import (
 
 // Channels are use for unscheduled backend
 type Channels struct {
-	Request chan Point
-	Done    chan bool
+	Request *chan Point
+	Done    *chan bool
 }
 
 // Backend Interface
@@ -58,12 +58,12 @@ const (
 )
 
 var (
-	queries chan Channels
+	queries *chan Channels
 	prefix  string
 )
 
 // Init : initialize a backend
-func (backend *Config) Init() (chan Channels, error) {
+func (backend *Config) Init() (*chan Channels, error) {
 	queries := make(chan Channels)
 	prefix = backend.Prefix
 	if len(backend.ValueField) == 0 {
@@ -80,10 +80,10 @@ func (backend *Config) Init() (chan Channels, error) {
 		carbon, err := graphite.NewGraphite(backend.Hostname, backend.Port)
 		if err != nil {
 			log.Println("Error connecting to graphite")
-			return queries, err
+			return &queries, err
 		}
 		backend.carbon = carbon
-		return queries, nil
+		return &queries, nil
 	case InfluxDB:
 		//Initialize Influx DB
 		log.Println("Intializing " + backendType + " backend")
@@ -98,20 +98,20 @@ func (backend *Config) Init() (chan Channels, error) {
 		})
 		if err != nil {
 			log.Println("Error connecting to InfluxDB")
-			return queries, err
+			return &queries, err
 		}
 		backend.influx = &influxclt
-		return queries, nil
+		return &queries, nil
 	case ThinInfluxDB:
 		//Initialize thin Influx DB client
 		log.Println("Initializing " + backendType + " backend")
 		thininfluxclt, err := thininfluxclient.NewThinInlfuxClient(backend.Hostname, backend.Port, backend.Database, backend.Username, backend.Password, "s", backend.Encrypted)
 		if err != nil {
 			log.Println("Error creating thin InfluxDB client")
-			return queries, err
+			return &queries, err
 		}
 		backend.thininfluxdb = &thininfluxclt
-		return queries, nil
+		return &queries, nil
 	case Elastic:
 		//Initialize Elastic client
 		elasticindex := backend.Database
@@ -132,10 +132,10 @@ func (backend *Config) Init() (chan Channels, error) {
 			elastic.SetBasicAuth(backend.Username, backend.Password))
 		if err != nil {
 			log.Println("Error creating Elastic client")
-			return queries, err
+			return &queries, err
 		}
 		backend.elastic = elasticclt
-		return queries, CreateIndexIfNotExists(backend.elastic, elasticindex)
+		return &queries, CreateIndexIfNotExists(backend.elastic, elasticindex)
 	case Prometheus:
 		//Initialize Prometheus client
 		log.Println("Initializing " + backendType + " backend")
@@ -144,7 +144,7 @@ func (backend *Config) Init() (chan Channels, error) {
 		err := registry.Register(backend)
 		if err != nil {
 			log.Println("Error creating Prometheus Registry")
-			return queries, err
+			return &queries, err
 		}
 
 		http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
@@ -166,17 +166,17 @@ func (backend *Config) Init() (chan Channels, error) {
 			log.Printf("Prometheus lisenting at http://%s/metrics\n", address)
 			return nil
 		}()
-		return queries, nil
+		return &queries, nil
 	case Fluentd:
 		//Initialize Influx DB
 		log.Println("Initializing " + backendType + " backend")
 		fluentclt, err := fluent.New(fluent.Config{FluentPort: backend.Port, FluentHost: backend.Hostname, MarshalAsJSON: true})
 		if err != nil {
 			log.Println("Error connecting to Fluentd")
-			return queries, err
+			return &queries, err
 		}
 		backend.fluent = fluentclt
-		return queries, nil
+		return &queries, nil
 	case ThinPrometheus:
 		//Initialize Thin Prometheus
 		log.Printf("Initializing %s backend\n", backendType)
@@ -191,10 +191,10 @@ func (backend *Config) Init() (chan Channels, error) {
 				log.Printf("Error Starting Prometheus listener: %s", err)
 			}
 		}()
-		return queries, nil
+		return &queries, nil
 	default:
 		log.Println("Backend " + backendType + " unknown.")
-		return queries, errors.New("Backend " + backendType + " unknown.")
+		return &queries, errors.New("Backend " + backendType + " unknown.")
 	}
 }
 

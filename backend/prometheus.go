@@ -18,15 +18,17 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 
 	log.Println("Requested Metrics!")
 
-	channels := Channels{Request: make(chan Point), Done: make(chan bool)}
+	request := make(chan Point)
+	done := make(chan bool)
+	channels := Channels{Request: &request, Done: &done}
 
-	queries <- channels
+	*queries <- channels
 
 	for {
 		select {
-		case point := <-channels.Request:
+		case point := <-*channels.Request:
 			backend.PrometheusSend(ch, point)
-		case <-channels.Done:
+		case <-*channels.Done:
 			return
 		}
 	}

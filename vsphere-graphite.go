@@ -200,15 +200,15 @@ func (service *Service) Manage() (string, error) {
 				ClearBuffer(pointbuffer)
 				bufferindex = 0
 			}
-		case request := <-queries:
+		case request := <-*queries:
 			log.Println("Adhoc metric retrieval")
 			var wg sync.WaitGroup
 			wg.Add(len(conf.VCenters))
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &request.Request, &wg)
+				go queryVCenter(*vcenter, conf, request.Request, &wg)
 			}
 			wg.Wait()
-			request.Done <- true
+			*request.Done <- true
 			cleanup <- true
 		case <-ticker.C:
 			log.Println("Scheduled metric retrieval")
