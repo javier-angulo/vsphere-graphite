@@ -141,7 +141,7 @@ func (service *Service) Manage() (string, error) {
 		vcenter.Init(conf.Metrics)
 	}
 
-	err = conf.Backend.Init()
+	queries, err := conf.Backend.Init()
 	if err != nil {
 		return "Could not initialize backend", err
 	}
@@ -155,10 +155,6 @@ func (service *Service) Manage() (string, error) {
 
 	// Set up a channel to receive the metrics
 	metrics := make(chan backend.Point, conf.FlushSize)
-	runQueries := make(chan bool, 1)
-	doneQueries := make(chan bool, 1)
-	resultMetrics := make(chan backend.Point)
-	conf.Backend.InitChannels(&runQueries, &doneQueries, &resultMetrics)
 
 	ticker := time.NewTicker(time.Second * time.Duration(conf.Interval))
 	defer ticker.Stop()
@@ -204,15 +200,15 @@ func (service *Service) Manage() (string, error) {
 				ClearBuffer(pointbuffer)
 				bufferindex = 0
 			}
-		case <-runQueries:
+		case request := <-queries:
 			log.Println("Adhoc metric retrieval")
 			var wg sync.WaitGroup
 			wg.Add(len(conf.VCenters))
 			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, &resultMetrics, &wg)
+				go queryVCenter(*vcenter, conf, &request.Request, &wg)
 			}
 			wg.Wait()
-			doneQueries <- true
+			request.Done <- true
 			cleanup <- true
 		case <-ticker.C:
 			log.Println("Scheduled metric retrieval")
@@ -227,8 +223,8 @@ func (service *Service) Manage() (string, error) {
 				// empty point buffer
 				bufferindex = 0
 				ClearBuffer(pointbuffer)
+				cleanup <- true
 			}
-			cleanup <- true
 		case <-cleanup:
 			runtime.GC()
 			debug.FreeOSMemory()

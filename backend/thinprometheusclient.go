@@ -49,15 +49,13 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		ctx.Error("Unsupported path", fasthttp.StatusNotFound)
 		return
 	}
-	if done == nil || query == nil || metrics == nil {
-		ctx.Error("Channels are not properly initialized.", fasthttp.StatusFailedDependency)
-		return
-	}
+	// prepare the channels for the request
+	channels := Channels{Request: make(chan Point), Done: make(chan bool)}
 	// create a buffer to organise metrics per type
 	buffer := map[string][]string{}
 	log.Println("Thin Prometheus Sending Query Request")
-	// start the queries
-	*query <- true
+	// start the queriess
+	queries <- channels
 	// start a timeout
 	timeout := time.NewTimer(10 * time.Second)
 	// wait for the results
@@ -65,7 +63,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	log.Println("Thin Prometheus is waiting for query results")
 	for wait {
 		select {
-		case point := <-*metrics:
+		case point := <-channels.Request:
 			// reset timer
 			if !timeout.Stop() {
 				<-timeout.C
@@ -73,7 +71,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			timeout.Reset(10 * time.Second)
 			// add point to the buffer
 			addToThinPrometheusBuffer(buffer, &point)
-		case <-*done:
+		case <-channels.Done:
 			// finish consuming metrics and break loop
 			log.Println("Thin Prometheus was signaled the end of the collection")
 			wait = false

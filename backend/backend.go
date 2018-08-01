@@ -22,6 +22,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+// Channels are use for unscheduled backend
+type Channels struct {
+	Request chan Point
+	Done    chan bool
+}
+
 // Backend Interface
 type Backend interface {
 	Init(config Config) error
@@ -52,13 +58,13 @@ const (
 )
 
 var (
-	query, done *chan bool
-	metrics     *chan Point
-	prefix      string
+	queries chan Channels
+	prefix  string
 )
 
 // Init : initialize a backend
-func (backend *Config) Init() error {
+func (backend *Config) Init() (chan Channels, error) {
+	queries := make(chan Channels)
 	prefix = backend.Prefix
 	if len(backend.ValueField) == 0 {
 		// for compatibility reason with previous version
@@ -74,10 +80,10 @@ func (backend *Config) Init() error {
 		carbon, err := graphite.NewGraphite(backend.Hostname, backend.Port)
 		if err != nil {
 			log.Println("Error connecting to graphite")
-			return err
+			return queries, err
 		}
 		backend.carbon = carbon
-		return nil
+		return queries, nil
 	case InfluxDB:
 		//Initialize Influx DB
 		log.Println("Intializing " + backendType + " backend")
@@ -92,20 +98,20 @@ func (backend *Config) Init() error {
 		})
 		if err != nil {
 			log.Println("Error connecting to InfluxDB")
-			return err
+			return queries, err
 		}
 		backend.influx = &influxclt
-		return nil
+		return queries, nil
 	case ThinInfluxDB:
 		//Initialize thin Influx DB client
 		log.Println("Initializing " + backendType + " backend")
 		thininfluxclt, err := thininfluxclient.NewThinInlfuxClient(backend.Hostname, backend.Port, backend.Database, backend.Username, backend.Password, "s", backend.Encrypted)
 		if err != nil {
 			log.Println("Error creating thin InfluxDB client")
-			return err
+			return queries, err
 		}
 		backend.thininfluxdb = &thininfluxclt
-		return nil
+		return queries, nil
 	case Elastic:
 		//Initialize Elastic client
 		elasticindex := backend.Database
@@ -126,10 +132,10 @@ func (backend *Config) Init() error {
 			elastic.SetBasicAuth(backend.Username, backend.Password))
 		if err != nil {
 			log.Println("Error creating Elastic client")
-			return err
+			return queries, err
 		}
 		backend.elastic = elasticclt
-		return CreateIndexIfNotExists(backend.elastic, elasticindex)
+		return queries, CreateIndexIfNotExists(backend.elastic, elasticindex)
 	case Prometheus:
 		//Initialize Prometheus client
 		log.Println("Initializing " + backendType + " backend")
@@ -138,7 +144,7 @@ func (backend *Config) Init() error {
 		err := registry.Register(backend)
 		if err != nil {
 			log.Println("Error creating Prometheus Registry")
-			return err
+			return queries, err
 		}
 
 		http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
@@ -160,24 +166,24 @@ func (backend *Config) Init() error {
 			log.Printf("Prometheus lisenting at http://%s/metrics\n", address)
 			return nil
 		}()
-		return nil
+		return queries, nil
 	case Fluentd:
 		//Initialize Influx DB
 		log.Println("Initializing " + backendType + " backend")
 		fluentclt, err := fluent.New(fluent.Config{FluentPort: backend.Port, FluentHost: backend.Hostname, MarshalAsJSON: true})
 		if err != nil {
 			log.Println("Error connecting to Fluentd")
-			return err
+			return queries, err
 		}
 		backend.fluent = fluentclt
-		return nil
+		return queries, nil
 	case ThinPrometheus:
 		//Initialize Thin Prometheus
 		log.Printf("Initializing %s backend\n", backendType)
 		client, err := NewThinPrometheusClient(backend.Hostname, backend.Port)
 		if err != nil {
 			log.Println("Error connecting to Thin prometheus")
-			return err
+			return nil, err
 		}
 		go func() {
 			err := client.ListenAndServe()
@@ -185,10 +191,10 @@ func (backend *Config) Init() error {
 				log.Printf("Error Starting Prometheus listener: %s", err)
 			}
 		}()
-		return nil
+		return queries, nil
 	default:
 		log.Println("Backend " + backendType + " unknown.")
-		return errors.New("Backend " + backendType + " unknown.")
+		return queries, errors.New("Backend " + backendType + " unknown.")
 	}
 }
 
@@ -351,13 +357,6 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 	default:
 		log.Println("Backend " + backendType + " unknown.")
 	}
-}
-
-// InitChannels initiates channels for pull backends
-func (backend *Config) InitChannels(initquery *chan bool, initdone *chan bool, initmetrics *chan Point) {
-	done = initdone
-	query = initquery
-	metrics = initmetrics
 }
 
 // Scheduled indicates that the metric collection needs to be scheduled for the backend
