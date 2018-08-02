@@ -121,7 +121,7 @@ dist: $(RELEASE_DIR)/vsphere-graphite_$(GOOS)_$(GOARCH).tgz
 build: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX)
 
 clean:
-    rm -f backend/thininfluxclient/thininfluxclient_ffjson.go
+	rm -f backend/thininfluxclient/thininfluxclient_ffjson.go
 	rm -f version.go
 	rm -rf $(RELEASE_DIR)
 
