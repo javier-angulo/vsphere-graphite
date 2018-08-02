@@ -17,7 +17,7 @@ pipeline:
     #- apk add --no-cache docker
     - cp Makefile docker/helper/
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/helper
-    - rm docker/helper/Makefile
+    #- rm docker/helper/Makefile
   # get dependancies
   #dependancies:
   #  name: Get Dependancies
@@ -80,14 +80,18 @@ pipeline:
     group: push
     name: Docker Push Linux AMD64
     image: cblomart/helper-vsphere-graphite
-    environment:
-      - DOCKER_HOST=unix:///go/docker.sock
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    #environment:
+    #  - DOCKER_HOST=unix:///go/docker.sock
+    secrets: [ docker_username, docker_password ]
     commands:
     - make docker-linux-amd64
+    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
     - make push-linux-amd64
 
-services:
-  docker:
-    image: docker:dind
-    privileged: true
-    command: [ '-H', 'unix:///go/docker.sock' ]
+#services:
+#  docker:
+#    image: docker:dind
+#    privileged: true
+#    command: [ '-H', 'unix:///go/docker.sock' ]
