@@ -8,8 +8,8 @@ pipeline:
   # perpare a helper image with necessary tooling deps included
   supportvm:
     name: Create Support Docker Image
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    #volumes:
+    #  - /var/run/docker.sock:/var/run/docker.sock
     image: docker
     environment:
       - DOCKER_HOST=unix:///go/docker.sock
