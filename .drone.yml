@@ -56,3 +56,18 @@ pipeline:
     - make build-linux-arm
     when:
       event: [ tag ]
+  # push to docker
+  pushlin:
+    group: push
+    name: Docker Push Linux AMD64
+    image: cblomart/helper-vsphere-graphite
+    environment:
+      - DOCKER_HOST=unix:///drone/docker.sock
+    commands:
+    - make push-linux-amd64
+
+services:
+  docker:
+    image: docker:dind
+    privileged: true
+    command: [ '-H', 'unix:///drone/docker.sock' ]

@@ -84,7 +84,7 @@ jobs:
     - touch releases/linux/amd64/vsphere-graphite
     - make docker-linux-amd64
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-    - make push-linux-amd64
+    #- make push-linux-amd64
   - name: Docker linux arm
     if: tag IS present
     script:
