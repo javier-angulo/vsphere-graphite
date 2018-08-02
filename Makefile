@@ -1,6 +1,13 @@
 GOVERSION=$(shell go version)
-COMMIT=$(shell git log -1 --pretty=format:"%h")
-TAG=$(shell git tag -l --points-at HEAD)
+ifndef COMMIT
+	COMMIT=$(shell git log -1 --pretty=format:"%h")
+endif
+ifdef TRAVIS_TAG
+	TAG=$(TRAVIS_TAG)
+endif
+ifndef TRAVIS_TAG
+	TAG=$(shell git tag -l --points-at HEAD)
+endif
 GOOS=$(word 1,$(subst /, ,$(lastword $(GOVERSION))))
 GOARCH=$(word 2,$(subst /, ,$(lastword $(GOVERSION))))
 RELEASE_DIR=releases
