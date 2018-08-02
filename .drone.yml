@@ -7,6 +7,7 @@ workspace:
 pipeline:
   # perpare a helper image with necessary tooling deps included
   supportvm:
+    name: Create Support Docker Image
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     image: alpine
@@ -15,6 +16,7 @@ pipeline:
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/main
   # do the checkups
   dependancies:
+    name: Get Dependancies
     image: cblomart/helper-vsphere-graphite
     volumes:
       - /var/volumes/dronecache:/cache
@@ -26,16 +28,19 @@ pipeline:
     - if [ ! -f /cache/vsphere-graphite-deps.tgz ]; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
     - if ! cmp -s /cache/vsphere-graphite-deps.md5 /tmp/vsphere-graphite-deps.md5; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
   checkups:
+    name: Golang Checkups
     image: cblomart/helper-vsphere-graphite
     commands:
     - make checks
   # buils
   buildlin:
+    name: Build Linux AMD64
     group: build
     image: cblomart/helper-vsphere-graphite
     commands:
     - make build-linux-amd64
   buildwin:
+    name: Build Windows AMD64
     group: build
     image: cblomart/helper-vsphere-graphite
     commands:
@@ -43,6 +48,7 @@ pipeline:
     when:
       event: [ tag ]
   buildosx:
+    name: Build OSX AMD64
     group: build
     image: cblomart/helper-vsphere-graphite
     commands:
@@ -50,6 +56,7 @@ pipeline:
     when:
       event: [ tag ]
   buildarm:
+    name: Build Linux ARM
     group: build
     image: cblomart/helper-vsphere-graphite
     commands:
@@ -62,12 +69,13 @@ pipeline:
     name: Docker Push Linux AMD64
     image: cblomart/helper-vsphere-graphite
     environment:
-      - DOCKER_HOST=unix:///drone/docker.sock
+      - DOCKER_HOST=unix:///go/docker.sock
     commands:
+    - make docker-build-amd64
     - make push-linux-amd64
 
 services:
   docker:
     image: docker:dind
     privileged: true
-    command: [ '-H', 'unix:///drone/docker.sock' ]
+    command: [ '-H', 'unix:///go/docker.sock' ]
