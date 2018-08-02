@@ -71,7 +71,7 @@ pipeline:
     environment:
       - DOCKER_HOST=unix:///go/docker.sock
     commands:
-    - make docker-build-amd64
+    - make docker-linux-amd64
     - make push-linux-amd64
 
 services:
