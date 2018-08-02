@@ -15,9 +15,8 @@ pipeline:
       - DOCKER_HOST=unix:///go/docker.sock
     commands:
     #- apk add --no-cache docker
-    - cp Makefile docker/helper/
+    - cp Makefile /tmp/
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/helper
-    - rm docker/helper/Makefile
   # do the checkups
   dependancies:
     name: Get Dependancies
