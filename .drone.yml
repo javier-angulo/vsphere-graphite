@@ -19,12 +19,12 @@ pipeline:
     volumes:
       - /var/volumes/dronecache:/cache
     commands:
+    - if [ -f /cache/vsphere-graphite-deps.tgz ]; tar -zxf /cache/vsphere-graphite-deps.tgz -C /go/
     - make deps
-    - touch .ignorecache 
-    - tar -zcf /tmp/vsphere-graphite-deps.tgz -C /go/ --exclude=*/vsphere-graphite/* ./
+    - tar -zcf /tmp/vsphere-graphite-deps.tgz -C /go/ --exclude=*/vsphere-graphite* ./
     - md5sum /tmp/vsphere-graphite-deps.tgz  | egrep -o '[A-Fa-f0-9]+' > /tmp/vsphere-graphite-deps.md5
     - if [ ! -f /cache/vsphere-graphite-deps.tgz ]; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
-    - if [ "$(cat /tmp/vsphere-graphite-deps.md5)" -ne "$(cat /cache/vsphere-graphite-deps.md5)" ]; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
+    - if ! cmp -s /cache/vsphere-graphite-deps.md5 /tmp/vsphere-graphite-deps.md5; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
   checkups:
     image: cblomart/helper-vsphere-graphite
     commands:
