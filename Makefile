@@ -18,7 +18,7 @@ BUILD_FLAGS=-ldflags '$(EXTRA_FLAGS) -s' -a
 MUSL_CC=musl-gcc
 MUSL_CCGLAGS="-static"
 
-deps:
+godeps:
 	go get github.com/cblomart/git-version
 	go get golang.org/x/sys/windows/registry
 	go get github.com/takama/daemon
@@ -37,6 +37,10 @@ deps:
 	go get golang.org/x/lint/golint
 	go get github.com/gordonklaus/ineffassign
 	go get github.com/securego/gosec/cmd/gosec/...
+	go generate ./...
+
+deps:
+	@$(MAKE) godeps
 	go generate ./...
 
 build-windows-amd64:

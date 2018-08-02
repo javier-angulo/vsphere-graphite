@@ -10,10 +10,14 @@ pipeline:
     name: Create Support Docker Image
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    image: alpine
+    image: docker
+    environment:
+      - DOCKER_HOST=unix:///go/docker.sock
     commands:
-    - apk add --no-cache docker
+    #- apk add --no-cache docker
+    - cp Makefile docker/helper/
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/main
+    - rm docker/helper/Makefile
   # do the checkups
   dependancies:
     name: Get Dependancies
