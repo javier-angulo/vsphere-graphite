@@ -57,7 +57,12 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	buffer := map[string][]string{}
 	log.Println("Thin Prometheus Sending Query Request")
 	// start the queriess
-	*queries <- channels
+	select {
+	case *queries <- channels:
+	default:
+		ctx.Error("Query buffer full", fasthttp.StatusConflict)
+		return
+	}
 	// start a timeout
 	timeout := time.NewTimer(10 * time.Second)
 	// wait for the results
@@ -82,6 +87,8 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			timeout.Stop()
 			log.Println("Thin Prometheus was signaled a timeout")
 			wait = false
+			ctx.Error("Timeout while gathering data", fasthttp.StatusRequestTimeout)
+			return
 		}
 	}
 	ctx.SetContentType("text/plain; charset=utf8")

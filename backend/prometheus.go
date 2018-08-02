@@ -22,7 +22,12 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 	done := make(chan bool)
 	channels := Channels{Request: &request, Done: &done}
 
-	*queries <- channels
+	select {
+	case *queries <- channels:
+	default:
+		log.Println("Query buffer full. Discarding request")
+		return
+	}
 
 	for {
 		select {
