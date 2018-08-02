@@ -2,7 +2,7 @@
 FROM golang:alpine as builder
 
 RUN apk add --no-cache make gcc git musl-dev
-COPY /tmp/Makefile Makefile
+COPY Makefile Makefile
 RUN make godeps
 RUN tar -zcf /tmp/go.tgz -C /go/ ./
 
