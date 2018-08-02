@@ -18,19 +18,27 @@ pipeline:
     - cp Makefile docker/helper/
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/helper
     - rm docker/helper/Makefile
-  # do the checkups
+  # get dependancies
+  #dependancies:
+  #  name: Get Dependancies
+  #  image: cblomart/helper-vsphere-graphite
+  #  volumes:
+  #    - /var/volumes/dronecache:/cache
+  #  commands:
+  #  - if [ -f /cache/vsphere-graphite-deps.tgz ]; then tar -zxf /cache/vsphere-graphite-deps.tgz -C /go/; fi
+  #  - make deps
+  #  - tar -zcf /tmp/vsphere-graphite-deps.tgz -C /go/ --exclude=*/vsphere-graphite* ./
+  #  - md5sum /tmp/vsphere-graphite-deps.tgz  | egrep -o '^[A-Fa-f0-9]+' > /tmp/vsphere-graphite-deps.md5
+  #  - if [ ! -f /cache/vsphere-graphite-deps.tgz ]; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
+  #  - if ! cmp -s /cache/vsphere-graphite-deps.md5 /tmp/vsphere-graphite-deps.md5; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
+  # restore dependancies
   dependancies:
-    name: Get Dependancies
+    name: Restore Dependancies
     image: cblomart/helper-vsphere-graphite
-    volumes:
-      - /var/volumes/dronecache:/cache
     commands:
-    - if [ -f /cache/vsphere-graphite-deps.tgz ]; then tar -zxf /cache/vsphere-graphite-deps.tgz -C /go/; fi
-    - make deps
-    - tar -zcf /tmp/vsphere-graphite-deps.tgz -C /go/ --exclude=*/vsphere-graphite* ./
-    - md5sum /tmp/vsphere-graphite-deps.tgz  | egrep -o '^[A-Fa-f0-9]+' > /tmp/vsphere-graphite-deps.md5
-    - if [ ! -f /cache/vsphere-graphite-deps.tgz ]; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
-    - if ! cmp -s /cache/vsphere-graphite-deps.md5 /tmp/vsphere-graphite-deps.md5; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
+    - if [ -f /var/cache/drone/go.tgz ]; then tar -zxf /var/cache/drone/go.tgz -C /go/; else make godeps; fi
+    - go generate ./...
+  # do the checkups
   checkups:
     name: Golang Checkups
     image: cblomart/helper-vsphere-graphite
