@@ -10,7 +10,7 @@ pipeline:
     name: Create Support Docker Image
     #volumes:
     #  - /var/run/docker.sock:/var/run/docker.sock
-    image: docker:dind
+    image: docker
     environment:
       - DOCKER_HOST=unix:///go/docker.sock
     commands:
