@@ -19,8 +19,10 @@ pipeline:
     volumes:
       - /var/volumes/dronecache:/cache
     commands:
-    - make deps 
-    - tar -C /go --exclude "./src/*/*/vsphere-graphite/" -zcf ./* /cache/vsphere-graphite-deps.tgz
+    - make deps
+    - touch .ignorecache 
+    - tar -zcf /tmp/vsphere-graphite-deps.tgz -C /go/ --exclude-tag-all=.ignorecache ./
+    - md5sum /tmp/vsphere-graphite-deps.tgz > /tmp/vsphere-graphite-deps.md5
   checkups:
     image: cblomart/helper-vsphere-graphite
     commands:
