@@ -19,7 +19,7 @@ pipeline:
     volumes:
       - /var/volumes/dronecache:/cache
     commands:
-    - if [ -f /cache/vsphere-graphite-deps.tgz ]; tar -zxf /cache/vsphere-graphite-deps.tgz -C /go/
+    - if [ -f /cache/vsphere-graphite-deps.tgz ]; then tar -zxf /cache/vsphere-graphite-deps.tgz -C /go/; fi
     - make deps
     - tar -zcf /tmp/vsphere-graphite-deps.tgz -C /go/ --exclude=*/vsphere-graphite* ./
     - md5sum /tmp/vsphere-graphite-deps.tgz  | egrep -o '[A-Fa-f0-9]+' > /tmp/vsphere-graphite-deps.md5
