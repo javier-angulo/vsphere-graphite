@@ -16,9 +16,11 @@ pipeline:
   # do the checkups
   dependancies:
     image: cblomart/helper-vsphere-graphite
+    volumes:
+      - /var/volumes/dronecache:/cache
     commands:
-    - echo $GOPATH
     - make deps 
+    - tar -C /go --exclude "./src/*/*/vsphere-graphite/" -zcf ./* /cache/vsphere-graphite-deps.tgz
   checkups:
     image: cblomart/helper-vsphere-graphite
     commands:
