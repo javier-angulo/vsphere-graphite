@@ -21,7 +21,7 @@ pipeline:
     commands:
     - make deps
     - touch .ignorecache 
-    - tar -zcf /tmp/vsphere-graphite-deps.tgz -C /go/ --exclude-tag-all=.ignorecache ./
+    - tar -zcf /tmp/vsphere-graphite-deps.tgz -C /go/ --exclude=*vsphere-graphite* ./
     - md5sum /tmp/vsphere-graphite-deps.tgz > /tmp/vsphere-graphite-deps.md5
     - if [ "$(cat /tmp/vsphere-graphite-deps.md5 | egrep -o '[A-Fa-f0-9]+')" -ne "$(cat /cache/vsphere-graphite-deps.md5 | egrep -o '[A-Fa-f0-9]+')" ]; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
   checkups:
