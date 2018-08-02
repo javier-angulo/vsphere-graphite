@@ -59,6 +59,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	// start the queriess
 	select {
 	case *queries <- channels:
+		log.Println("Thin Prometheus Sent Query Request")
 	default:
 		ctx.Error("Query buffer full", fasthttp.StatusConflict)
 		return
