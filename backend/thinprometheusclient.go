@@ -50,7 +50,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	// prepare the channels for the request
-	request := make(chan Point)
+	request := make(chan Point, 100)
 	done := make(chan bool)
 	channels := Channels{Request: &request, Done: &done}
 	// create a buffer to organise metrics per type

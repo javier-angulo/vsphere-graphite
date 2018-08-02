@@ -18,7 +18,7 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 
 	log.Println("Requested Metrics!")
 
-	request := make(chan Point)
+	request := make(chan Point, 100)
 	done := make(chan bool)
 	channels := Channels{Request: &request, Done: &done}
 
