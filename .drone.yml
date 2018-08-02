@@ -11,27 +11,10 @@ pipeline:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     image: docker
-    #environment:
-    #  - DOCKER_HOST=unix:///go/docker.sock
     commands:
     #- apk add --no-cache docker
     - cp Makefile docker/helper/
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/helper
-    #- rm docker/helper/Makefile
-  # get dependancies
-  #dependancies:
-  #  name: Get Dependancies
-  #  image: cblomart/helper-vsphere-graphite
-  #  volumes:
-  #    - /var/volumes/dronecache:/cache
-  #  commands:
-  #  - if [ -f /cache/vsphere-graphite-deps.tgz ]; then tar -zxf /cache/vsphere-graphite-deps.tgz -C /go/; fi
-  #  - make deps
-  #  - tar -zcf /tmp/vsphere-graphite-deps.tgz -C /go/ --exclude=*/vsphere-graphite* ./
-  #  - md5sum /tmp/vsphere-graphite-deps.tgz  | egrep -o '^[A-Fa-f0-9]+' > /tmp/vsphere-graphite-deps.md5
-  #  - if [ ! -f /cache/vsphere-graphite-deps.tgz ]; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
-  #  - if ! cmp -s /cache/vsphere-graphite-deps.md5 /tmp/vsphere-graphite-deps.md5; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
-  # restore dependancies
   dependancies:
     name: Restore Dependances
     image: cblomart/helper-vsphere-graphite
@@ -82,16 +65,8 @@ pipeline:
     image: cblomart/helper-vsphere-graphite
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    #environment:
-    #  - DOCKER_HOST=unix:///go/docker.sock
     secrets: [ docker_username, docker_password ]
     commands:
     - make docker-linux-amd64
-    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME -password-stdin
     - make push-linux-amd64
-
-#services:
-#  docker:
-#    image: docker:dind
-#    privileged: true
-#    command: [ '-H', 'unix:///go/docker.sock' ]
