@@ -31,6 +31,7 @@ deps:
 	go get -u github.com/gordonklaus/ineffassign
 	go get -u github.com/securego/gosec/cmd/gosec/...
 	go generate ./...
+	git status
 
 build-windows-amd64:
 	@$(MAKE) build GOOS=windows GOARCH=amd64 SUFFIX=.exe
