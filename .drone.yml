@@ -33,7 +33,7 @@ pipeline:
   #  - if ! cmp -s /cache/vsphere-graphite-deps.md5 /tmp/vsphere-graphite-deps.md5; then cp -f /tmp/vsphere-graphite-deps.* /cache/; fi
   # restore dependancies
   dependancies:
-    name: Restore Dependancies
+    name: Restore Dependances
     image: cblomart/helper-vsphere-graphite
     commands:
     - if [ -f /var/cache/drone/go.tgz ]; then tar -zxf /var/cache/drone/go.tgz -C /go/; else make godeps; fi
