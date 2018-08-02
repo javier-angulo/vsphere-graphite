@@ -37,7 +37,6 @@ godeps:
 	go get golang.org/x/lint/golint
 	go get github.com/gordonklaus/ineffassign
 	go get github.com/securego/gosec/cmd/gosec/...
-	go generate ./...
 
 deps:
 	@$(MAKE) godeps
