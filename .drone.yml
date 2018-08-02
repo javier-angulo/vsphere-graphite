@@ -12,7 +12,6 @@ pipeline:
       - /var/run/docker.sock:/var/run/docker.sock
     image: docker
     commands:
-    #- apk add --no-cache docker
     - cp Makefile docker/helper/
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/helper
   dependancies:
@@ -59,14 +58,31 @@ pipeline:
     when:
       event: [ tag ]
   # push to docker
+  dockerlogin:
+    name: Login to docker
+    image: cblomart/helper-vsphere-graphite
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    secrets: [ docker_username, docker_password ]
+    commands:
+    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
   pushlin:
     group: push
     name: Docker Push Linux AMD64
     image: cblomart/helper-vsphere-graphite
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    secrets: [ docker_username, docker_password ]
     commands:
     - make docker-linux-amd64
-    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
     - make push-linux-amd64
+  pusharm:
+    group: push
+    name: Docker Push Linux ARM
+    image: cblomart/helper-vsphere-graphite
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    commands:
+    - make docker-linux-arm
+    - make push-linux-arm
+    when:
+      event: [ tag ]
