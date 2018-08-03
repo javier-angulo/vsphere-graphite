@@ -16,7 +16,7 @@ func (backend *Config) Describe(ch chan<- *prometheus.Desc) {
 // Collect : Implementation of Prometheus Collector.Collect
 func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 
-	log.Println("Requested Metrics!")
+	log.Println("Prometheus is requesting metrics")
 
 	request := make(chan Point, 100)
 	done := make(chan bool)
@@ -24,6 +24,7 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 
 	select {
 	case *queries <- channels:
+		log.Println("Prometheus requested metrics")
 	default:
 		log.Println("Query buffer full. Discarding request")
 		return
