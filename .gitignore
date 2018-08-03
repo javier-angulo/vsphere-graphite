@@ -6,7 +6,8 @@ vsphere-graphite
 vsphere-graphite.exe
 
 # ignore ffjson generated files
-*_ffjson.go
+*_ffjson*
+ffjson*
 
 #ignore saved files (i.e. nano)
 *.save
