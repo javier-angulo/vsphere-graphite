@@ -72,7 +72,7 @@ pipeline:
   pusharm:
     group: push
     name: Docker Push Linux ARM
-    image: cblomart/helper-vsphere-graphite
+    image: docker
     secrets: [ docker_username, docker_password ]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
