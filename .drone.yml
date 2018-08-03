@@ -72,6 +72,7 @@ pipeline:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
+    - apk add --no-cache make
     - make docker-linux-amd64
     - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
     - make push-linux-amd64
