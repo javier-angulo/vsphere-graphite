@@ -11,8 +11,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-	json "github.com/pquerna/ffjson/ffjson"
 )
 
 // constants
@@ -141,7 +139,8 @@ func (client *ThinInfluxClient) Send(lines []string) error {
 		if err != nil {
 			return err
 		}
-		err = json.Unmarshal(body, &jsonerr)
+		err = jsonerr.UnmarshalJSON(body)
+		//err = json.Unmarshal(body, &jsonerr)
 		if err != nil {
 			return err
 		}

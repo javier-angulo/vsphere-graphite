@@ -1,5 +1,5 @@
 # create archive of golang dependancies
-FROM golang:1.10
+FROM golang:1.10 as builder
 
 COPY Makefile Makefile
 RUN make godeps
