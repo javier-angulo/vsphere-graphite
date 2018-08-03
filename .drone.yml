@@ -61,7 +61,7 @@ pipeline:
   pushlin:
     group: push
     name: Docker Push Linux AMD64
-    image: cblomart/helper-vsphere-graphite
+    image: docker
     secrets: [ docker_username, docker_password ]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
