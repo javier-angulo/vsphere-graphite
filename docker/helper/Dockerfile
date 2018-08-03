@@ -15,5 +15,10 @@ RUN apt-get update && apt-get install -y \
     musl-tools &&\
     apt-get clean &&\
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN curl -SL https://download.docker.com/linux/static/stable/x86_64/docker-17.03.0-ce.tgz | tar -zxC /tmp &&\
+    cp /tmp/docker/docker /usr/local/bin/docker &&\
+    rm -rf /tmp/docker
+
 RUN mkdir -p /var/cache/drone
 COPY --from=builder /tmp/go.tgz /var/cache/drone/go.tgz

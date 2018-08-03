@@ -67,7 +67,7 @@ pipeline:
   pushlin:
     group: push
     name: Docker Push Linux AMD64
-    image: docker
+    image: cblomart/helper-vsphere-graphite
     secrets: [ docker_username, docker_password ]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -79,12 +79,11 @@ pipeline:
   pusharm:
     group: push
     name: Docker Push Linux ARM
-    image: docker
+    image: cblomart/helper-vsphere-graphite
     secrets: [ docker_username, docker_password ]
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     commands:
-    - apk add --no-cache make
     - make docker-linux-arm
     - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
     - make push-linux-arm
