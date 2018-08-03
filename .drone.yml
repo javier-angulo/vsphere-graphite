@@ -6,7 +6,6 @@ workspace:
 
 # clone with tags
 clone:
-  name: Clone from Github
   git:
     image: plugins/git
     tags: true
