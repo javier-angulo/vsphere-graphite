@@ -1,5 +1,5 @@
 # create archive of golang dependancies
-FROM golang:alpine as builder
+FROM golang:1.10-alpine as builder
 
 RUN apk add --no-cache make gcc git musl-dev
 COPY Makefile Makefile
@@ -7,7 +7,7 @@ RUN make godeps
 RUN tar -zcf /tmp/go.tgz -C /go/ ./
 
 # create a base image with necessary tooling and dependancies cache
-FROM golang:alpine
+FROM golang:1.10-alpine
 LABEL maintainer="cblomart@gmail.com"
 
 RUN apk add --no-cache make gcc git upx docker musl-dev
