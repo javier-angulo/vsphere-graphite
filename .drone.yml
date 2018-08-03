@@ -5,6 +5,12 @@ workspace:
 # Build vsphere-graphite with drone.
 
 pipeline:
+  # clone with tags
+  clone:
+    name: Clone from Github
+    git:
+      image: plugins/git
+      tags: true
   # perpare a helper image with necessary tooling deps included
   supportvm:
     name: Create Support Docker Image
