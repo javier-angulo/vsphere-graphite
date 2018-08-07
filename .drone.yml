@@ -88,3 +88,44 @@ pipeline:
     - make push-linux-arm
     when:
       event: [ tag ]
+  packlin:
+    name: Package Linux AMD64
+    group: pack
+    image: cblomart/helper-vsphere-graphite
+    commands:
+    - make dist-linux-amd64
+    when:
+      event: [ tag ]
+  packwin:
+    name: Package Windows AMD64
+    group: pack
+    image: cblomart/helper-vsphere-graphite
+    commands:
+    - make dist-windows-amd64
+    when:
+      event: [ tag ]
+  packosx:
+    name: Package OSX AMD64
+    group: pack
+    image: cblomart/helper-vsphere-graphite
+    commands:
+    - make dist-darwin-amd64
+    when:
+      event: [ tag ]
+  packarm:
+    name: Package Linux ARM
+    group: pack
+    image: cblomart/helper-vsphere-graphite
+    commands:
+    - make dist-linux-ARM
+    when:
+      event: [ tag ]
+  release:
+    image: plugins/github-release
+    secrets: [ github_token ]
+    files:
+      - release/*/*/*.tgz
+    checksum:
+      - sha256
+    when:
+      event: [ tag ]
