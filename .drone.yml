@@ -128,7 +128,7 @@ pipeline:
     image: plugins/github-release
     secrets: [ github_token ]
     files:
-      - release/*.tgz
+      - releases/*.tgz
     checksum:
       - sha256
     when:
