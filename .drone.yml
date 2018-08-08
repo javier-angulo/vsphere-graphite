@@ -94,6 +94,7 @@ pipeline:
     image: cblomart/helper-vsphere-graphite
     commands:
     - make dist-linux-amd64
+    - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
   packwin:
@@ -102,6 +103,7 @@ pipeline:
     image: cblomart/helper-vsphere-graphite
     commands:
     - make dist-windows-amd64
+    - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
   packosx:
@@ -110,6 +112,7 @@ pipeline:
     image: cblomart/helper-vsphere-graphite
     commands:
     - make dist-darwin-amd64
+    - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
   packarm:
@@ -118,13 +121,14 @@ pipeline:
     image: cblomart/helper-vsphere-graphite
     commands:
     - make dist-linux-arm
+    - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
   release:
     image: plugins/github-release
     secrets: [ github_token ]
     files:
-      - release/*/*/*.tgz
+      - release/*.tgz
     checksum:
       - sha256
     when:

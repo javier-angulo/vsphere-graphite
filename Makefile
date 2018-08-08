@@ -111,7 +111,7 @@ checks:
 	go tool vet ./..
 
 $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX): $(SRC_FILES)
-	if [ "$(GOOS)-$(GOARCH)" = "linux-amd64" ] && [ ! -f /etc/alpine-release ]; then\
+	if [ "$(GOOS)-$(GOARCH)" = "linux-amd64" ] && [ ! -f /etc/alpine-release ] && [ ! -f /etc/arch-release ]; then\
 		echo "Using musl";\
 		CC=$(MUSL_CC) CCGLAGS=$(MUSL_CCGLAGS) go build $(MUSL_BUILD_FLAGS) -o $(RELEASE_DIR)/linux/amd64//vsphere-graphite .;\
 	else\
