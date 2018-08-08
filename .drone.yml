@@ -117,7 +117,7 @@ pipeline:
     group: pack
     image: cblomart/helper-vsphere-graphite
     commands:
-    - make dist-linux-ARM
+    - make dist-linux-arm
     when:
       event: [ tag ]
   release:
