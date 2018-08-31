@@ -5,6 +5,8 @@ COPY Makefile Makefile
 RUN make godeps
 RUN tar -zcf /tmp/go.tgz -C /go/ ./
 
+FROM docker AS docker
+
 # create a base image with necessary tooling and dependancies cache
 FROM golang:1.10
 LABEL maintainer="cblomart@gmail.com"
