@@ -146,7 +146,7 @@ func (vcenter *VCenter) Init(metrics []*Metric) {
 }
 
 // Query : Query a vcenter
-func (vcenter *VCenter) Query(interval int, domain string, properties []string, channel *chan backend.Point, wg *sync.WaitGroup) {
+func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, properties []string, channel *chan backend.Point, wg *sync.WaitGroup) {
 	defer func() {
 		if wg != nil {
 			wg.Done()
@@ -473,8 +473,12 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 
 	for _, base := range perfres.Returnval {
 		pem := base.(*types.PerfEntityMetric)
+		// name checks the name of the object
 		name := cache.FindString(vcName, "names", pem.Entity.Value)
 		name = strings.ToLower(strings.Replace(name, domain, "", -1))
+		if replacepoint {
+			name = strings.Replace(name, ".", "_", -1)
+		}
 		//find datastore
 		datastore := cache.FindNames(vcName, "datastores", pem.Entity.Value)
 		//find host and cluster
@@ -516,9 +520,14 @@ func (vcenter *VCenter) Query(interval int, domain string, properties []string, 
 		}
 		objType := strings.ToLower(pem.Entity.Type)
 		timeStamp := endTime.Unix()
+		// replace point in vcname
+		rvcname := vcName
+		if replacepoint {
+			rvcname = strings.Replace(rvcname, ".", "_", -1)
+		}
 		// prepare basic informaitons of point
 		point := backend.Point{
-			VCenter:      vcName,
+			VCenter:      rvcname,
 			ObjectType:   objType,
 			ObjectName:   name,
 			Datastore:    datastore,

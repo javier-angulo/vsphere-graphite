@@ -16,4 +16,5 @@ type Configuration struct {
 	CPUProfiling bool
 	MEMProfiling bool
 	FlushSize    int
+	ReplacePoint bool
 }

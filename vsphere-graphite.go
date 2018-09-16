@@ -44,7 +44,7 @@ type Service struct {
 }
 
 func queryVCenter(vcenter vsphere.VCenter, conf config.Configuration, channel *chan backend.Point, wg *sync.WaitGroup) {
-	vcenter.Query(conf.Interval, conf.Domain, conf.Properties, channel, wg)
+	vcenter.Query(conf.Interval, conf.Domain, conf.ReplacePoint, conf.Properties, channel, wg)
 }
 
 // Manage by daemon commands or run the daemon
