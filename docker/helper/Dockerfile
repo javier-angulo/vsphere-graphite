@@ -8,7 +8,7 @@ RUN tar -zcf /tmp/go.tgz -C /go/ ./
 FROM docker AS docker
 
 # create a base image with necessary tooling and dependancies cache
-FROM golang:1.10
+FROM golang:1.11
 LABEL maintainer="cblomart@gmail.com"
 
 RUN apt-get update && apt-get install -y \
