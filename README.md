@@ -137,8 +137,8 @@ No open source projects would live and thrive without common effort. Here is the
 * [dupondje](https://github.com/dupondje)
 * [jlothian](https://github.com/jlothian)
 
-Also keep in mind that if you can't contribute code, issues and imporvement request are also a key part of a project evolution!
-So don't hesitate and tell us what doens't work or what you miss.
+Also keep in mind that if you can't contribute code, issues and improvement requests are also a key part of a project evolution!
+So don't hesitate and tell us what doesn't work or what you miss.
 
 ## Donations
 
