@@ -10,6 +10,8 @@ Travis: [![Travis Build Status](https://travis-ci.org/cblomart/vsphere-graphite.
 
 Drone: [![Drone Build Status](https://drone.blomart.net/api/badges/cblomart/vsphere-graphite/status.svg)](https://drone.blomart.net/cblomart/vsphere-graphite)
 
+Drone does the push to github.
+
 ## Code report
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cblomart/vsphere-graphite)](https://goreportcard.com/report/github.com/cblomart/vsphere-graphite)
