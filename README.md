@@ -28,7 +28,7 @@ Define vSphere credentials and collection metrics in the JSON config file. An ex
 Copy this config file to /etc/*binaryname*.json and modify as needed. Example:
   > cp vsphere-graphite-example.json /etc/vsphere-graphite.json
 
-<!-- provide link to vcenter role permissions -->
+<!-- provide link to vcenter roles and permissions -->
 
 Metrics collection is performed by associating ObjectType groups with Metric groups.
 These are expressed via the vsphere scheme: *group*.*metric*.*rollup*
