@@ -12,6 +12,7 @@ steps:
     commands:
     - cp Makefile docker/helper/
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/helper
+  # check dependencies
   - dependancies:
     name: Restore Dependances
     image: cblomart/helper-vsphere-graphite
