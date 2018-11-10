@@ -2,40 +2,30 @@ kind: pipeline
 name: default
 
 steps:
-  # perpare a helper image with necessary tooling deps included
-  - supportvm:
-    name: Create Support Docker Image
-    volumes:
-    - name: docker
-      path: /var/run/docker.sock
-    image: docker
-    commands:
-    - cp Makefile docker/helper/
-    - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/helper
   # check dependencies
   - dependancies:
     name: Restore Dependances
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
-    - if [ -f /var/cache/drone/go.tgz ]; then tar -zxf /var/cache/drone/go.tgz -C /go/; else make godeps; fi
+    - make godeps
     - go generate ./...
   # do the checkups
   - checkups:
     name: Golang Checkups
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make checks
   # buils
   - buildlin:
     name: Build Linux AMD64
     group: build
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make build-linux-amd64
   - buildwin:
     name: Build Windows AMD64
     group: build
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make build-windows-amd64
     when:
@@ -43,7 +33,7 @@ steps:
   - buildosx:
     name: Build OSX AMD64
     group: build
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make build-darwin-amd64
     when:
@@ -51,7 +41,7 @@ steps:
   - buildarm:
     name: Build Linux ARM
     group: build
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make build-linux-arm
     when:
@@ -60,7 +50,7 @@ steps:
   - pushlin:
     group: push
     name: Docker Push Linux AMD64
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     secrets: [ docker_username, docker_password ]
     volumes:
     - name: docker
@@ -72,7 +62,7 @@ steps:
   - pusharm:
     group: push
     name: Docker Push Linux ARM
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     secrets: [ docker_username, docker_password ]
     volumes:
     - name: docker
@@ -86,7 +76,7 @@ steps:
   - packlin:
     name: Package Linux AMD64
     group: pack
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make dist-linux-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
@@ -95,7 +85,7 @@ steps:
   - packwin:
     name: Package Windows AMD64
     group: pack
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make dist-windows-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
@@ -104,7 +94,7 @@ steps:
   - packosx:
     name: Package OSX AMD64
     group: pack
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make dist-darwin-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
@@ -113,7 +103,7 @@ steps:
   - packarm:
     name: Package Linux ARM
     group: pack
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make dist-linux-arm
     - cp /tmp/vsphere-graphite_*.tgz releases/
