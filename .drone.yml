@@ -1,18 +1,9 @@
-workspace:
-  base: /go
-  path: src/github.com/cblomart/vsphere-graphite
+kind: pipeline
+name: default
 
-# Build vsphere-graphite with drone.
-
-# clone with tags
-clone:
-  git:
-    image: plugins/git
-    tags: true
-
-pipeline:
+steps:
   # perpare a helper image with necessary tooling deps included
-  supportvm:
+  - supportvm:
     name: Create Support Docker Image
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -20,26 +11,26 @@ pipeline:
     commands:
     - cp Makefile docker/helper/
     - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/helper
-  dependancies:
+  - dependancies:
     name: Restore Dependances
     image: cblomart/helper-vsphere-graphite
     commands:
     - if [ -f /var/cache/drone/go.tgz ]; then tar -zxf /var/cache/drone/go.tgz -C /go/; else make godeps; fi
     - go generate ./...
   # do the checkups
-  checkups:
+  - checkups:
     name: Golang Checkups
     image: cblomart/helper-vsphere-graphite
     commands:
     - make checks
   # buils
-  buildlin:
+  - buildlin:
     name: Build Linux AMD64
     group: build
     image: cblomart/helper-vsphere-graphite
     commands:
     - make build-linux-amd64
-  buildwin:
+  - buildwin:
     name: Build Windows AMD64
     group: build
     image: cblomart/helper-vsphere-graphite
@@ -47,7 +38,7 @@ pipeline:
     - make build-windows-amd64
     when:
       event: [ tag ]
-  buildosx:
+  - buildosx:
     name: Build OSX AMD64
     group: build
     image: cblomart/helper-vsphere-graphite
@@ -55,7 +46,7 @@ pipeline:
     - make build-darwin-amd64
     when:
       event: [ tag ]
-  buildarm:
+  - buildarm:
     name: Build Linux ARM
     group: build
     image: cblomart/helper-vsphere-graphite
@@ -64,7 +55,7 @@ pipeline:
     when:
       event: [ tag ]
   # push to docker
-  pushlin:
+  - pushlin:
     group: push
     name: Docker Push Linux AMD64
     image: cblomart/helper-vsphere-graphite
@@ -75,7 +66,7 @@ pipeline:
     - make docker-linux-amd64
     - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
     - make push-linux-amd64
-  pusharm:
+  - pusharm:
     group: push
     name: Docker Push Linux ARM
     image: cblomart/helper-vsphere-graphite
@@ -88,7 +79,7 @@ pipeline:
     - make push-linux-arm
     when:
       event: [ tag ]
-  packlin:
+  - packlin:
     name: Package Linux AMD64
     group: pack
     image: cblomart/helper-vsphere-graphite
@@ -97,7 +88,7 @@ pipeline:
     - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
-  packwin:
+  - packwin:
     name: Package Windows AMD64
     group: pack
     image: cblomart/helper-vsphere-graphite
@@ -106,7 +97,7 @@ pipeline:
     - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
-  packosx:
+  - packosx:
     name: Package OSX AMD64
     group: pack
     image: cblomart/helper-vsphere-graphite
@@ -115,7 +106,7 @@ pipeline:
     - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
-  packarm:
+  - packarm:
     name: Package Linux ARM
     group: pack
     image: cblomart/helper-vsphere-graphite
@@ -124,7 +115,7 @@ pipeline:
     - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
-  release:
+  - release:
     image: plugins/github-release
     secrets: [ github_token ]
     files:
