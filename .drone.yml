@@ -120,6 +120,7 @@ steps:
     when:
       event: [ tag ]
   - release:
+    name: release
     image: plugins/github-release
     secrets: [ github_token ]
     files:
