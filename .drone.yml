@@ -127,3 +127,8 @@ steps:
       - sha256
     when:
       event: [ tag ]
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
