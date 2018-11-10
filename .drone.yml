@@ -6,7 +6,8 @@ steps:
   - supportvm:
     name: Create Support Docker Image
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    - name: docker
+      path: /var/run/docker.sock
     image: docker
     commands:
     - cp Makefile docker/helper/
@@ -61,7 +62,8 @@ steps:
     image: cblomart/helper-vsphere-graphite
     secrets: [ docker_username, docker_password ]
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    - name: docker
+      path: /var/run/docker.sock
     commands:
     - make docker-linux-amd64
     - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
@@ -72,7 +74,8 @@ steps:
     image: cblomart/helper-vsphere-graphite
     secrets: [ docker_username, docker_password ]
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    - name: docker
+      path: /var/run/docker.sock
     commands:
     - make docker-linux-arm
     - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
