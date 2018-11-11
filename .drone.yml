@@ -10,6 +10,7 @@ steps:
     name: Restore Dependances
     image: cblomart/gobasebuild
     commands:
+    - go version
     - make godeps
     - go generate ./...
   # do the checkups
