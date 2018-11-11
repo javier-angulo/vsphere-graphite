@@ -66,13 +66,13 @@ steps:
     group: push
     name: Docker Push Linux ARM
     image: cblomart/gobasebuild
-    secrets: [ docker_username, docker_password ]
+    secrets: [ docker_password ]
     volumes:
     - name: docker
       path: /var/run/docker.sock
     commands:
     - make docker-linux-arm
-    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+    - echo $DOCKER_PASSWORD | docker login -u cblomart --password-stdin
     - make push-linux-arm
     when:
       event: [ tag ]
