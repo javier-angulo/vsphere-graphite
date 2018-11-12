@@ -55,13 +55,13 @@ steps:
     group: push
     name: Docker Push Linux AMD64
     image: cblomart/gobasebuild
-    secrets: [ docker_username, docker_password ]
+    secrets: [ docker_username ]
     volumes:
     - name: docker
       path: /var/run/docker.sock
     commands:
     - make docker-linux-amd64
-    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
     - make push-linux-amd64
   - pusharm:
     group: push
