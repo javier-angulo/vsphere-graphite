@@ -61,7 +61,7 @@ steps:
       path: /var/run/docker.sock
     commands:
     - make docker-linux-amd64
-    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+    - docker login -u cblomart -p $DOCKER_PASSWORD
     - make push-linux-amd64
   - pusharm:
     group: push
