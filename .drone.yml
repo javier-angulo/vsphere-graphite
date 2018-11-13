@@ -55,7 +55,7 @@ steps:
     group: push
     name: Docker Push Linux AMD64
     image: cblomart/gobasebuild
-    secrets: [ docker_username ]
+    secrets: [ docker_password ]
     volumes:
     - name: docker
       path: /var/run/docker.sock
