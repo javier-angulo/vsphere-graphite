@@ -15,7 +15,7 @@ steps:
     - go generate ./...
   # do the checkups
   - checkups:
-    name: Golang Checkups
+    name: checks
     image: cblomart/gobasebuild
     commands:
     - make checks
