@@ -7,7 +7,7 @@ workspace:
 steps:
   # check dependencies
   - dependancies:
-    name: Restore Dependances
+    name: dependancies
     image: cblomart/gobasebuild
     commands:
     - go version
@@ -21,13 +21,13 @@ steps:
     - make checks
   # buils
   - buildlin:
-    name: Build Linux AMD64
+    name: build linux amd64
     group: build
     image: cblomart/gobasebuild
     commands:
     - make build-linux-amd64
   - buildwin:
-    name: Build Windows AMD64
+    name: build win amd64
     group: build
     image: cblomart/gobasebuild
     commands:
@@ -35,7 +35,7 @@ steps:
     when:
       event: [ tag ]
   - buildosx:
-    name: Build OSX AMD64
+    name: build osx amd64
     group: build
     image: cblomart/gobasebuild
     commands:
@@ -43,7 +43,7 @@ steps:
     when:
       event: [ tag ]
   - buildarm:
-    name: Build Linux ARM
+    name: build linux arm
     group: build
     image: cblomart/gobasebuild
     commands:
@@ -53,7 +53,7 @@ steps:
   # push to docker
   - pushlin:
     group: push
-    name: Push Linux AMD64
+    name: push linux amd64
     image: cblomart/gobasebuild
     environment:
       DOCKER_PASSWORD:
@@ -67,7 +67,7 @@ steps:
     - make push-linux-amd64
   - pusharm:
     group: push
-    name: Push Linux ARM
+    name: push linux arm
     image: cblomart/gobasebuild
     environment:
       DOCKER_PASSWORD:
@@ -82,7 +82,7 @@ steps:
     when:
       event: [ tag ]
   - packlin:
-    name: Pack Linux AMD64
+    name: pack linux amd64
     group: pack
     image: cblomart/gobasebuild
     commands:
@@ -91,7 +91,7 @@ steps:
     when:
       event: [ tag ]
   - packwin:
-    name: Pack Windows AMD64
+    name: pack windows amd64
     group: pack
     image: cblomart/gobasebuild
     commands:
@@ -100,7 +100,7 @@ steps:
     when:
       event: [ tag ]
   - packosx:
-    name: Pack OSX AMD64
+    name: pack osx amd64
     group: pack
     image: cblomart/gobasebuild
     commands:
@@ -109,7 +109,7 @@ steps:
     when:
       event: [ tag ]
   - packarm:
-    name: Pack Linux ARM
+    name: pack linux arm
     group: pack
     image: cblomart/gobasebuild
     commands:
