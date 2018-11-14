@@ -17,8 +17,24 @@ MUSL_BUILD_FLAGS=-ldflags '-linkmode external -s -w -extldflags "-static" $(EXTR
 BUILD_FLAGS=-ldflags '$(EXTRA_FLAGS) -s' -a
 MUSL_CC=musl-gcc
 MUSL_CCGLAGS="-static"
+GOSIMPLE := $(shell command -v gosimple 2> /dev/null)
+INEFFASSIGN := $(shell command -v ineffassign 2> /dev/null)
+GOLINT := $(shell command -v golint 2> /dev/null)
+GOSEC := $(shell command -v gosec 2> /dev/null)
 
 godeps:
+ifndef GOSIMPLE
+	go get honnef.co/go/tools/cmd/gosimple
+endif
+ifndef GOLINT
+	go get golang.org/x/lint/golint
+endif
+ifndef INEFFASSIGN
+	go get github.com/gordonklaus/ineffassign
+endif
+ifndef GOSEC
+	go get github.com/securego/gosec/cmd/gosec/...
+endif
 	go get github.com/cblomart/git-version
 	go get golang.org/x/sys/windows/registry
 	go get github.com/takama/daemon
@@ -33,10 +49,6 @@ godeps:
 	go get github.com/prometheus/client_golang/prometheus
 	go get github.com/fluent/fluent-logger-golang/fluent	
 	go get github.com/valyala/fasthttp
-	go get honnef.co/go/tools/cmd/gosimple
-	go get golang.org/x/lint/golint
-	go get github.com/gordonklaus/ineffassign
-	go get github.com/securego/gosec/cmd/gosec/...
 
 deps:
 	@$(MAKE) godeps

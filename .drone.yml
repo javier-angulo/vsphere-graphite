@@ -1,135 +1,136 @@
+kind: pipeline
+name: default
 workspace:
   base: /go
   path: src/github.com/cblomart/vsphere-graphite
 
-# Build vsphere-graphite with drone.
-
-# clone with tags
-clone:
-  git:
-    image: plugins/git
-    tags: true
-
-pipeline:
-  # perpare a helper image with necessary tooling deps included
-  supportvm:
-    name: Create Support Docker Image
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    image: docker
+steps:
+  # check dependencies
+  - dependancies:
+    name: dependancies
+    image: cblomart/gobasebuild
     commands:
-    - cp Makefile docker/helper/
-    - docker build -f docker/helper/Dockerfile -t cblomart/helper-vsphere-graphite docker/helper
-  dependancies:
-    name: Restore Dependances
-    image: cblomart/helper-vsphere-graphite
-    commands:
-    - if [ -f /var/cache/drone/go.tgz ]; then tar -zxf /var/cache/drone/go.tgz -C /go/; else make godeps; fi
+    - go version
+    - make godeps
     - go generate ./...
   # do the checkups
-  checkups:
-    name: Golang Checkups
-    image: cblomart/helper-vsphere-graphite
+  - checkups:
+    name: checks
+    image: cblomart/gobasebuild
     commands:
     - make checks
   # buils
-  buildlin:
-    name: Build Linux AMD64
+  - buildlin:
+    name: build linux amd64
     group: build
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make build-linux-amd64
-  buildwin:
-    name: Build Windows AMD64
+  - buildwin:
+    name: build win amd64
     group: build
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make build-windows-amd64
     when:
       event: [ tag ]
-  buildosx:
-    name: Build OSX AMD64
+  - buildosx:
+    name: build osx amd64
     group: build
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make build-darwin-amd64
     when:
       event: [ tag ]
-  buildarm:
-    name: Build Linux ARM
+  - buildarm:
+    name: build linux arm
     group: build
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make build-linux-arm
     when:
       event: [ tag ]
   # push to docker
-  pushlin:
+  - pushlin:
     group: push
-    name: Docker Push Linux AMD64
-    image: cblomart/helper-vsphere-graphite
-    secrets: [ docker_username, docker_password ]
+    name: push linux amd64
+    image: cblomart/gobasebuild
+    environment:
+      DOCKER_PASSWORD:
+        from_secret: docker_password
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    - name: docker
+      path: /var/run/docker.sock
     commands:
     - make docker-linux-amd64
-    - echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin
+    - docker login -u cblomart -p $DOCKER_PASSWORD
     - make push-linux-amd64
-  pusharm:
+  - pusharm:
     group: push
-    name: Docker Push Linux ARM
-    image: cblomart/helper-vsphere-graphite
-    secrets: [ docker_username, docker_password ]
+    name: push linux arm
+    image: cblomart/gobasebuild
+    environment:
+      DOCKER_PASSWORD:
+        from_secret: docker_password
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
+    - name: docker
+      path: /var/run/docker.sock
     commands:
     - make docker-linux-arm
-    - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+    - docker login -u cblomart -p $DOCKER_PASSWORD
     - make push-linux-arm
     when:
       event: [ tag ]
-  packlin:
-    name: Package Linux AMD64
+  - packlin:
+    name: pack linux amd64
     group: pack
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make dist-linux-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
-  packwin:
-    name: Package Windows AMD64
+  - packwin:
+    name: pack windows amd64
     group: pack
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make dist-windows-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
-  packosx:
-    name: Package OSX AMD64
+  - packosx:
+    name: pack osx amd64
     group: pack
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make dist-darwin-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
-  packarm:
-    name: Package Linux ARM
+  - packarm:
+    name: pack linux arm
     group: pack
-    image: cblomart/helper-vsphere-graphite
+    image: cblomart/gobasebuild
     commands:
     - make dist-linux-arm
     - cp /tmp/vsphere-graphite_*.tgz releases/
     when:
       event: [ tag ]
-  release:
+  - release:
+    name: release
     image: plugins/github-release
-    secrets: [ github_token ]
+    environment:
+      GIHUB_SECRET:
+        from_secret: github_secret
     files:
       - releases/*.tgz
     checksum:
       - sha256
     when:
       event: [ tag ]
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
