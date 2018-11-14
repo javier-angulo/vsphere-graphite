@@ -53,7 +53,7 @@ steps:
   # push to docker
   - pushlin:
     group: push
-    name: Docker Push Linux AMD64
+    name: Push Linux AMD64
     image: cblomart/gobasebuild
     secrets: [ docker_password ]
     volumes:
@@ -61,11 +61,12 @@ steps:
       path: /var/run/docker.sock
     commands:
     - make docker-linux-amd64
+    - env
     - docker login -u cblomart -p $DOCKER_PASSWORD
     - make push-linux-amd64
   - pusharm:
     group: push
-    name: Docker Push Linux ARM
+    name: Push Linux ARM
     image: cblomart/gobasebuild
     secrets: [ docker_password ]
     volumes:
@@ -78,7 +79,7 @@ steps:
     when:
       event: [ tag ]
   - packlin:
-    name: Package Linux AMD64
+    name: Pack Linux AMD64
     group: pack
     image: cblomart/gobasebuild
     commands:
@@ -87,7 +88,7 @@ steps:
     when:
       event: [ tag ]
   - packwin:
-    name: Package Windows AMD64
+    name: Pack Windows AMD64
     group: pack
     image: cblomart/gobasebuild
     commands:
@@ -96,7 +97,7 @@ steps:
     when:
       event: [ tag ]
   - packosx:
-    name: Package OSX AMD64
+    name: Pack OSX AMD64
     group: pack
     image: cblomart/gobasebuild
     commands:
@@ -105,7 +106,7 @@ steps:
     when:
       event: [ tag ]
   - packarm:
-    name: Package Linux ARM
+    name: Pack Linux ARM
     group: pack
     image: cblomart/gobasebuild
     commands:
