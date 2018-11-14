@@ -10,6 +10,8 @@ Travis: [![Travis Build Status](https://travis-ci.org/cblomart/vsphere-graphite.
 
 Drone: [![Drone Build Status](https://drone.blomart.net/api/badges/cblomart/vsphere-graphite/status.svg)](https://drone.blomart.net/cblomart/vsphere-graphite)
 
+Drone does the push to github.
+
 ## Code report
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/cblomart/vsphere-graphite)](https://goreportcard.com/report/github.com/cblomart/vsphere-graphite)
@@ -28,7 +30,7 @@ Define vSphere credentials and collection metrics in the JSON config file. An ex
 Copy this config file to /etc/*binaryname*.json and modify as needed. Example:
   > cp vsphere-graphite-example.json /etc/vsphere-graphite.json
 
-<!-- provide link to vcenter role permissions -->
+<!-- provide link to vcenter roles and permissions -->
 
 Metrics collection is performed by associating ObjectType groups with Metric groups.
 These are expressed via the vsphere scheme: *group*.*metric*.*rollup*
@@ -137,8 +139,8 @@ No open source projects would live and thrive without common effort. Here is the
 * [dupondje](https://github.com/dupondje)
 * [jlothian](https://github.com/jlothian)
 
-Also keep in mind that if you can't contribute code, issues and imporvement request are also a key part of a project evolution!
-So don't hesitate and tell us what doens't work or what you miss.
+Also keep in mind that if you can't contribute code, issues and improvement requests are also a key part of a project evolution!
+So don't hesitate and tell us what doesn't work or what you miss.
 
 ## Donations
 
