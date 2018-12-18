@@ -24,6 +24,10 @@ func CreateIndexIfNotExists(e *elastic.Client, index string) error {
 		v := reflect.TypeOf(Point{})
 
 		mapping := MapStr{
+			"settings": MapStr{
+				"number_of_shards":   1,
+				"number_of_replicas": 1,
+			},
 			"mappings": MapStr{
 				"doc": MapStr{
 					"properties": MapStr{},
