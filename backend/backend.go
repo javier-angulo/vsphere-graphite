@@ -130,7 +130,8 @@ func (backend *Config) Init() (*chan Channels, error) {
 			elastic.SetURL(protocol+"://"+backend.Hostname+":"+strconv.Itoa(backend.Port)),
 			elastic.SetMaxRetries(10),
 			elastic.SetScheme(protocol),
-			elastic.SetBasicAuth(backend.Username, backend.Password))
+			elastic.SetBasicAuth(backend.Username, backend.Password),
+			elastic.SetSniff(true))
 		if err != nil {
 			log.Println("Error creating Elastic client")
 			return queries, err
