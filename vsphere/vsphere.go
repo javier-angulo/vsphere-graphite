@@ -3,12 +3,14 @@ package vsphere
 import (
 	"fmt"
 	"log"
+	"math"
 	"net/url"
 	"regexp"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/vmware/govmomi/vim25/soap"
 
 	"github.com/cblomart/vsphere-graphite/backend"
 	"github.com/cblomart/vsphere-graphite/utils"
@@ -20,6 +22,11 @@ import (
 	"github.com/vmware/govmomi/vim25/methods"
 	"github.com/vmware/govmomi/vim25/mo"
 	"github.com/vmware/govmomi/vim25/types"
+)
+
+const (
+	VCENTERRESULTLIMIT = 500000.0
+	INSTANCERATIO      = 1.5
 )
 
 var cache Cache
@@ -418,6 +425,8 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	}
 	cache.Clean(vcName, "datastoreids", datastoreids)
 
+	cache.Purge(vcName, "folders")
+
 	// Create Queries from interesting objects and requested metrics
 	queries := []types.PerfQuerySpec{}
 
@@ -451,11 +460,216 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	for _, query := range queries {
 		metriccount = metriccount + len(query.MetricId)
 	}
-	log.Printf("Issuing %d queries to vcenter %s requesting %d metrics.\n", querycount, vcName, metriccount)
+	expCounters := math.Ceil(float64(metriccount) * INSTANCERATIO)
+	log.Println("Queries generated:")
+	log.Printf("%d queries to vcenter %s\n", querycount, vcName)
+	log.Printf("%d total metricIds from vcenter %s\n", metriccount, vcName)
+	log.Printf("%.0f total counter from vcenter %s (accounting for %f instances ratio)", expCounters, vcName, INSTANCERATIO)
+
+	// separate in batches of queries if to avoid 500000 returend perf limit
+	batches := math.Ceil(expCounters / VCENTERRESULTLIMIT)
+	batchqueries := make([]types.QueryPerf, int(batches))
+	batchsize := int(math.Ceil(float64(len(queries)) / batches))
+	batchnum := 0
+	querieslen := len(queries)
+	for i := 0; i < len(queries); i += batchsize {
+		end := i + batchsize
+		if end > querieslen {
+			end = querieslen
+		}
+		batchqueries[batchnum] = types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries[i:end]}
+		batchnum++
+	}
+
+	// make each queries in separate functions
+	for _, query := range batchqueries {
+		go ExecuteQueries(ctx, client.RoundTripper, &cache, &query, endTime.Unix(), replacepoint, domain, vcName, channel)
+	}
+
+	/* ****
+	   /* Replace by go func version
+	   /* ****
+
+	   	// Query the performances
+	   	perfreq := types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries}
+	   	perfres, err := methods.QueryPerf(ctx, client.RoundTripper, &perfreq)
+	   	if err != nil {
+	   		log.Println("Could not request perfs from vcenter: " + vcName)
+	   		log.Println("Error: ", err)
+	   		return
+	   	}
+
+	   	// Get the result
+	   	returncount := len(perfres.Returnval)
+	   	if returncount == 0 {
+	   		log.Println("No result returned by queries.")
+	   	}
+	   	// create an array to store vm to folder path resolution
+	   	valuescount := 0
+
+	   	for _, base := range perfres.Returnval {
+	   		pem := base.(*types.PerfEntityMetric)
+	   		// name checks the name of the object
+	   		name := cache.FindString(vcName, "names", pem.Entity.Value)
+	   		name = strings.ToLower(strings.Replace(name, domain, "", -1))
+	   		if replacepoint {
+	   			name = strings.Replace(name, ".", "_", -1)
+	   		}
+	   		//find datastore
+	   		datastore := cache.FindNames(vcName, "datastores", pem.Entity.Value)
+	   		//find host and cluster
+	   		vmhost, cluster := cache.FindHostAndCluster(vcName, pem.Entity.Value)
+	   		vmhost = strings.Replace(vmhost, domain, "", -1)
+	   		//find network
+	   		network := cache.FindNames(vcName, "networks", pem.Entity.Value)
+	   		//find resource pool path
+	   		resourcepool := cache.FindName(vcName, "poolpaths", pem.Entity.Value)
+	   		//find folder path
+	   		paths := []string{}
+	   		if strings.HasPrefix(pem.Entity.Value, "vm-") {
+	   			current := cache.GetString(vcName, "parents", pem.Entity.Value)
+	   			for {
+	   				if current == nil {
+	   					break
+	   				}
+	   				if !(strings.HasPrefix(*current, "folder-") || strings.HasPrefix(*current, "group-")) {
+	   					break
+	   				}
+	   				foldername := cache.GetString(vcName, "names", *current)
+	   				if foldername == nil {
+	   					log.Println("Folder name not found for " + *current)
+	   					break
+	   				}
+	   				if *foldername == "vm" {
+	   					break
+	   				}
+	   				paths = append(paths, *foldername)
+	   				current = cache.GetString(vcName, "parents", *current)
+	   			}
+	   		}
+	   		utils.Reverse(paths)
+	   		folderpath := strings.Join(paths, "/")
+	   		//find tags
+	   		vitags := cache.FindTags(vcName, pem.Entity.Value)
+	   		if len(pem.Value) == 0 {
+	   			log.Println("No values returned in query!")
+	   		}
+	   		objType := strings.ToLower(pem.Entity.Type)
+	   		timeStamp := endTime.Unix()
+	   		// replace point in vcname
+	   		rvcname := vcName
+	   		if replacepoint {
+	   			rvcname = strings.Replace(rvcname, ".", "_", -1)
+	   		}
+	   		// prepare basic informaitons of point
+	   		point := backend.Point{
+	   			VCenter:      rvcname,
+	   			ObjectType:   objType,
+	   			ObjectName:   name,
+	   			Datastore:    datastore,
+	   			ESXi:         vmhost,
+	   			Cluster:      cluster,
+	   			Network:      network,
+	   			ResourcePool: resourcepool,
+	   			Folder:       folderpath,
+	   			ViTags:       vitags,
+	   			Timestamp:    timeStamp,
+	   		}
+	   		//send disk infos
+	   		diskInfos := cache.GetDiskInfos(vcName, "disks", pem.Entity.Value)
+	   		if diskInfos != nil {
+	   			for _, diskInfo := range *diskInfos {
+	   				// skip if no capacity
+	   				if diskInfo.Capacity == 0 {
+	   					continue
+	   				}
+	   				// format disk path
+	   				diskPath := strings.Replace(diskInfo.DiskPath, "\\", "/", -1)
+	   				// send free space
+	   				point.Group = "guestdisk"
+	   				point.Counter = "freespace"
+	   				point.Instance = diskPath
+	   				point.Rollup = "latest"
+	   				point.Value = diskInfo.FreeSpace
+	   				*channel <- point
+	   				// send capacity
+	   				point.Group = "guestdisk"
+	   				point.Counter = "capacity"
+	   				point.Instance = diskPath
+	   				point.Rollup = "latest"
+	   				point.Value = diskInfo.Capacity
+	   				*channel <- point
+	   				// send usage %
+	   				point.Group = "guestdisk"
+	   				point.Counter = "usage"
+	   				point.Instance = diskPath
+	   				point.Rollup = "latest"
+	   				point.Value = int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity))))
+	   				*channel <- point
+	   			}
+	   		}
+	   		// send numcpu infos
+	   		numcpu := cache.GetInt32(vcName, "cpus", pem.Entity.Value)
+	   		if numcpu != nil {
+	   			point.Group = "cpu"
+	   			point.Counter = "count"
+	   			point.Instance = ""
+	   			point.Rollup = "latest"
+	   			point.Value = int64(*numcpu)
+	   			*channel <- point
+	   		}
+	   		// send numcpu infos
+	   		memorysizemb := cache.GetInt32(vcName, "memories", pem.Entity.Value)
+	   		if memorysizemb != nil {
+	   			point.Group = "mem"
+	   			point.Counter = "sizemb"
+	   			point.Instance = ""
+	   			point.Rollup = "latest"
+	   			point.Value = int64(*memorysizemb)
+	   			*channel <- point
+	   		}
+	   		valuescount = valuescount + len(pem.Value)
+	   		for _, baseserie := range pem.Value {
+	   			serie := baseserie.(*types.PerfMetricIntSeries)
+	   			metricName := cache.FindMetricName(vcName, serie.Id.CounterId)
+	   			metricName = strings.ToLower(metricName)
+	   			metricparts := strings.Split(metricName, ".")
+	   			point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
+	   			point.Instance = serie.Id.Instance
+	   			if len(point.Instance) > 0 && point.Group == "datastore" {
+	   				newDatastore := cache.GetString(vcName, "datastoreids", point.Instance)
+	   				if newDatastore != nil {
+	   					point.Datastore = []string{*newDatastore}
+	   				} else {
+	   					point.Datastore = []string{}
+	   				}
+	   			}
+	   			var value int64 = -1
+	   			switch {
+	   			case strings.HasSuffix(metricName, ".average"):
+	   				value = utils.Average(serie.Value...)
+	   			case strings.HasSuffix(metricName, ".maximum"):
+	   				value = utils.Max(serie.Value...)
+	   			case strings.HasSuffix(metricName, ".minimum"):
+	   				value = utils.Min(serie.Value...)
+	   			case strings.HasSuffix(metricName, ".latest"):
+	   				value = serie.Value[len(serie.Value)-1]
+	   			case strings.HasSuffix(metricName, ".summation"):
+	   				value = utils.Sum(serie.Value...)
+	   			}
+	   			point.Value = value
+	   			*channel <- point
+	   		}
+	   	}
+	   	log.Println("Got " + strconv.Itoa(returncount) + " results from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
+	*/
+}
+
+// ExecuteQueries : Query a vcenter for performances
+func ExecuteQueries(ctx context.Context, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point) {
 
 	// Query the performances
-	perfreq := types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries}
-	perfres, err := methods.QueryPerf(ctx, client.RoundTripper, &perfreq)
+	perfres, err := methods.QueryPerf(ctx, r, queryperf)
 	if err != nil {
 		log.Println("Could not request perfs from vcenter: " + vcName)
 		log.Println("Error: ", err)
@@ -466,164 +680,164 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	returncount := len(perfres.Returnval)
 	if returncount == 0 {
 		log.Println("No result returned by queries.")
+		return
 	}
-	// create an array to store vm to folder path resolution
-	valuescount := 0
-	cache.Purge(vcName, "folders")
 
+	// Parse results
 	for _, base := range perfres.Returnval {
-		pem := base.(*types.PerfEntityMetric)
-		// name checks the name of the object
-		name := cache.FindString(vcName, "names", pem.Entity.Value)
-		name = strings.ToLower(strings.Replace(name, domain, "", -1))
-		if replacepoint {
-			name = strings.Replace(name, ".", "_", -1)
-		}
-		//find datastore
-		datastore := cache.FindNames(vcName, "datastores", pem.Entity.Value)
-		//find host and cluster
-		vmhost, cluster := cache.FindHostAndCluster(vcName, pem.Entity.Value)
-		vmhost = strings.Replace(vmhost, domain, "", -1)
-		//find network
-		network := cache.FindNames(vcName, "networks", pem.Entity.Value)
-		//find resource pool path
-		resourcepool := cache.FindName(vcName, "poolpaths", pem.Entity.Value)
-		//find folder path
-		paths := []string{}
-		if strings.HasPrefix(pem.Entity.Value, "vm-") {
-			current := cache.GetString(vcName, "parents", pem.Entity.Value)
-			for {
-				if current == nil {
-					break
-				}
-				if !(strings.HasPrefix(*current, "folder-") || strings.HasPrefix(*current, "group-")) {
-					break
-				}
-				foldername := cache.GetString(vcName, "names", *current)
-				if foldername == nil {
-					log.Println("Folder name not found for " + *current)
-					break
-				}
-				if *foldername == "vm" {
-					break
-				}
-				paths = append(paths, *foldername)
-				current = cache.GetString(vcName, "parents", *current)
+		go ProcessMetric(cache, base.(*types.PerfEntityMetric), timeStamp, replacepoint, domain, vcName, channel)
+	}
+}
+
+// ProcessMetric : Process Metric to metric queue
+func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point) {
+	// name checks the name of the object
+	name := cache.FindString(vcName, "names", pem.Entity.Value)
+	name = strings.ToLower(strings.Replace(name, domain, "", -1))
+	if replacepoint {
+		name = strings.Replace(name, ".", "_", -1)
+	}
+	//find datastore
+	datastore := cache.FindNames(vcName, "datastores", pem.Entity.Value)
+	//find host and cluster
+	vmhost, cluster := cache.FindHostAndCluster(vcName, pem.Entity.Value)
+	vmhost = strings.Replace(vmhost, domain, "", -1)
+	//find network
+	network := cache.FindNames(vcName, "networks", pem.Entity.Value)
+	//find resource pool path
+	resourcepool := cache.FindName(vcName, "poolpaths", pem.Entity.Value)
+	//find folder path
+	paths := []string{}
+	if strings.HasPrefix(pem.Entity.Value, "vm-") {
+		current := cache.GetString(vcName, "parents", pem.Entity.Value)
+		for {
+			if current == nil {
+				break
 			}
-		}
-		utils.Reverse(paths)
-		folderpath := strings.Join(paths, "/")
-		//find tags
-		vitags := cache.FindTags(vcName, pem.Entity.Value)
-		if len(pem.Value) == 0 {
-			log.Println("No values returned in query!")
-		}
-		objType := strings.ToLower(pem.Entity.Type)
-		timeStamp := endTime.Unix()
-		// replace point in vcname
-		rvcname := vcName
-		if replacepoint {
-			rvcname = strings.Replace(rvcname, ".", "_", -1)
-		}
-		// prepare basic informaitons of point
-		point := backend.Point{
-			VCenter:      rvcname,
-			ObjectType:   objType,
-			ObjectName:   name,
-			Datastore:    datastore,
-			ESXi:         vmhost,
-			Cluster:      cluster,
-			Network:      network,
-			ResourcePool: resourcepool,
-			Folder:       folderpath,
-			ViTags:       vitags,
-			Timestamp:    timeStamp,
-		}
-		//send disk infos
-		diskInfos := cache.GetDiskInfos(vcName, "disks", pem.Entity.Value)
-		if diskInfos != nil {
-			for _, diskInfo := range *diskInfos {
-				// skip if no capacity
-				if diskInfo.Capacity == 0 {
-					continue
-				}
-				// format disk path
-				diskPath := strings.Replace(diskInfo.DiskPath, "\\", "/", -1)
-				// send free space
-				point.Group = "guestdisk"
-				point.Counter = "freespace"
-				point.Instance = diskPath
-				point.Rollup = "latest"
-				point.Value = diskInfo.FreeSpace
-				*channel <- point
-				// send capacity
-				point.Group = "guestdisk"
-				point.Counter = "capacity"
-				point.Instance = diskPath
-				point.Rollup = "latest"
-				point.Value = diskInfo.Capacity
-				*channel <- point
-				// send usage %
-				point.Group = "guestdisk"
-				point.Counter = "usage"
-				point.Instance = diskPath
-				point.Rollup = "latest"
-				point.Value = int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity))))
-				*channel <- point
+			if !(strings.HasPrefix(*current, "folder-") || strings.HasPrefix(*current, "group-")) {
+				break
 			}
+			foldername := cache.GetString(vcName, "names", *current)
+			if foldername == nil {
+				log.Println("Folder name not found for " + *current)
+				break
+			}
+			if *foldername == "vm" {
+				break
+			}
+			paths = append(paths, *foldername)
+			current = cache.GetString(vcName, "parents", *current)
 		}
-		// send numcpu infos
-		numcpu := cache.GetInt32(vcName, "cpus", pem.Entity.Value)
-		if numcpu != nil {
-			point.Group = "cpu"
-			point.Counter = "count"
-			point.Instance = ""
+	}
+	utils.Reverse(paths)
+	folderpath := strings.Join(paths, "/")
+	//find tags
+	vitags := cache.FindTags(vcName, pem.Entity.Value)
+	if len(pem.Value) == 0 {
+		log.Println("No values returned in query!")
+	}
+	objType := strings.ToLower(pem.Entity.Type)
+	// replace point in vcname
+	rvcname := vcName
+	if replacepoint {
+		rvcname = strings.Replace(rvcname, ".", "_", -1)
+	}
+	// prepare basic informaitons of point
+	point := backend.Point{
+		VCenter:      rvcname,
+		ObjectType:   objType,
+		ObjectName:   name,
+		Datastore:    datastore,
+		ESXi:         vmhost,
+		Cluster:      cluster,
+		Network:      network,
+		ResourcePool: resourcepool,
+		Folder:       folderpath,
+		ViTags:       vitags,
+		Timestamp:    timeStamp,
+	}
+	//send disk infos
+	diskInfos := cache.GetDiskInfos(vcName, "disks", pem.Entity.Value)
+	if diskInfos != nil {
+		for _, diskInfo := range *diskInfos {
+			// skip if no capacity
+			if diskInfo.Capacity == 0 {
+				continue
+			}
+			// format disk path
+			diskPath := strings.Replace(diskInfo.DiskPath, "\\", "/", -1)
+			// send free space
+			point.Group = "guestdisk"
+			point.Counter = "freespace"
+			point.Instance = diskPath
 			point.Rollup = "latest"
-			point.Value = int64(*numcpu)
+			point.Value = diskInfo.FreeSpace
 			*channel <- point
-		}
-		// send numcpu infos
-		memorysizemb := cache.GetInt32(vcName, "memories", pem.Entity.Value)
-		if memorysizemb != nil {
-			point.Group = "mem"
-			point.Counter = "sizemb"
-			point.Instance = ""
+			// send capacity
+			point.Group = "guestdisk"
+			point.Counter = "capacity"
+			point.Instance = diskPath
 			point.Rollup = "latest"
-			point.Value = int64(*memorysizemb)
+			point.Value = diskInfo.Capacity
 			*channel <- point
-		}
-		valuescount = valuescount + len(pem.Value)
-		for _, baseserie := range pem.Value {
-			serie := baseserie.(*types.PerfMetricIntSeries)
-			metricName := cache.FindMetricName(vcName, serie.Id.CounterId)
-			metricName = strings.ToLower(metricName)
-			metricparts := strings.Split(metricName, ".")
-			point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
-			point.Instance = serie.Id.Instance
-			if len(point.Instance) > 0 && point.Group == "datastore" {
-				newDatastore := cache.GetString(vcName, "datastoreids", point.Instance)
-				if newDatastore != nil {
-					point.Datastore = []string{*newDatastore}
-				} else {
-					point.Datastore = []string{}
-				}
-			}
-			var value int64 = -1
-			switch {
-			case strings.HasSuffix(metricName, ".average"):
-				value = utils.Average(serie.Value...)
-			case strings.HasSuffix(metricName, ".maximum"):
-				value = utils.Max(serie.Value...)
-			case strings.HasSuffix(metricName, ".minimum"):
-				value = utils.Min(serie.Value...)
-			case strings.HasSuffix(metricName, ".latest"):
-				value = serie.Value[len(serie.Value)-1]
-			case strings.HasSuffix(metricName, ".summation"):
-				value = utils.Sum(serie.Value...)
-			}
-			point.Value = value
+			// send usage %
+			point.Group = "guestdisk"
+			point.Counter = "usage"
+			point.Instance = diskPath
+			point.Rollup = "latest"
+			point.Value = int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity))))
 			*channel <- point
 		}
 	}
-	log.Println("Got " + strconv.Itoa(returncount) + " results from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
+	// send numcpu infos
+	numcpu := cache.GetInt32(vcName, "cpus", pem.Entity.Value)
+	if numcpu != nil {
+		point.Group = "cpu"
+		point.Counter = "count"
+		point.Instance = ""
+		point.Rollup = "latest"
+		point.Value = int64(*numcpu)
+		*channel <- point
+	}
+	// send numcpu infos
+	memorysizemb := cache.GetInt32(vcName, "memories", pem.Entity.Value)
+	if memorysizemb != nil {
+		point.Group = "mem"
+		point.Counter = "sizemb"
+		point.Instance = ""
+		point.Rollup = "latest"
+		point.Value = int64(*memorysizemb)
+		*channel <- point
+	}
+	for _, baseserie := range pem.Value {
+		serie := baseserie.(*types.PerfMetricIntSeries)
+		metricName := cache.FindMetricName(vcName, serie.Id.CounterId)
+		metricName = strings.ToLower(metricName)
+		metricparts := strings.Split(metricName, ".")
+		point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
+		point.Instance = serie.Id.Instance
+		if len(point.Instance) > 0 && point.Group == "datastore" {
+			newDatastore := cache.GetString(vcName, "datastoreids", point.Instance)
+			if newDatastore != nil {
+				point.Datastore = []string{*newDatastore}
+			} else {
+				point.Datastore = []string{}
+			}
+		}
+		var value int64 = -1
+		switch {
+		case strings.HasSuffix(metricName, ".average"):
+			value = utils.Average(serie.Value...)
+		case strings.HasSuffix(metricName, ".maximum"):
+			value = utils.Max(serie.Value...)
+		case strings.HasSuffix(metricName, ".minimum"):
+			value = utils.Min(serie.Value...)
+		case strings.HasSuffix(metricName, ".latest"):
+			value = serie.Value[len(serie.Value)-1]
+		case strings.HasSuffix(metricName, ".summation"):
+			value = utils.Sum(serie.Value...)
+		}
+		point.Value = value
+		*channel <- point
+	}
 }
