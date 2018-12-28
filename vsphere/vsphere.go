@@ -25,8 +25,10 @@ import (
 )
 
 const (
+	// VCENTERRESULTLIMIT is the maximum amount of result to fetch back in one query
 	VCENTERRESULTLIMIT = 500000.0
-	INSTANCERATIO      = 1.5
+	// INSTANCERATIO is the number of effective result in fonction of the metrics. This is necessary due to the possibility to retrieve instances with wildcards
+	INSTANCERATIO = 1.5
 )
 
 var cache Cache
