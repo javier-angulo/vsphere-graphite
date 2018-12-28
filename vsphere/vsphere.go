@@ -483,7 +483,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 
 	// make each queries in separate functions
 	for _, query := range batchqueries {
-		go ExecuteQueries(ctx, client.RoundTripper, &cache, &query, endTime.Unix(), replacepoint, domain, vcName, channel)
+		go ExecuteQueries(client.RoundTripper, &cache, &query, endTime.Unix(), replacepoint, domain, vcName, channel)
 	}
 
 	/* ****
@@ -666,7 +666,11 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 }
 
 // ExecuteQueries : Query a vcenter for performances
-func ExecuteQueries(ctx context.Context, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point) {
+func ExecuteQueries(r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point) {
+
+	// Create the contect
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
