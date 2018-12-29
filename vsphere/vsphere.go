@@ -110,15 +110,18 @@ func InitMetrics(metrics []*Metric, perfmanager *mo.PerformanceManager) {
 // Init : initialize vcenter
 func (vcenter *VCenter) Init(metrics []*Metric) {
 	log.Printf("Initializing vCenter %s\n", vcenter.Hostname)
+
 	// connect to vcenter
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
 	client, err := vcenter.Connect()
 	if err != nil {
 		log.Println("Could not connect to vcenter: ", vcenter.Hostname)
 		log.Println("Error: ", err)
 		return
 	}
+
 	defer func() {
 		log.Println("disconnecting from vcenter:", vcenter.Hostname)
 		err := client.Logout(ctx) // nolint: vetshadow
@@ -127,6 +130,7 @@ func (vcenter *VCenter) Init(metrics []*Metric) {
 			log.Println("Error: ", err)
 		}
 	}()
+
 	// get the performance manager
 	var perfmanager mo.PerformanceManager
 	err = client.RetrieveOne(ctx, *client.ServiceContent.PerfManager, nil, &perfmanager)
@@ -135,6 +139,7 @@ func (vcenter *VCenter) Init(metrics []*Metric) {
 		log.Println("Error: ", err)
 		return
 	}
+
 	InitMetrics(metrics, &perfmanager)
 	// add the metric to be collected in vcenter
 	for _, metric := range metrics {
@@ -484,9 +489,19 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	}
 
 	// make each queries in separate functions
+	// use a wait group to avoid exiting if all threads are not finished
+
+	// create the wait group and declare the amount of threads
+	var querieswaitgroup sync.WaitGroup
+	querieswaitgroup.Add(len(batchqueries))
+
+	// execute the threads
 	for _, query := range batchqueries {
-		go ExecuteQueries(client.RoundTripper, &cache, &query, endTime.Unix(), replacepoint, domain, vcName, channel)
+		go ExecuteQueries(ctx, client.RoundTripper, &cache, &query, endTime.Unix(), replacepoint, domain, vcName, channel, &querieswaitgroup)
 	}
+
+	//wait fot the waitgroup
+	querieswaitgroup.Wait()
 
 	/* ****
 	   /* Replace by go func version
@@ -668,11 +683,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 }
 
 // ExecuteQueries : Query a vcenter for performances
-func ExecuteQueries(r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point) {
-
-	// Create the contect
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func ExecuteQueries(ctx context.Context, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
 
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
@@ -690,6 +701,7 @@ func ExecuteQueries(r soap.RoundTripper, cache *Cache, queryperf *types.QueryPer
 	}
 
 	// Parse results
+	// no need to wait here because this is only processing (no connection to vcenter needed)
 	for _, base := range perfres.Returnval {
 		go ProcessMetric(cache, base.(*types.PerfEntityMetric), timeStamp, replacepoint, domain, vcName, channel)
 	}
