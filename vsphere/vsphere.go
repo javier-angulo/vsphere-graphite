@@ -471,7 +471,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	log.Println("Queries generated:")
 	log.Printf("%d queries to vcenter %s\n", querycount, vcName)
 	log.Printf("%d total metricIds from vcenter %s\n", metriccount, vcName)
-	log.Printf("%.0f total counter from vcenter %s (accounting for %f instances ratio)", expCounters, vcName, INSTANCERATIO)
+	log.Printf("%g total counter from vcenter %s (accounting for %g instances ratio)", expCounters, vcName, INSTANCERATIO)
 
 	// separate in batches of queries if to avoid 500000 returend perf limit
 	batches := math.Ceil(expCounters / VCENTERRESULTLIMIT)
