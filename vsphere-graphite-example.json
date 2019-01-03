@@ -1,5 +1,6 @@
 {
   "Domain": ".contoso.com",
+  "ReplacePoint": false,
   "Properties": [ "all" ],
   "Interval": 60,
   "FlushSize": 1000,
