@@ -487,7 +487,10 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		batchqueries[batchnum] = types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries[i:end]}
 		batchnum++
 	}
-	log.Printf("%d threads generated to execute queries", batchsize)
+	log.Printf("%g threads generated to execute queries", batches)
+	for i, query := range batchqueries {
+		log.Printf("Thread %d requests %d metrics", i + 1, len(query.QuerySpec))
+	}
 
 	// make each queries in separate functions
 	// use a wait group to avoid exiting if all threads are not finished
