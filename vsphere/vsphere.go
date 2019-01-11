@@ -487,9 +487,9 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		batchqueries[batchnum] = types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries[i:end]}
 		batchnum++
 	}
-	log.Printf("%g threads generated to execute queries", batches)
+	log.Printf("%g threads generated to execute queries", len(batchqueries))
 	for i, query := range batchqueries {
-		log.Printf("Thread %d requests %d metrics", i + 1, len(query.QuerySpec))
+		log.Printf("Thread %d requests %d metrics", i+1, len(query.QuerySpec))
 	}
 
 	// make each queries in separate functions
@@ -689,22 +689,27 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 // ExecuteQueries : Query a vcenter for performances
 func ExecuteQueries(id int, ctx context.Context, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
 
+	// Starting informations
+	log.Printf("Thread %d requesting %d metrics\n", id, queryperf.QuerySpec)
+	
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
 	if err != nil {
-		log.Println("Could not request perfs from vcenter: " + vcName)
+		log.Printf("Thread %d Could not request perfs from vcenter: %s\n",id,vcName)
 		log.Println("Error: ", err)
 		return
 	}
+	
+	// Tell the waitgroup that we are done
+	wg.Done()
 
 	// Get the result
 	returncount := len(perfres.Returnval)
 	if returncount == 0 {
-		log.Println("No result returned by queries.")
+		log.Printf("Thread %d has no result returned by queries\n",id)
 		return
 	}
-	log.Printf("Thread %d returned %d metrics\n",id,returncount)
-	
+	log.Printf("Thread %d returned %d metrics\n", id, returncount)
 
 	// Parse results
 	// no need to wait here because this is only processing (no connection to vcenter needed)
