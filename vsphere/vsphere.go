@@ -28,7 +28,7 @@ const (
 	// VCENTERRESULTLIMIT is the maximum amount of result to fetch back in one query
 	VCENTERRESULTLIMIT = 500000.0
 	// INSTANCERATIO is the number of effective result in fonction of the metrics. This is necessary due to the possibility to retrieve instances with wildcards
-	INSTANCERATIO = 1.5
+	INSTANCERATIO = 3.0
 )
 
 var cache Cache
@@ -476,10 +476,10 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	// separate in batches of queries if to avoid 500000 returend perf limit
 	batches := math.Ceil(expCounters / VCENTERRESULTLIMIT)
 	batchqueries := make([]types.QueryPerf, int(batches))
-	batchsize := int(math.Ceil(float64(len(queries)) / batches))
-	batchnum := 0
 	querieslen := len(queries)
-	for i := 0; i < len(queries); i += batchsize {
+	batchsize := int(math.Ceil(float64(querieslen) / batches))
+	batchnum := 0
+	for i := 0; i < querieslen; i += batchsize {
 		end := i + batchsize
 		if end > querieslen {
 			end = querieslen
@@ -487,6 +487,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		batchqueries[batchnum] = types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries[i:end]}
 		batchnum++
 	}
+	log.Printf("%d threads generated to execute queries", batchsize)
 
 	// make each queries in separate functions
 	// use a wait group to avoid exiting if all threads are not finished
@@ -496,8 +497,8 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	querieswaitgroup.Add(len(batchqueries))
 
 	// execute the threads
-	for _, query := range batchqueries {
-		go ExecuteQueries(ctx, client.RoundTripper, &cache, &query, endTime.Unix(), replacepoint, domain, vcName, channel, &querieswaitgroup)
+	for i, query := range batchqueries {
+		go ExecuteQueries(i+1, ctx, client.RoundTripper, &cache, &query, endTime.Unix(), replacepoint, domain, vcName, channel, &querieswaitgroup)
 	}
 
 	//wait fot the waitgroup
@@ -683,7 +684,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 }
 
 // ExecuteQueries : Query a vcenter for performances
-func ExecuteQueries(ctx context.Context, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
+func ExecuteQueries(id int, ctx context.Context, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
 
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
@@ -699,6 +700,8 @@ func ExecuteQueries(ctx context.Context, r soap.RoundTripper, cache *Cache, quer
 		log.Println("No result returned by queries.")
 		return
 	}
+	log.Printf("Thread %d returned %d metrics\n",id,returncount)
+	
 
 	// Parse results
 	// no need to wait here because this is only processing (no connection to vcenter needed)
