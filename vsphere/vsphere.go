@@ -694,14 +694,16 @@ func ExecuteQueries(id int, ctx context.Context, r soap.RoundTripper, cache *Cac
 
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
+
+	// Tell the waitgroup that we are done
+	wg.Done()
+
+	// Check the result
 	if err != nil {
 		log.Printf("Thread %d Could not request perfs from vcenter: %s\n",id,vcName)
 		log.Println("Error: ", err)
 		return
 	}
-
-	// Tell the waitgroup that we are done
-	wg.Done()
 
 	// Get the result
 	returncount := len(perfres.Returnval)
