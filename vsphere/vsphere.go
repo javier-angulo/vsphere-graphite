@@ -487,7 +487,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		batchqueries[batchnum] = types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries[i:end]}
 		batchnum++
 	}
-	log.Printf("%g threads generated to execute queries", len(batchqueries))
+	log.Printf("%d threads generated to execute queries", len(batchqueries))
 	for i, query := range batchqueries {
 		log.Printf("Thread %d requests %d metrics", i+1, len(query.QuerySpec))
 	}
@@ -691,7 +691,7 @@ func ExecuteQueries(id int, ctx context.Context, r soap.RoundTripper, cache *Cac
 
 	// Starting informations
 	log.Printf("Thread %d requesting %d metrics\n", id, queryperf.QuerySpec)
-	
+
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
 	if err != nil {
@@ -699,7 +699,7 @@ func ExecuteQueries(id int, ctx context.Context, r soap.RoundTripper, cache *Cac
 		log.Println("Error: ", err)
 		return
 	}
-	
+
 	// Tell the waitgroup that we are done
 	wg.Done()
 
