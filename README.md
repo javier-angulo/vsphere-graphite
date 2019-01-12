@@ -1,5 +1,5 @@
 > **WARNING**
-> Currently influxdb client is not available and breaks builds: https://github.com/influxdata/influxdb/issues/11035
+> Currently influxdb client is not available and breaks builds: influxdata/influxdb#11035
 >
 > Untill the issue is resolved influx client will be automatically replaced by the embedded implementation.
 >
