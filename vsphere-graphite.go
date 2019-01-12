@@ -36,8 +36,6 @@ const (
 
 var dependencies = []string{}
 
-var commit, tag string
-
 // Service has embedded daemon
 type Service struct {
 	daemon.Daemon
@@ -151,6 +149,7 @@ func (service *Service) Manage() (string, error) {
 	// We must use a buffered channel or risk missing the signal
 	// if we're not ready to receive when the signal is sent.
 	interrupt := make(chan os.Signal, 1)
+	//lint:ignore SA1016 in this case we wan't to quit
 	signal.Notify(interrupt, os.Interrupt, os.Kill, syscall.SIGTERM) // nolint: megacheck
 
 	// Set up a channel to receive the metrics
@@ -232,10 +231,10 @@ func (service *Service) Manage() (string, error) {
 			log.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
 			if conf.MEMProfiling {
 				f, err := os.OpenFile("/tmp/vsphere-graphite-mem.pb.gz", os.O_RDWR|os.O_CREATE, 0600) // nolin.vetshaddow
-				defer f.Close()
 				if err != nil {
 					log.Fatal("could not create Mem profile: ", err)
 				}
+				defer f.Close()
 				log.Println("Will write mem profiling to: ", f.Name())
 				if err := pprof.WriteHeapProfile(f); err != nil {
 					log.Fatal("could not write Mem profile: ", err)
