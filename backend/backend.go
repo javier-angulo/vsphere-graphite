@@ -134,7 +134,7 @@ func (backend *Config) Init() (*chan Channels, error) {
 		}
 		elasticclt, err := elastic.NewClient(
 			elastic.SetURL(protocol+"://"+backend.Hostname+":"+strconv.Itoa(backend.Port)),
-			elastic.SetMaxRetries(10),
+			elastic.SetRetrier(elastic.NewBackoffRetrier(elastic.NewSimpleBackoff(100, 500, 2000, 5000, 10000))), // 5 retries with fixed delay of 100ms, 500ms, 2s, 5s, and 10s,
 			elastic.SetScheme(protocol),
 			elastic.SetBasicAuth(backend.Username, backend.Password),
 			elastic.SetSniff(true))
