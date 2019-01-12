@@ -15,7 +15,8 @@ import (
 
 	"github.com/cblomart/vsphere-graphite/backend/thininfluxclient"
 	"github.com/fluent/fluent-logger-golang/fluent"
-	influxclient "github.com/influxdata/influxdb/client/v2"
+
+	//influxclient "github.com/influxdata/influxdb/client/v2" # disabled untill the influx client is back
 	"github.com/marpaia/graphite-golang"
 	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus"
@@ -86,6 +87,9 @@ func (backend *Config) Init() (*chan Channels, error) {
 		backend.carbon = carbon
 		return queries, nil
 	case InfluxDB:
+		/***
+		/* Disabled until influx client is back
+		/***
 		//Initialize Influx DB
 		log.Println("Intializing " + backendType + " backend")
 		protocol := "http"
@@ -103,6 +107,8 @@ func (backend *Config) Init() (*chan Channels, error) {
 		}
 		backend.influx = &influxclt
 		return queries, nil
+		***/
+		fallthrough
 	case ThinInfluxDB:
 		//Initialize thin Influx DB client
 		log.Println("Initializing " + backendType + " backend")
@@ -128,7 +134,7 @@ func (backend *Config) Init() (*chan Channels, error) {
 		}
 		elasticclt, err := elastic.NewClient(
 			elastic.SetURL(protocol+"://"+backend.Hostname+":"+strconv.Itoa(backend.Port)),
-			elastic.SetMaxRetries(10),
+			elastic.SetRetrier(elastic.NewBackoffRetrier(elastic.NewSimpleBackoff(100, 500, 2000, 5000, 10000))), // 5 retries with fixed delay of 100ms, 500ms, 2s, 5s, and 10s,
 			elastic.SetScheme(protocol),
 			elastic.SetBasicAuth(backend.Username, backend.Password),
 			elastic.SetSniff(true))
@@ -258,6 +264,9 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 			}
 		}
 	case InfluxDB:
+		/***
+		/* Disabled until influx client is back
+		/***
 		//Influx batch points
 		bp, err := influxclient.NewBatchPoints(influxclient.BatchPointsConfig{
 			Database:  backend.Database,
@@ -288,6 +297,8 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 		if err != nil {
 			log.Println("Error sending metrics: ", err)
 		}
+		***/
+		fallthrough
 	case ThinInfluxDB:
 		lines := []string{}
 		for _, point := range metrics {

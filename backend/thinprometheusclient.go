@@ -28,7 +28,7 @@ func NewThinPrometheusClient(server string, port int) (ThinPrometheusClient, err
 	if port == 0 {
 		port = defaultPort
 	} else if port < 1000 || port > 65535 {
-		return ThinPrometheusClient{}, errors.New("Port is not in a user range")
+		return ThinPrometheusClient{}, errors.New("port is not in a user range")
 	}
 	address := ""
 	if len(server) > 0 {
