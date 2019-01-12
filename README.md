@@ -1,3 +1,9 @@
+<aside class="warning">
+Currently influxdb client is not available and breaks builds: https://github.com/influxdata/influxdb/issues/11035
+Untill the issue is resolved influx client will be automatically replaced by the embedded implementation.
+You can also transparently swith to this client by replacing the "influxdb" backend by "thininfluxdb".
+</aside>
+
 # vSphere Graphite
 
 Monitors VMware vSphere stats using govmomi. Sinks metrics to one of many time series backends.
