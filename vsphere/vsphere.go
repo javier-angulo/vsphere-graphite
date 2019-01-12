@@ -501,7 +501,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 
 	// execute the threads
 	for i, query := range batchqueries {
-		go ExecuteQueries(i+1, ctx, client.RoundTripper, &cache, &query, endTime.Unix(), replacepoint, domain, vcName, channel, &querieswaitgroup)
+		go ExecuteQueries(ctx, i+1, client.RoundTripper, &cache, &query, endTime.Unix(), replacepoint, domain, vcName, channel, &querieswaitgroup)
 	}
 
 	//wait fot the waitgroup
@@ -687,10 +687,10 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 }
 
 // ExecuteQueries : Query a vcenter for performances
-func ExecuteQueries(id int, ctx context.Context, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
+func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
 
 	// Starting informations
-	log.Printf("Thread %d requesting %d metrics\n", id, queryperf.QuerySpec)
+	log.Printf("Thread %d requesting %d metrics\n", id, len(queryperf.QuerySpec))
 
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
@@ -700,7 +700,7 @@ func ExecuteQueries(id int, ctx context.Context, r soap.RoundTripper, cache *Cac
 
 	// Check the result
 	if err != nil {
-		log.Printf("Thread %d Could not request perfs from vcenter: %s\n",id,vcName)
+		log.Printf("Thread %d Could not request perfs from vcenter: %s\n", id, vcName)
 		log.Println("Error: ", err)
 		return
 	}
@@ -708,7 +708,7 @@ func ExecuteQueries(id int, ctx context.Context, r soap.RoundTripper, cache *Cac
 	// Get the result
 	returncount := len(perfres.Returnval)
 	if returncount == 0 {
-		log.Printf("Thread %d has no result returned by queries\n",id)
+		log.Printf("Thread %d has no result returned by queries\n", id)
 		return
 	}
 	log.Printf("Thread %d returned %d metrics\n", id, returncount)
