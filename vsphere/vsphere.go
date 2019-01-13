@@ -199,24 +199,8 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		datacenters = append(datacenters, child.Reference())
 	}
 
-	// Get interesting objects from properties
-	// Check if contains all
-	objectTypes := []string{}
-	// replace all by all properties
-	all := false
-	for _, property := range properties {
-		if strings.ToLower(property) == "all" {
-			all = true
-			break
-		}
-	}
-	if all {
-		properties = []string{}
-		for propkey := range Properties {
-			properties = append(properties, propkey)
-		}
-	}
 	// get the object types from properties
+	objectTypes := []string{}
 	for _, property := range properties {
 		if propval, ok := Properties[property]; ok {
 			for objkey := range propval {

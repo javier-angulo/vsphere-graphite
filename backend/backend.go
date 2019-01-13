@@ -383,3 +383,13 @@ func (backend *Config) Scheduled() bool {
 		return true
 	}
 }
+
+// HasMetadata indicates that the backend supports metadata
+func (backend *Config) HasMetadata() bool {
+	switch backendType := strings.ToLower(backend.Type); backendType {
+	case Graphite:
+		return false
+	default:
+		return true
+	}
+}

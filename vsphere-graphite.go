@@ -84,9 +84,25 @@ func (service *Service) Manage() (string, error) {
 		return "Could not decode configuration file", err
 	}
 
-	// defaults to all properties
+	// replace all by all properties
+	all := false
 	if conf.Properties == nil {
-		conf.Properties = []string{"all"}
+		all = true
+	} else {
+		for _, property := range conf.Properties {
+			if strings.ToLower(property) == "all" {
+				all = true
+				break
+			}
+		}
+	}
+	if all {
+		// Reset properties
+		conf.Properties = []string{}
+		// Fill it with all properties keys
+		for propkey := range vsphere.Properties {
+			conf.Properties = append(conf.Properties, propkey)
+		}
 	}
 
 	// default flush size 1000
@@ -144,6 +160,24 @@ func (service *Service) Manage() (string, error) {
 		return "Could not initialize backend", err
 	}
 	defer conf.Backend.Disconnect()
+
+	//check properties in function of backend support of metadata
+	if conf.Backend.HasMetadata() == false {
+		properties := []string{}
+		for _, confproperty := range conf.Properties {
+			found := false
+			for _, metricproperty := range vsphere.MetricProperties {
+				if strings.ToLower(confproperty) == strings.ToLower(metricproperty) {
+					found = true
+					break
+				}
+			}
+			if found {
+				properties = append(properties, confproperty)
+			}
+		}
+		conf.Properties = properties
+	}
 
 	// Set up channel on which to send signal notifications.
 	// We must use a buffered channel or risk missing the signal
