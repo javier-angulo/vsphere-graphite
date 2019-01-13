@@ -162,7 +162,7 @@ func (service *Service) Manage() (string, error) {
 	defer conf.Backend.Disconnect()
 
 	//check properties in function of backend support of metadata
-	if conf.Backend.HasMetadata() == false {
+	if !conf.Backend.HasMetadata() {
 		properties := []string{}
 		for _, confproperty := range conf.Properties {
 			found := false
