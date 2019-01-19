@@ -229,7 +229,7 @@ func (service *Service) Manage() (string, error) {
 			bufferindex++
 			if bufferindex == len(pointbuffer) {
 				conf.Backend.SendMetrics(pointbuffer)
-				log.Printf("Sent %d logs to backend", bufferindex)
+				log.Printf("sent %d logs to backend\n", bufferindex)
 				ClearBuffer(pointbuffer)
 				bufferindex = 0
 			}
@@ -252,7 +252,7 @@ func (service *Service) Manage() (string, error) {
 			if conf.Backend.Scheduled() {
 				// sent remaining values
 				conf.Backend.SendMetrics(pointbuffer)
-				log.Printf("Sent %d logs to backend", bufferindex)
+				log.Printf("sent last %d logs to backend\n", bufferindex)
 				// empty point buffer
 				bufferindex = 0
 				ClearBuffer(pointbuffer)

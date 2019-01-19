@@ -252,11 +252,13 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 		}
 		err := backend.carbon.SendMetrics(graphiteMetrics)
 		if err != nil {
-			log.Println("Error sending metrics (trying to reconnect): ", err)
-			err := backend.carbon.Connect()
-			if err != nil {
-				log.Println("could not connect to graphite: ", err)
-			}
+			/* remove connection retry */
+			//log.Printf("backend %s : Error sending metrics (trying to reconnect) - %s\n", backendType, err)
+			//err := backend.carbon.Connect()
+			//if err != nil {
+			//	log.Printf("backend %s : could not connect to graphite - %s\n", err)
+			//}
+			log.Printf("backend %s: could not send metrics - %s\n", backendType, err)
 		}
 	case InfluxDB:
 		//Influx batch points
@@ -265,8 +267,7 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 			Precision: "s",
 		})
 		if err != nil {
-			log.Println("Error creating influx batchpoint")
-			log.Println(err)
+			log.Printf("backend %s: error creating influx batchpoint - %s\n", backendType, err)
 			return
 		}
 		for _, point := range metrics {
@@ -279,15 +280,14 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 			fields[backend.ValueField] = point.Value
 			pt, err := influxclient.NewPoint(key, tags, fields, time.Unix(point.Timestamp, 0)) // nolint: vetshadow
 			if err != nil {
-				log.Println("Could not create influxdb point")
-				log.Println(err)
+				log.Printf("backend %s: could not create influxdb point - %s\n", backendType, err)
 				continue
 			}
 			bp.AddPoint(pt)
 		}
 		err = (*backend.influx).Write(bp)
 		if err != nil {
-			log.Println("Error sending metrics: ", err)
+			log.Printf("backend %s: error sending metrics - %s\n", backendType, err)
 		}
 	case ThinInfluxDB:
 		lines := []string{}
@@ -297,11 +297,12 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 			}
 			lines = append(lines, point.ToInflux(backend.NoArray, backend.ValueField))
 		}
+		/** simplify sent lines to thin influx
 		count := 3
 		for count > 0 {
 			err := backend.thininfluxdb.Send(lines)
 			if err != nil {
-				log.Println("Error sending metrics: ", err)
+				log.Printf("backend %s: error sending metrics - %s\n", backendType, err)
 				if err.Error() == "Server Busy: timeout" {
 					log.Println("waiting .5 second to continue")
 					time.Sleep(500 * time.Millisecond)
@@ -313,52 +314,53 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 				break
 			}
 		}
+		**/
 		err := backend.thininfluxdb.Send(lines)
 		if err != nil {
-			log.Println("Error sendg metrics: ", err)
+			log.Printf("backend %s: error sending metrics - %s\n", backendType, err)
 		}
 	case Elastic:
 		elasticindex := backend.Database + "-" + time.Now().Format("2006.01.02")
 		err := CreateIndexIfNotExists(backend.elastic, elasticindex)
 		if err != nil {
-			log.Println(err)
-		} else {
-			bulkRequest := backend.elastic.Bulk()
-			for _, point := range metrics {
-				indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(point).UseEasyJSON(true)
-				bulkRequest = bulkRequest.Add(indexReq)
-			}
-			bulkResponse, err := bulkRequest.Do(context.Background())
-			if err != nil {
-				// Handle error
-				log.Println(err)
-			} else {
-				// Succeeded actions
-				succeeded := bulkResponse.Succeeded()
-				log.Println("Logs successfully indexed: ", len(succeeded))
-				_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
-				if err != nil {
-					panic(err)
-				} else {
-					log.Println("Elastic Indexing flushed")
-				}
-			}
+			log.Printf("backend %s: could not create index - %s\n", backendType, err)
+			return
 		}
+		bulkRequest := backend.elastic.Bulk()
+		for _, point := range metrics {
+			indexReq := elastic.NewBulkIndexRequest().Index(elasticindex).Type("doc").Doc(point).UseEasyJSON(true)
+			bulkRequest = bulkRequest.Add(indexReq)
+		}
+		bulkResponse, err := bulkRequest.Do(context.Background())
+		if err != nil {
+			log.Printf("backend %s: bulk insert failed - %s\n", backendType, err)
+			return
+		}
+		// Succeeded actions
+		succeeded := bulkResponse.Succeeded()
+		log.Printf("backend %s: %d logs successfully indexed\n", backendType, len(succeeded))
+		_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
+		if err != nil {
+			log.Printf("backend %s: errr flushing data - %s\n", backendType, err)
+			return
+		}
+		log.Printf("backend %s: elastic indexing flushed", backendType)
 	case Prometheus:
 		// Prometheus doesn't need to send metrics
 	case Fluentd:
 		for _, point := range metrics {
-			if point != nil {
-				err := backend.fluent.Post(backend.Prefix, *point)
-				if err != nil {
-					log.Println(err)
-				}
+			if point == nil {
+				continue
+			}
+			err := backend.fluent.Post(backend.Prefix, *point)
+			if err != nil {
+				log.Printf("bakcend %s: failed to post point - %s\n", backendType, err)
 			}
 		}
 	case ThinPrometheus:
 		// Thin Prometheus doesn't need to send metrics
 	default:
-		log.Println("Backend " + backendType + " unknown.")
+		log.Printf("backend %s: unknown", backendType)
 	}
 }
 
