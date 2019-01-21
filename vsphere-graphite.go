@@ -220,15 +220,13 @@ func (service *Service) Manage() (string, error) {
 	for {
 		select {
 		case value := <-metrics:
+			// reset timer as a point has been recieved.
+			// do that in the main thread to avoid collisions
+			if !memtimer.Stop() {
+				<-memtimer.C
+			}
+			memtimer.Reset(time.Second * time.Duration(5))
 			go func() {
-				// reset timer as a point has been revieved
-				if !memtimer.Stop() {
-					select {
-					case <-memtimer.C:
-					default:
-					}
-				}
-				memtimer.Reset(time.Second * time.Duration(5))
 				pointbuffer[bufferindex] = &value
 				bufferindex++
 				if bufferindex == len(pointbuffer) {
