@@ -223,10 +223,12 @@ func (service *Service) Manage() (string, error) {
 			// reset timer as a point has been recieved.
 			// do that in the main thread to avoid collisions
 			if !memtimer.Stop() {
-				<-memtimer.C
+				select {
+				case <-memtimer.C:
+				default:
+				}
 			}
 			memtimer.Reset(time.Second * time.Duration(5))
-			log.Println("recieving point")
 			pointbuffer[bufferindex] = &value
 			bufferindex++
 			if bufferindex == len(pointbuffer) {
