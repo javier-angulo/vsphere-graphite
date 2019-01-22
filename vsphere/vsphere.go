@@ -71,7 +71,7 @@ func (vcenter *VCenter) Connect() (*govmomi.Client, error) {
 	}
 	client, err := govmomi.NewClient(ctx, u, true)
 	if err != nil {
-		log.Println("vcenter %s: could not connect to vcenter - %s\n", vcenter.Hostname, err)
+		log.Printf("vcenter %s: could not connect to vcenter - %s\n", vcenter.Hostname, err)
 		return nil, err
 	}
 	return client, nil
@@ -147,7 +147,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		}
 	}()
 
-	log.Println("vcenter %s: setting up query inventory", vcenter.Hostname)
+	log.Printf("vcenter %s: setting up query inventory", vcenter.Hostname)
 
 	// Create the contect
 	ctx, cancel := context.WithCancel(context.Background())
@@ -281,7 +281,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	propreq := types.RetrieveProperties{SpecSet: []types.PropertyFilterSpec{{ObjectSet: objectSet, PropSet: propSet}}}
 	propres, err := client.PropertyCollector().RetrieveProperties(ctx, propreq)
 	if err != nil {
-		log.Println("vcenter %s: could not retrieve object names - %s\n", vcenter.Hostname, err)
+		log.Printf("vcenter %s: could not retrieve object names - %s\n", vcenter.Hostname, err)
 		return
 	}
 
@@ -416,14 +416,14 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	// Check that there is something to query
 	querycount := len(queries)
 	if querycount == 0 {
-		log.Println("vcenter %s: no queries created!", vcenter.Hostname)
+		log.Printf("vcenter %s: no queries created!", vcenter.Hostname)
 		return
 	}
 	metriccount := 0
 	for _, query := range queries {
 		metriccount = metriccount + len(query.MetricId)
 	}
-	log.Printf("vcenter %s: issuing %d queries requesting %d metrics.\n", vcenter.Hostname, querycount, vcName, metriccount)
+	log.Printf("vcenter %s: issuing %d queries requesting %d metrics.\n", vcenter.Hostname, querycount, metriccount)
 
 	// Query the performances
 	perfreq := types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries}
@@ -490,7 +490,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		//find tags
 		vitags := cache.FindTags(vcName, pem.Entity.Value)
 		if len(pem.Value) == 0 {
-			log.Println("vcenter %s: no values returned in metrics!", vcenter.Hostname)
+			log.Printf("vcenter %s: no values returned in metrics!", vcenter.Hostname)
 		}
 		objType := strings.ToLower(pem.Entity.Type)
 		timeStamp := endTime.Unix()
