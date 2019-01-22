@@ -78,17 +78,17 @@ func (backend *Config) Init() (*chan Channels, error) {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		// Initialize Graphite
-		log.Println("Intializing " + backendType + " backend")
+		log.Printf("backend %s: intializing\n",backendType)
 		carbon, err := graphite.NewGraphite(backend.Hostname, backend.Port)
 		if err != nil {
-			log.Println("Error connecting to graphite")
+			log.Printf("backend %s: error connecting to graphite - %s\n", backendType, err)
 			return queries, err
 		}
 		backend.carbon = carbon
 		return queries, nil
 	case InfluxDB:
 		//Initialize Influx DB
-		log.Println("Intializing " + backendType + " backend")
+		log.Printf("backend %s: intializing\n", backendType)
 		protocol := "http"
 		if backend.Encrypted {
 			protocol = "https"
@@ -99,30 +99,31 @@ func (backend *Config) Init() (*chan Channels, error) {
 			Password: backend.Password,
 		})
 		if err != nil {
-			log.Println("Error connecting to InfluxDB")
+			log.Printf("backend %s: error connecting - %s\n", backendType, err)
 			return queries, err
 		}
 		backend.influx = &influxclt
 		return queries, nil
 	case ThinInfluxDB:
 		//Initialize thin Influx DB client
-		log.Println("Initializing " + backendType + " backend")
+		log.Printf("backend %s: initializing\n", backendType)
 		thininfluxclt, err := thininfluxclient.NewThinInlfuxClient(backend.Hostname, backend.Port, backend.Database, backend.Username, backend.Password, "s", backend.Encrypted)
 		if err != nil {
-			log.Println("Error creating thin InfluxDB client")
+			log.Printf("backend %s: error creating client - %s\n", backendType, err)
 			return queries, err
 		}
 		backend.thininfluxdb = &thininfluxclt
 		return queries, nil
 	case Elastic:
 		//Initialize Elastic client
+		log.Printf("backend %s: initializing\n", backendType)
 		elasticindex := backend.Database
 		if len(elasticindex) > 0 {
 			elasticindex = elasticindex + "-" + time.Now().Format("2006.01.02")
 		} else {
-			log.Println("backend.Database (used as Elastic Index name) not specified in vsphere-graphite.json")
+			log.Printf("backend %s: Database not specified in vsphere-graphite.json (used as index)\n", backendType)
 		}
-		log.Println("Initializing " + backendType + " backend " + backend.Hostname + ":" + strconv.Itoa(backend.Port) + "/" + elasticindex)
+		log.Printf("backend %s: %s:%d/%s\n", backendType, backend.Port, elasticindex)
 		protocol := "http"
 		if backend.Encrypted {
 			protocol = "https"
@@ -134,19 +135,18 @@ func (backend *Config) Init() (*chan Channels, error) {
 			elastic.SetBasicAuth(backend.Username, backend.Password),
 			elastic.SetSniff(true))
 		if err != nil {
-			log.Println("Error creating Elastic client")
+			log.Printf("backend %s: error creating client - %s\n", backendType, err)
 			return queries, err
 		}
 		backend.elastic = elasticclt
 		return queries, CreateIndexIfNotExists(backend.elastic, elasticindex)
 	case Prometheus:
 		//Initialize Prometheus client
-		log.Println("Initializing " + backendType + " backend")
-
+		log.Printf("backend %s: initializing\n", backendType)
 		registry := prometheus.NewRegistry()
 		err := registry.Register(backend)
 		if err != nil {
-			log.Println("Error creating Prometheus Registry")
+			log.Printf("backend %s: error creating registry - %s\n", backendType, err)
 			return queries, err
 		}
 
@@ -163,41 +163,41 @@ func (backend *Config) Init() (*chan Channels, error) {
 			}
 			err := http.ListenAndServe(address, nil)
 			if err != nil {
-				log.Println("Error creating Prometheus listener")
+				log.Printf("backend %s: error creating listener - %s\n", backendType, err)
 				return err
 			}
-			log.Printf("Prometheus lisenting at http://%s/metrics\n", address)
+			log.Printf("backend %s: lisenting to http://%s/metrics\n", backendType, address)
 			return nil
 		}()
 		return queries, nil
 	case Fluentd:
 		//Initialize Influx DB
-		log.Println("Initializing " + backendType + " backend")
+		log.Printf("backend %s: initializing\n", backendType)
 		fluentclt, err := fluent.New(fluent.Config{FluentPort: backend.Port, FluentHost: backend.Hostname, MarshalAsJSON: true})
 		if err != nil {
-			log.Println("Error connecting to Fluentd")
+			log.Printf("backend %s: error connecting - %s\n", backendType, err)
 			return queries, err
 		}
 		backend.fluent = fluentclt
 		return queries, nil
 	case ThinPrometheus:
 		//Initialize Thin Prometheus
-		log.Printf("Initializing %s backend\n", backendType)
+		log.Printf("backend %s: initializing\n", backendType)
 		client, err := NewThinPrometheusClient(backend.Hostname, backend.Port)
 		if err != nil {
-			log.Println("Error connecting to Thin prometheus")
+			log.Printf("backend %s: error connecting - %s\n", backendType, err)
 			return nil, err
 		}
 		go func() {
 			err := client.ListenAndServe()
 			if err != nil {
-				log.Printf("Error Starting Prometheus listener: %s", err)
+				log.Printf("backend %s: error starting listener - %s", backendType, err)
 			}
 		}()
 		return queries, nil
 	default:
-		log.Println("Backend " + backendType + " unknown.")
-		return queries, errors.New("Backend " + backendType + " unknown.")
+		log.Printf("backend %s: unknown backend\n", backendType)
+		return queries, errors.New("backend " + backendType + " unknown.")
 	}
 }
 
@@ -214,7 +214,7 @@ func (backend *Config) Clean() {
 			return
 		}
 		// Succeeded actions
-		log.Printf("backend %s: flushing index %s", elasticindex, backendType)
+		log.Printf("backend %s: flushing index %s", backendType, elasticindex)
 		_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
 		if err != nil {
 			log.Printf("backend %s: error flushing indices - %s\n", backendType, err)

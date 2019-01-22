@@ -229,7 +229,7 @@ func (service *Service) Manage() (string, error) {
 			pointbuffer[bufferindex] = &value
 			bufferindex++
 			if bufferindex == len(pointbuffer) {
-				t := make([]*backend.Point, len(pointbuffer))
+				t := make([]*backend.Point, bufferindex)
 				copy(t, pointbuffer)
 				ClearBuffer(pointbuffer)
 				bufferindex = 0
@@ -259,7 +259,7 @@ func (service *Service) Manage() (string, error) {
 			}
 			// sent remaining values
 			// copy to send point to appart buffer
-			t := make([]*backend.Point, len(pointbuffer))
+			t := make([]*backend.Point, bufferindex)
 			copy(t, pointbuffer)
 			// clear main buffer
 			ClearBuffer(pointbuffer)
