@@ -229,10 +229,12 @@ func (service *Service) Manage() (string, error) {
 			pointbuffer[bufferindex] = &value
 			bufferindex++
 			if bufferindex == len(pointbuffer) {
-				go conf.Backend.SendMetrics(pointbuffer)
-				log.Printf("sent %d logs to backend\n", bufferindex)
+				t := make([]*backend.Point, len(pointbuffer))
+				copy(t,pointbuffer)
 				ClearBuffer(pointbuffer)
 				bufferindex = 0
+				go conf.Backend.SendMetrics(t)
+				log.Printf("sent %d logs to backend\n", len(t))
 			}
 		case request := <-*queries:
 			go func() {
@@ -253,15 +255,19 @@ func (service *Service) Manage() (string, error) {
 			}
 		case <-memtimer.C:
 			if !conf.Backend.Scheduled() {
-				cleanup <- true
 				continue
 			}
 			// sent remaining values
-			go conf.Backend.SendMetrics(pointbuffer)
-			log.Printf("sent last %d logs to backend\n", bufferindex)
-			// empty point buffer
-			bufferindex = 0
+			// copy to send point to appart buffer
+			t := make([]*backend.Point, len(pointbuffer))
+			copy(t,pointbuffer)
+			// clear main buffer
 			ClearBuffer(pointbuffer)
+			bufferindex = 0
+			// send sent buffer
+			go conf.Backend.SendMetrics(t)
+			log.Printf("sent last %d logs to backend\n", len(t))
+			// empty point buffer
 			cleanup <- true
 		case <-cleanup:
 			go func() {
