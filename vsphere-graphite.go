@@ -254,7 +254,7 @@ func (service *Service) Manage() (string, error) {
 		case <-memtimer.C:
 			if !conf.Backend.Scheduled() {
 				cleanup <- true
-				return
+				continue
 			}
 			// sent remaining values
 			go conf.Backend.SendMetrics(pointbuffer)
