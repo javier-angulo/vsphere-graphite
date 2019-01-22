@@ -220,6 +220,7 @@ func (service *Service) Manage() (string, error) {
 	for {
 		select {
 		case value := <-metrics:
+			log.Println("recieving point")
 			// reset timer as a point has been recieved.
 			// do that in the main thread to avoid collisions
 			if !memtimer.Stop() {
