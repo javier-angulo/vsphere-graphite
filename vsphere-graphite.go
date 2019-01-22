@@ -253,6 +253,7 @@ func (service *Service) Manage() (string, error) {
 			}
 		case <-memtimer.C:
 			if !conf.Backend.Scheduled() {
+				cleanup <- true
 				return
 			}
 			// sent remaining values
