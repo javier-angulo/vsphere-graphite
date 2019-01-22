@@ -201,6 +201,29 @@ func (backend *Config) Init() (*chan Channels, error) {
 	}
 }
 
+// Clean : take actions on backend when cycle finished
+func (backend *Config) Clean() {
+	switch backendType := strings.ToLower(backend.Type); backendType {
+	case Elastic:
+		// flush index
+		// get or create index
+		elasticindex := backend.Database + "-" + time.Now().Format("2006.01.02")
+		err := CreateIndexIfNotExists(backend.elastic, elasticindex)
+		if err != nil {
+			log.Printf("backend %s: could not create index - %s\n", backendType, err)
+			return
+		}
+		// Succeeded actions
+		log.Printf("backend %s: flushing index %s", elasticindex, backendType)
+		_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
+		if err != nil {
+			log.Printf("backend %s: error flushing indices - %s\n", backendType, err)
+		}
+	default:
+		return
+	}
+}
+
 // Disconnect : disconnect from backend
 func (backend *Config) Disconnect() {
 	switch backendType := strings.ToLower(backend.Type); backendType {
@@ -235,7 +258,7 @@ func (backend *Config) Disconnect() {
 }
 
 // SendMetrics : send metrics to backend
-func (backend *Config) SendMetrics(metrics []*Point) {
+func (backend *Config) SendMetrics(metrics []*Point, cleanup bool) {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		var graphiteMetrics []graphite.Metric
@@ -268,7 +291,7 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 		})
 		if err != nil {
 			log.Printf("backend %s: error creating influx batchpoint - %s\n", backendType, err)
-			return
+			break
 		}
 		for _, point := range metrics {
 			if point == nil {
@@ -324,7 +347,7 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 		err := CreateIndexIfNotExists(backend.elastic, elasticindex)
 		if err != nil {
 			log.Printf("backend %s: could not create index - %s\n", backendType, err)
-			return
+			break
 		}
 		bulkRequest := backend.elastic.Bulk()
 		for _, point := range metrics {
@@ -334,17 +357,19 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 		bulkResponse, err := bulkRequest.Do(context.Background())
 		if err != nil {
 			log.Printf("backend %s: bulk insert failed - %s\n", backendType, err)
-			return
+			break
 		}
 		// Succeeded actions
 		succeeded := bulkResponse.Succeeded()
 		log.Printf("backend %s: %d logs successfully indexed\n", backendType, len(succeeded))
+		/** only flush index at the end of cycle - see Clean function
 		_, err = backend.elastic.Flush().Index(elasticindex).Do(context.Background())
 		if err != nil {
 			log.Printf("backend %s: errr flushing data - %s\n", backendType, err)
 			return
 		}
 		log.Printf("backend %s: elastic indexing flushed", backendType)
+		**/
 	case Prometheus:
 		// Prometheus doesn't need to send metrics
 	case Fluentd:
@@ -361,6 +386,9 @@ func (backend *Config) SendMetrics(metrics []*Point) {
 		// Thin Prometheus doesn't need to send metrics
 	default:
 		log.Printf("backend %s: unknown", backendType)
+	}
+	if cleanup {
+		backend.Clean()
 	}
 }
 

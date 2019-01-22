@@ -230,10 +230,10 @@ func (service *Service) Manage() (string, error) {
 			bufferindex++
 			if bufferindex == len(pointbuffer) {
 				t := make([]*backend.Point, len(pointbuffer))
-				copy(t,pointbuffer)
+				copy(t, pointbuffer)
 				ClearBuffer(pointbuffer)
 				bufferindex = 0
-				go conf.Backend.SendMetrics(t)
+				go conf.Backend.SendMetrics(t, false)
 				log.Printf("sent %d logs to backend\n", len(t))
 			}
 		case request := <-*queries:
@@ -260,12 +260,12 @@ func (service *Service) Manage() (string, error) {
 			// sent remaining values
 			// copy to send point to appart buffer
 			t := make([]*backend.Point, len(pointbuffer))
-			copy(t,pointbuffer)
+			copy(t, pointbuffer)
 			// clear main buffer
 			ClearBuffer(pointbuffer)
 			bufferindex = 0
 			// send sent buffer
-			go conf.Backend.SendMetrics(t)
+			go conf.Backend.SendMetrics(t, true)
 			log.Printf("sent last %d logs to backend\n", len(t))
 			// empty point buffer
 			cleanup <- true
@@ -293,7 +293,7 @@ func (service *Service) Manage() (string, error) {
 		case killSignal := <-interrupt:
 			log.Println("Got signal:", killSignal)
 			if bufferindex > 0 {
-				conf.Backend.SendMetrics(pointbuffer[:bufferindex])
+				conf.Backend.SendMetrics(pointbuffer[:bufferindex], true)
 				log.Printf("Sent %d logs to backend", bufferindex)
 			}
 			if killSignal == os.Interrupt {
