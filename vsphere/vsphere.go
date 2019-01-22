@@ -58,6 +58,10 @@ func (vcenter *VCenter) AddMetric(metric *MetricDef, mtype string) {
 
 // Connect : Conncet to vcenter
 func (vcenter *VCenter) Connect() (*govmomi.Client, error) {
+
+	// prepare vcname
+	vcName := strings.Split(vcenter.Hostname, ".")[0]
+
 	// Prepare vCenter Connections
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -97,6 +101,10 @@ func InitMetrics(metrics []*Metric, perfmanager *mo.PerformanceManager) {
 
 // Init : initialize vcenter
 func (vcenter *VCenter) Init(metrics []*Metric) {
+
+	// prepare vcname
+	vcName := strings.Split(vcenter.Hostname, ".")[0]
+
 	log.Printf("vcenter %s: initializing\n", vcName)
 	// connect to vcenter
 	ctx, cancel := context.WithCancel(context.Background())
@@ -147,6 +155,9 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		}
 	}()
 
+	// prepare vcname
+	vcName := strings.Replace(vcenter.Hostname, domain, "", -1)
+
 	log.Printf("vcenter %s: setting up query inventory", vcName)
 
 	// Create the contect
@@ -168,7 +179,6 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 			log.Printf("vcenter %s: error logging out - %s\n", vcName, err)
 		}
 	}()
-
 
 	// Create the view manager
 	var viewManager mo.ViewManager
@@ -284,9 +294,6 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		log.Printf("vcenter %s: could not retrieve object names - %s\n", vcName, err)
 		return
 	}
-
-	// prepare vcname
-	vcName := strings.Replace(vcenter.Hostname, domain, "", -1)
 
 	// fill in the sections from queried data
 	refs := make([]string, len(propres.Returnval))
