@@ -78,7 +78,7 @@ func (backend *Config) Init() (*chan Channels, error) {
 	switch backendType := strings.ToLower(backend.Type); backendType {
 	case Graphite:
 		// Initialize Graphite
-		log.Printf("backend %s: intializing\n",backendType)
+		log.Printf("backend %s: intializing\n", backendType)
 		carbon, err := graphite.NewGraphite(backend.Hostname, backend.Port)
 		if err != nil {
 			log.Printf("backend %s: error connecting to graphite - %s\n", backendType, err)
@@ -123,7 +123,7 @@ func (backend *Config) Init() (*chan Channels, error) {
 		} else {
 			log.Printf("backend %s: Database not specified in vsphere-graphite.json (used as index)\n", backendType)
 		}
-		log.Printf("backend %s: %s:%d/%s\n", backendType, backend.Port, elasticindex)
+		log.Printf("backend %s: %s:%d/%s\n", backendType, backend.Hostname, backend.Port, elasticindex)
 		protocol := "http"
 		if backend.Encrypted {
 			protocol = "https"

@@ -22,7 +22,7 @@ func CreateIndexIfNotExists(e *elastic.Client, index string) error {
 	if exists {
 		return nil
 	}
-	
+
 	// Create a new index.
 	v := reflect.TypeOf(Point{})
 
@@ -52,13 +52,13 @@ func CreateIndexIfNotExists(e *elastic.Client, index string) error {
 	}
 	mappingJSON, err := json.Marshal(mapping)
 	if err != nil {
-		log.Printf("elastic: error on json marshal - %s\n",err)
+		log.Printf("elastic: error on json marshal - %s\n", err)
 		return err
 	}
 
 	_, err = e.CreateIndex(index).BodyString(string(mappingJSON)).Do(context.Background())
 	if err != nil {
-		log.Printf("elastic: error creating elastic index %s - %s\n",index,err)
+		log.Printf("elastic: error creating elastic index %s - %s\n", index, err)
 		return err
 	}
 	log.Printf("elastic: index %s created\n",index)
