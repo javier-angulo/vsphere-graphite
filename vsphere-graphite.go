@@ -226,16 +226,14 @@ func (service *Service) Manage() (string, error) {
 				<-memtimer.C
 			}
 			memtimer.Reset(time.Second * time.Duration(5))
-			go func() {
-				pointbuffer[bufferindex] = &value
-				bufferindex++
-				if bufferindex == len(pointbuffer) {
-					conf.Backend.SendMetrics(pointbuffer)
-					log.Printf("sent %d logs to backend\n", bufferindex)
-					ClearBuffer(pointbuffer)
-					bufferindex = 0
-				}
-			}()
+			pointbuffer[bufferindex] = &value
+			bufferindex++
+			if bufferindex == len(pointbuffer) {
+				go conf.Backend.SendMetrics(pointbuffer)
+				log.Printf("sent %d logs to backend\n", bufferindex)
+				ClearBuffer(pointbuffer)
+				bufferindex = 0
+			}
 		case request := <-*queries:
 			go func() {
 				log.Println("adhoc metric retrieval")
