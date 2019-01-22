@@ -603,6 +603,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 				value = utils.Sum(serie.Value...)
 			}
 			point.Value = value
+			log.Println("sending point...")
 			*channel <- point
 		}
 	}
