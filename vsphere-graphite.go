@@ -252,17 +252,16 @@ func (service *Service) Manage() (string, error) {
 				go queryVCenter(*vcenter, conf, &metrics, nil)
 			}
 		case <-memtimer.C:
-			if conf.Backend.Scheduled() {
-				go func() {
-					// sent remaining values
-					conf.Backend.SendMetrics(pointbuffer)
-					log.Printf("sent last %d logs to backend\n", bufferindex)
-					// empty point buffer
-					bufferindex = 0
-					ClearBuffer(pointbuffer)
-					cleanup <- true
-				}()
+			if !conf.Backend.Scheduled() {
+				return
 			}
+			// sent remaining values
+			go conf.Backend.SendMetrics(pointbuffer)
+			log.Printf("sent last %d logs to backend\n", bufferindex)
+			// empty point buffer
+			bufferindex = 0
+			ClearBuffer(pointbuffer)
+			cleanup <- true
 		case <-cleanup:
 			go func() {
 				runtime.GC()
