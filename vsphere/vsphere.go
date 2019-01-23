@@ -514,7 +514,6 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 	log.Printf("vcenter %s thread %d: retuned %d metrics\n", vcName, id, returncount)
 
 	// create an array to store vm to folder path resolution
-	valuescount := 0
 	cache.Purge(vcName, "folders")
 
 	// Parse results
