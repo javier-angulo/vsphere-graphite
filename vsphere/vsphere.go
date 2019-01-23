@@ -68,22 +68,24 @@ func (vcenter *VCenter) AddMetric(metric *MetricDef, mtype string) {
 
 // Connect : Conncet to vcenter
 func (vcenter *VCenter) Connect() (*govmomi.Client, error) {
+
+	// prepare vcname
+	vcName := strings.Split(vcenter.Hostname, ".")[0]
+
 	// Prepare vCenter Connections
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	log.Println("connecting to vcenter: " + vcenter.Hostname)
+	log.Printf("vcenter %s: connecting\n", vcName)
 	username := url.QueryEscape(vcenter.Username)
 	password := url.QueryEscape(vcenter.Password)
 	u, err := url.Parse("https://" + username + ":" + password + "@" + vcenter.Hostname + "/sdk")
 	if err != nil {
-		log.Println("Could not parse vcenter url: ", vcenter.Hostname)
-		log.Println("Error: ", err)
+		log.Printf("vcenter %s: could not parse vcenter url - %s\n", vcName, err)
 		return nil, err
 	}
 	client, err := govmomi.NewClient(ctx, u, true)
 	if err != nil {
-		log.Println("Could not connect to vcenter: ", vcenter.Hostname)
-		log.Println("Error: ", err)
+		log.Printf("vcenter %s: could not connect to vcenter - %s\n", vcName, err)
 		return nil, err
 	}
 	return client, nil
@@ -109,25 +111,24 @@ func InitMetrics(metrics []*Metric, perfmanager *mo.PerformanceManager) {
 
 // Init : initialize vcenter
 func (vcenter *VCenter) Init(metrics []*Metric) {
-	log.Printf("Initializing vCenter %s\n", vcenter.Hostname)
+	vcName := strings.Split(vcenter.Hostname, ".")[0]
 
+	log.Printf("vcenter %s: initializing\n", vcName)
 	// connect to vcenter
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	client, err := vcenter.Connect()
 	if err != nil {
-		log.Println("Could not connect to vcenter: ", vcenter.Hostname)
-		log.Println("Error: ", err)
+		log.Printf("vcenter %s: could not connect to vcenter - %s\n", vcName, err)
 		return
 	}
 
 	defer func() {
-		log.Println("disconnecting from vcenter:", vcenter.Hostname)
+		log.Printf("vcenter %s: disconnecting\n", vcName)
 		err := client.Logout(ctx) // nolint: vetshadow
 		if err != nil {
-			log.Println("Error loging out of vcenter: ", vcenter.Hostname)
-			log.Println("Error: ", err)
+			log.Printf("vcenter %s: error logging out - %s\n", vcName, err)
 		}
 	}()
 
@@ -135,8 +136,7 @@ func (vcenter *VCenter) Init(metrics []*Metric) {
 	var perfmanager mo.PerformanceManager
 	err = client.RetrieveOne(ctx, *client.ServiceContent.PerfManager, nil, &perfmanager)
 	if err != nil {
-		log.Println("Could not get performance manager")
-		log.Println("Error: ", err)
+		log.Printf("vcenter %s: could not get performance manager - %s\n", vcName, err)
 		return
 	}
 
@@ -145,7 +145,7 @@ func (vcenter *VCenter) Init(metrics []*Metric) {
 	for _, metric := range metrics {
 		for _, metricdef := range metric.Definition {
 			if metricdef.Key == 0 {
-				log.Println("Metric key was not found for " + metricdef.Metric)
+				log.Printf("vcenter %s: metric key was not found %s", vcName, metricdef.Metric)
 				continue
 			}
 			for _, mtype := range metric.ObjectType {
@@ -167,7 +167,10 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		}
 	}()
 
-	log.Println("Setting up query inventory of vcenter: ", vcenter.Hostname)
+	// prepare vcname
+	vcName := strings.Replace(vcenter.Hostname, domain, "", -1)
+
+	log.Printf("vcenter %s: setting up query inventory", vcName)
 
 	// Create the contect
 	ctx, cancel := context.WithCancel(context.Background())
@@ -176,18 +179,16 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	// Get the client
 	client, err := vcenter.Connect()
 	if err != nil {
-		log.Println("Could not connect to vcenter: ", vcenter.Hostname)
-		log.Println("Error: ", err)
+		log.Printf("vcenter %s: could not connect to vcenter - %s\n", vcName, err)
 		return
 	}
 
 	// wait to be properly connected to defer logout
 	defer func() {
-		log.Println("disconnecting from vcenter:", vcenter.Hostname)
+		log.Printf("vcenter %s: disconnecting\n", vcName)
 		err := client.Logout(ctx) // nolint: vetshadow
 		if err != nil {
-			log.Println("Error loging out of vcenter: ", vcenter.Hostname)
-			log.Println("Error: ", err)
+			log.Printf("vcenter %s: error logging out - %s\n", vcName, err)
 		}
 	}()
 
@@ -195,8 +196,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	var viewManager mo.ViewManager
 	err = client.RetrieveOne(ctx, *client.ServiceContent.ViewManager, nil, &viewManager)
 	if err != nil {
-		log.Println("Could not get view manager from vcenter: " + vcenter.Hostname)
-		log.Println("Error: ", err)
+		log.Printf("vcenter %s: could not get view manager - %s\n", vcName, err)
 		return
 	}
 
@@ -205,32 +205,15 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	finder := find.NewFinder(client.Client, true)
 	dcs, err := finder.DatacenterList(ctx, "*")
 	if err != nil {
-		log.Println("Could not find a datacenter: ", vcenter.Hostname)
-		log.Println("Error: ", err)
+		log.Printf("vcenter %s: could not find a datacenter - %s\n", vcName, err)
 		return
 	}
 	for _, child := range dcs {
 		datacenters = append(datacenters, child.Reference())
 	}
 
-	// Get interesting objects from properties
-	// Check if contains all
-	objectTypes := []string{}
-	// replace all by all properties
-	all := false
-	for _, property := range properties {
-		if strings.ToLower(property) == "all" {
-			all = true
-			break
-		}
-	}
-	if all {
-		properties = []string{}
-		for propkey := range Properties {
-			properties = append(properties, propkey)
-		}
-	}
 	// get the object types from properties
+	objectTypes := []string{}
 	for _, property := range properties {
 		if propval, ok := Properties[property]; ok {
 			for objkey := range propval {
@@ -260,16 +243,14 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		req := types.CreateContainerView{This: viewManager.Reference(), Container: datacenter, Type: objectTypes, Recursive: true}
 		res, err := methods.CreateContainerView(ctx, client.RoundTripper, &req) // nolint: vetshadow
 		if err != nil {
-			log.Println("Could not create container view from vcenter: " + vcenter.Hostname)
-			log.Println("Error: ", err)
+			log.Printf("vcenter %s: could not create container view - %s\n", vcName, err)
 			continue
 		}
 		// Retrieve the created ContentView
 		var containerView mo.ContainerView
 		err = client.RetrieveOne(ctx, res.Returnval, nil, &containerView)
 		if err != nil {
-			log.Println("Could not get container view from vcenter: " + vcenter.Hostname)
-			log.Println("Error: ", err)
+			log.Printf("vcenter %s: could not get container - %s\n", vcName, err)
 			continue
 		}
 		// Add found object to object list
@@ -277,7 +258,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	}
 
 	if len(mors) == 0 {
-		log.Printf("No object of intereset in types %s\n", strings.Join(objectTypes, ", "))
+		log.Printf("vcenter %s: no object of intereset in types %s\n", vcName, strings.Join(objectTypes, ", "))
 		return
 	}
 
@@ -322,13 +303,9 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	propreq := types.RetrieveProperties{SpecSet: []types.PropertyFilterSpec{{ObjectSet: objectSet, PropSet: propSet}}}
 	propres, err := client.PropertyCollector().RetrieveProperties(ctx, propreq)
 	if err != nil {
-		log.Println("Could not retrieve object names from vcenter: " + vcenter.Hostname)
-		log.Println("Error: ", err)
+		log.Printf("vcenter %s: could not retrieve object names - %s\n", vcName, err)
 		return
 	}
-
-	// prepare vcname
-	vcName := strings.Replace(vcenter.Hostname, domain, "", -1)
 
 	// fill in the sections from queried data
 	refs := make([]string, len(propres.Returnval))
@@ -338,7 +315,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 			if section, ok := PropertiesSections[Property.Name]; ok {
 				cache.Add(vcName, section, objectContent.Obj.Value, Property.Val)
 			} else {
-				log.Printf("Unhandled property '%s' for %s whose type is '%T'\n", Property.Name, objectContent.Obj.Value, Property.Val)
+				log.Printf("vcenter %s: unhandled property '%s' for %s whose type is '%T'\n", vcName, Property.Name, objectContent.Obj.Value, Property.Val)
 			}
 		}
 	}
@@ -370,7 +347,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 				poolname := cache.GetString(vcName, "names", poolmor)
 				if len(*poolname) == 0 {
 					// could not find name
-					log.Println("Could not find name for resourcepool " + poolmor)
+					log.Printf("vcenter %s: could not find name for resourcepool %s\n", vcName, poolmor)
 					break
 				}
 				if *poolname == "Resources" {
@@ -382,7 +359,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 				newmor := cache.GetString(vcName, "parents", poolmor)
 				if len(*newmor) == 0 {
 					// no parent pool found
-					log.Println("Could not find parent for resourcepool " + *poolname)
+					log.Printf("vcenter %s: could not find parent for resourcepool %s\n", vcName, *poolname)
 					break
 				}
 				poolmor = *newmor
@@ -460,18 +437,19 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	// Check that there is something to query
 	querycount := len(queries)
 	if querycount == 0 {
-		log.Println("No queries created!")
+		log.Printf("vcenter %s: no queries created!", vcName)
 		return
 	}
 	metriccount := 0
 	for _, query := range queries {
 		metriccount = metriccount + len(query.MetricId)
 	}
+
 	expCounters := math.Ceil(float64(metriccount) * INSTANCERATIO)
-	log.Println("Queries generated:")
-	log.Printf("%d queries to vcenter %s\n", querycount, vcName)
-	log.Printf("%d total metricIds from vcenter %s\n", metriccount, vcName)
-	log.Printf("%g total counter from vcenter %s (accounting for %g instances ratio)", expCounters, vcName, INSTANCERATIO)
+  log.Printf("vcenter %s: queries generated", vcName)
+  log.Printf("vcenter %s: %d queries\n", vcName, querycount)
+  log.Printf("vcenter %s: %d total metricIds\n", vcName, metriccount)
+  log.Printf("vcenter %s: %g total counter (accounting for %g instances ratio)\n", vcName, expCounters, INSTANCERATIO)
 
 	// separate in batches of queries if to avoid 500000 returend perf limit
 	batches := math.Ceil(expCounters / VCENTERRESULTLIMIT)
@@ -507,190 +485,13 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	//wait fot the waitgroup
 	querieswaitgroup.Wait()
 
-	/* ****
-	   /* Replace by go func version
-	   /* ****
-
-	   	// Query the performances
-	   	perfreq := types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries}
-	   	perfres, err := methods.QueryPerf(ctx, client.RoundTripper, &perfreq)
-	   	if err != nil {
-	   		log.Println("Could not request perfs from vcenter: " + vcName)
-	   		log.Println("Error: ", err)
-	   		return
-	   	}
-
-	   	// Get the result
-	   	returncount := len(perfres.Returnval)
-	   	if returncount == 0 {
-	   		log.Println("No result returned by queries.")
-	   	}
-	   	// create an array to store vm to folder path resolution
-	   	valuescount := 0
-
-	   	for _, base := range perfres.Returnval {
-	   		pem := base.(*types.PerfEntityMetric)
-	   		// name checks the name of the object
-	   		name := cache.FindString(vcName, "names", pem.Entity.Value)
-	   		name = strings.ToLower(strings.Replace(name, domain, "", -1))
-	   		if replacepoint {
-	   			name = strings.Replace(name, ".", "_", -1)
-	   		}
-	   		//find datastore
-	   		datastore := cache.FindNames(vcName, "datastores", pem.Entity.Value)
-	   		//find host and cluster
-	   		vmhost, cluster := cache.FindHostAndCluster(vcName, pem.Entity.Value)
-	   		vmhost = strings.Replace(vmhost, domain, "", -1)
-	   		//find network
-	   		network := cache.FindNames(vcName, "networks", pem.Entity.Value)
-	   		//find resource pool path
-	   		resourcepool := cache.FindName(vcName, "poolpaths", pem.Entity.Value)
-	   		//find folder path
-	   		paths := []string{}
-	   		if strings.HasPrefix(pem.Entity.Value, "vm-") {
-	   			current := cache.GetString(vcName, "parents", pem.Entity.Value)
-	   			for {
-	   				if current == nil {
-	   					break
-	   				}
-	   				if !(strings.HasPrefix(*current, "folder-") || strings.HasPrefix(*current, "group-")) {
-	   					break
-	   				}
-	   				foldername := cache.GetString(vcName, "names", *current)
-	   				if foldername == nil {
-	   					log.Println("Folder name not found for " + *current)
-	   					break
-	   				}
-	   				if *foldername == "vm" {
-	   					break
-	   				}
-	   				paths = append(paths, *foldername)
-	   				current = cache.GetString(vcName, "parents", *current)
-	   			}
-	   		}
-	   		utils.Reverse(paths)
-	   		folderpath := strings.Join(paths, "/")
-	   		//find tags
-	   		vitags := cache.FindTags(vcName, pem.Entity.Value)
-	   		if len(pem.Value) == 0 {
-	   			log.Println("No values returned in query!")
-	   		}
-	   		objType := strings.ToLower(pem.Entity.Type)
-	   		timeStamp := endTime.Unix()
-	   		// replace point in vcname
-	   		rvcname := vcName
-	   		if replacepoint {
-	   			rvcname = strings.Replace(rvcname, ".", "_", -1)
-	   		}
-	   		// prepare basic informaitons of point
-	   		point := backend.Point{
-	   			VCenter:      rvcname,
-	   			ObjectType:   objType,
-	   			ObjectName:   name,
-	   			Datastore:    datastore,
-	   			ESXi:         vmhost,
-	   			Cluster:      cluster,
-	   			Network:      network,
-	   			ResourcePool: resourcepool,
-	   			Folder:       folderpath,
-	   			ViTags:       vitags,
-	   			Timestamp:    timeStamp,
-	   		}
-	   		//send disk infos
-	   		diskInfos := cache.GetDiskInfos(vcName, "disks", pem.Entity.Value)
-	   		if diskInfos != nil {
-	   			for _, diskInfo := range *diskInfos {
-	   				// skip if no capacity
-	   				if diskInfo.Capacity == 0 {
-	   					continue
-	   				}
-	   				// format disk path
-	   				diskPath := strings.Replace(diskInfo.DiskPath, "\\", "/", -1)
-	   				// send free space
-	   				point.Group = "guestdisk"
-	   				point.Counter = "freespace"
-	   				point.Instance = diskPath
-	   				point.Rollup = "latest"
-	   				point.Value = diskInfo.FreeSpace
-	   				*channel <- point
-	   				// send capacity
-	   				point.Group = "guestdisk"
-	   				point.Counter = "capacity"
-	   				point.Instance = diskPath
-	   				point.Rollup = "latest"
-	   				point.Value = diskInfo.Capacity
-	   				*channel <- point
-	   				// send usage %
-	   				point.Group = "guestdisk"
-	   				point.Counter = "usage"
-	   				point.Instance = diskPath
-	   				point.Rollup = "latest"
-	   				point.Value = int64(10000 * (1 - (float64(diskInfo.FreeSpace) / float64(diskInfo.Capacity))))
-	   				*channel <- point
-	   			}
-	   		}
-	   		// send numcpu infos
-	   		numcpu := cache.GetInt32(vcName, "cpus", pem.Entity.Value)
-	   		if numcpu != nil {
-	   			point.Group = "cpu"
-	   			point.Counter = "count"
-	   			point.Instance = ""
-	   			point.Rollup = "latest"
-	   			point.Value = int64(*numcpu)
-	   			*channel <- point
-	   		}
-	   		// send numcpu infos
-	   		memorysizemb := cache.GetInt32(vcName, "memories", pem.Entity.Value)
-	   		if memorysizemb != nil {
-	   			point.Group = "mem"
-	   			point.Counter = "sizemb"
-	   			point.Instance = ""
-	   			point.Rollup = "latest"
-	   			point.Value = int64(*memorysizemb)
-	   			*channel <- point
-	   		}
-	   		valuescount = valuescount + len(pem.Value)
-	   		for _, baseserie := range pem.Value {
-	   			serie := baseserie.(*types.PerfMetricIntSeries)
-	   			metricName := cache.FindMetricName(vcName, serie.Id.CounterId)
-	   			metricName = strings.ToLower(metricName)
-	   			metricparts := strings.Split(metricName, ".")
-	   			point.Group, point.Counter, point.Rollup = metricparts[0], metricparts[1], metricparts[2]
-	   			point.Instance = serie.Id.Instance
-	   			if len(point.Instance) > 0 && point.Group == "datastore" {
-	   				newDatastore := cache.GetString(vcName, "datastoreids", point.Instance)
-	   				if newDatastore != nil {
-	   					point.Datastore = []string{*newDatastore}
-	   				} else {
-	   					point.Datastore = []string{}
-	   				}
-	   			}
-	   			var value int64 = -1
-	   			switch {
-	   			case strings.HasSuffix(metricName, ".average"):
-	   				value = utils.Average(serie.Value...)
-	   			case strings.HasSuffix(metricName, ".maximum"):
-	   				value = utils.Max(serie.Value...)
-	   			case strings.HasSuffix(metricName, ".minimum"):
-	   				value = utils.Min(serie.Value...)
-	   			case strings.HasSuffix(metricName, ".latest"):
-	   				value = serie.Value[len(serie.Value)-1]
-	   			case strings.HasSuffix(metricName, ".summation"):
-	   				value = utils.Sum(serie.Value...)
-	   			}
-	   			point.Value = value
-	   			*channel <- point
-	   		}
-	   	}
-	   	log.Println("Got " + strconv.Itoa(returncount) + " results from " + vcenter.Hostname + " with " + strconv.Itoa(valuescount) + " values")
-	*/
 }
 
 // ExecuteQueries : Query a vcenter for performances
 func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
 
 	// Starting informations
-	log.Printf("Thread %d requesting %d metrics\n", id, len(queryperf.QuerySpec))
+  log.Printf("vcenter %s thread %d: requesting %d metrics\n", vcName, id, len(queryperf.QuerySpec))
 
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
@@ -700,18 +501,20 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 
 	// Check the result
 	if err != nil {
-		log.Printf("Thread %d Could not request perfs from vcenter: %s\n", id, vcName)
-		log.Println("Error: ", err)
+		log.Printf("vcenter %s thread %d: could not request perfs - %s\n", vcName, id, err)
 		return
 	}
 
 	// Get the result
 	returncount := len(perfres.Returnval)
 	if returncount == 0 {
-		log.Printf("Thread %d has no result returned by queries\n", id)
+		log.Printf("vcenter %s thread %d: no result returned by queries\n", vcName, id)
 		return
 	}
-	log.Printf("Thread %d returned %d metrics\n", id, returncount)
+	log.Printf("vcenter %s thread %d: retuned %d metrics\n", vcName, id, returncount)
+
+	// create an array to store vm to folder path resolution
+	cache.Purge(vcName, "folders")
 
 	// Parse results
 	// no need to wait here because this is only processing (no connection to vcenter needed)
@@ -750,7 +553,7 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 			}
 			foldername := cache.GetString(vcName, "names", *current)
 			if foldername == nil {
-				log.Println("Folder name not found for " + *current)
+        log.Printf("vcenter %s: folder name not found for %s", vcName, *current)
 				break
 			}
 			if *foldername == "vm" {
@@ -765,7 +568,7 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 	//find tags
 	vitags := cache.FindTags(vcName, pem.Entity.Value)
 	if len(pem.Value) == 0 {
-		log.Println("No values returned in query!")
+    log.Printf("vcenter %s: bo values returned in query!", vcName)
 	}
 	objType := strings.ToLower(pem.Entity.Type)
 	// replace point in vcname

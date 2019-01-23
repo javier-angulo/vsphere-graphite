@@ -44,8 +44,7 @@ endif
 	go get golang.org/x/net/context
 	go get github.com/vmware/govmomi
 	go get github.com/marpaia/graphite-golang
-	## disabled untill influxdb client comes back
-	#go get github.com/influxdata/influxdb/client/v2
+	go get github.com/influxdata/influxdb1-client/v2
 	go get github.com/pquerna/ffjson/fflib/v1
 	go get code.cloudfoundry.org/bytefmt
 	go get github.com/pquerna/ffjson

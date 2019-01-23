@@ -282,7 +282,6 @@ func (c *Cache) FindHostAndCluster(vcenter, moref string) (string, string) {
 		// find host of the vm
 		host := c.GetString(vcenter, "hosts", moref)
 		if host == nil {
-			log.Printf("VM %s has no host.\n", moref)
 			return "", ""
 		}
 		moref = *host
@@ -296,7 +295,6 @@ func (c *Cache) FindHostAndCluster(vcenter, moref string) (string, string) {
 	// find cluster
 	cluster := cache.GetString(vcenter, "parents", moref)
 	if cluster == nil {
-		log.Printf("Host %s has no parents.\n", moref)
 		return hostname, ""
 	}
 	if strings.HasPrefix(*cluster, "domain-s") {
@@ -304,7 +302,6 @@ func (c *Cache) FindHostAndCluster(vcenter, moref string) (string, string) {
 		return hostname, ""
 	}
 	if !strings.HasPrefix(*cluster, "domain-c") {
-		log.Printf("Host %s has no suitable parent %s.", moref, *cluster)
 		return hostname, ""
 	}
 	clusternameptr := cache.GetString(vcenter, "names", *cluster)

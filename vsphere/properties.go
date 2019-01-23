@@ -1,5 +1,8 @@
 package vsphere
 
+// MetricProperties are properties that are sent as metrics
+var MetricProperties = []string{"numcpu", "memorysizemb", "disks"}
+
 // Properties describes know relation to properties to related objects and properties
 var Properties = map[string]map[string][]string{
 	"datastore": {
@@ -45,14 +48,14 @@ var Properties = map[string]map[string][]string{
 
 // PropertiesSections represent the mapping of attributes to sections in the cache
 var PropertiesSections = map[string]string{
-	"summary.url":                 "urls",
-	"name":                        "names",
-	"datastore":                   "datastores",
-	"network":                     "networks",
-	"runtime.host":                "hosts",
-	"parent":                      "parents",
-	"vm":                          "vms",
-	"tag":                         "tags",
+	"summary.url":  "urls",
+	"name":         "names",
+	"datastore":    "datastores",
+	"network":      "networks",
+	"runtime.host": "hosts",
+	"parent":       "parents",
+	"vm":           "vms",
+	"tag":          "tags",
 	"summary.config.numCpu":       "cpus",
 	"summary.config.memorySizeMB": "memories",
 	"guest.disk":                  "disks",
