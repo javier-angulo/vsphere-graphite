@@ -167,7 +167,7 @@ func (service *Service) Manage() (string, error) {
 		for _, confproperty := range conf.Properties {
 			found := false
 			for _, metricproperty := range vsphere.MetricProperties {
-				if strings.ToLower(confproperty) == strings.ToLower(metricproperty) {
+				if strings.EqualFold(confproperty, metricproperty) {
 					found = true
 					break
 				}
