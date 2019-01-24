@@ -149,7 +149,6 @@ func (backend *Config) Init() (*chan Channels, error) {
 			log.Printf("backend %s: error creating registry - %s\n", backendType, err)
 			return queries, err
 		}
-		log.Printf("backend %s: starting server\n", backendType)
 		http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
 		go func() error {
 			address := ""
@@ -163,12 +162,9 @@ func (backend *Config) Init() (*chan Channels, error) {
 			}
 			log.Printf("backend %s: starting listener on %s\n", backendType, address)
 			err := http.ListenAndServe(address, nil)
-			if err != nil {
-				log.Printf("backend %s: error creating listener - %s\n", backendType, err)
-				return err
-			}
-			log.Printf("backend %s: lisenting to http://%s/metrics\n", backendType, address)
-			return nil
+			// list and serve allways retruns non nil error
+			log.Printf("backend %s: listener result - %s\n", backendType, err)
+			return err
 		}()
 		return queries, nil
 	case Fluentd:
