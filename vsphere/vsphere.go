@@ -427,15 +427,21 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	for _, mor := range mors {
 		// check connection state
 		connectionState := cache.GetString(vcName, "connections", mor.Value)
-		if *connectionState != "connected" {
-			skipped++
-			continue
+		if connectionState != nil {
+			if *connectionState != "connected" {
+				skipped++
+				continue
+			}
+			log.Printf("vcenter %s: vm %s is %s", vcName, mor.Value, *connectionState)
 		}
 		// check power state
 		powerState := cache.GetString(vcName, "powers", mor.Value)
-		if *powerState != "poweredOn" {
-			skipped++
-			continue
+		if powerState != nil {
+			if *powerState != "poweredOn" {
+				skipped++
+				continue
+			}
+			log.Printf("vcenter %s: vm %s is %s", vcName, mor.Value, *powerState)
 		}
 		metricIds := []types.PerfMetricId{}
 		for _, metricgroup := range vcenter.MetricGroups {
