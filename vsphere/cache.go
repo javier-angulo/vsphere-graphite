@@ -70,8 +70,16 @@ func (c *Cache) Add(vcenter, section, i string, v interface{}) {
 		if len(typed.GuestDiskInfo) > 0 {
 			c.add(vcenter, section, i, &(typed.GuestDiskInfo))
 		}
+	case types.VirtualMachineConnectionState:
+		c.add(vcenter, section, i, &typed)
+	case types.VirtualMachinePowerState:
+		c.add(vcenter, section, i, &typed)
+	case types.HostSystemConnectionState:
+		c.add(vcenter, section, i, &typed)
+	case types.HostSystemPowerState:
+		c.add(vcenter, section, i, &typed)
 	default:
-		log.Printf("Adding a unhandled type %T to cache for %s section %s and ref %s\n", v, vcenter, section, i)
+		log.Printf("cache %s/%s: unhandled type %T for %s\n", vcenter, section, v, i)
 	}
 }
 
