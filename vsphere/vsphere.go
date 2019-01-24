@@ -274,6 +274,9 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	for _, objType := range objectTypes {
 		reqProps[objType] = []string{"name"}
 	}
+	//fill in the connection state and powerstate of virtualmachines
+	reqProps["VirtualMachine"] = []string{"runtime.connectionState", "runtime.powerState"}
+	reqProps["HostSystem"] = []string{"runtime.connectionState", "runtime.powerState"}
 	//complete with required properties
 	for _, property := range properties {
 		if typeProperties, ok := Properties[property]; ok {
@@ -420,7 +423,20 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	startTime := endTime.Add(time.Duration(-interval-1) * time.Second)
 
 	// Parse objects
+	skipped := 0
 	for _, mor := range mors {
+		// check connection state
+		connectionState := cache.GetString(vcName, "connections", mor.Value)
+		if *connectionState != "connected" {
+			skipped++
+			continue
+		}
+		// check power state
+		powerState := cache.GetString(vcName, "powers", mor.Value)
+		if *powerState != "poweredOn" {
+			skipped++
+			continue
+		}
 		metricIds := []types.PerfMetricId{}
 		for _, metricgroup := range vcenter.MetricGroups {
 			if metricgroup.ObjectType == mor.Type {
@@ -433,6 +449,9 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 			queries = append(queries, types.PerfQuerySpec{Entity: mor, StartTime: &startTime, EndTime: &endTime, MetricId: metricIds, IntervalId: intervalID})
 		}
 	}
+
+	// log skippped objects
+	log.Printf("vcenter %s: skipped %d objects because they are either not connected or not powered on", vcName, skipped)
 
 	// Check that there is something to query
 	querycount := len(queries)
