@@ -446,10 +446,10 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	}
 
 	expCounters := math.Ceil(float64(metriccount) * INSTANCERATIO)
-  log.Printf("vcenter %s: queries generated", vcName)
-  log.Printf("vcenter %s: %d queries\n", vcName, querycount)
-  log.Printf("vcenter %s: %d total metricIds\n", vcName, metriccount)
-  log.Printf("vcenter %s: %g total counter (accounting for %g instances ratio)\n", vcName, expCounters, INSTANCERATIO)
+	log.Printf("vcenter %s: queries generated", vcName)
+	log.Printf("vcenter %s: %d queries\n", vcName, querycount)
+	log.Printf("vcenter %s: %d total metricIds\n", vcName, metriccount)
+	log.Printf("vcenter %s: %g total counter (accounting for %g instances ratio)\n", vcName, expCounters, INSTANCERATIO)
 
 	// separate in batches of queries if to avoid 500000 returend perf limit
 	batches := math.Ceil(expCounters / VCENTERRESULTLIMIT)
@@ -491,7 +491,8 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
 
 	// Starting informations
-  log.Printf("vcenter %s thread %d: requesting %d metrics\n", vcName, id, len(queryperf.QuerySpec))
+	requestedcount := len(queryperf.QuerySpec)
+	log.Printf("vcenter %s thread %d: requesting %d metrics\n", vcName, id, requestedcount)
 
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
@@ -520,6 +521,34 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 	// no need to wait here because this is only processing (no connection to vcenter needed)
 	for _, base := range perfres.Returnval {
 		go ProcessMetric(cache, base.(*types.PerfEntityMetric), timeStamp, replacepoint, domain, vcName, channel)
+	}
+
+	// Check missing values in the aftermath
+	if requestedcount > returncount {
+		log.Printf("vcenter %s thread %d: returned count is lower that requested count", vcName, id)
+		// check requested entities
+		reqmorefs := make([]string, requestedcount)
+		for i := 0; i < requestedcount; i++ {
+			reqmorefs[i] = queryperf.QuerySpec[i].Entity.Value
+		}
+		// check missing entities
+		missmorefs := []string{}
+		for i := 0; i < requestedcount; i++ {
+			found := false
+			for j := 0; j < returncount; j++ {
+				if perfres.Returnval[j].(*types.PerfEntityMetric).Entity.Value == queryperf.QuerySpec[i].Entity.Value {
+					found = true
+					break
+				}
+			}
+			if !found {
+				missmorefs = append(missmorefs, queryperf.QuerySpec[i].Entity.Value)
+			}
+		}
+		// output missing metrics
+		for i := 0; i < len(missmorefs); i++ {
+			log.Printf("vcenter %s thread %d: missing metrics for %s", vcName, id, missmorefs[i])
+		}
 	}
 }
 
@@ -553,7 +582,7 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 			}
 			foldername := cache.GetString(vcName, "names", *current)
 			if foldername == nil {
-        log.Printf("vcenter %s: folder name not found for %s", vcName, *current)
+				log.Printf("vcenter %s: folder name not found for %s", vcName, *current)
 				break
 			}
 			if *foldername == "vm" {
@@ -568,7 +597,7 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 	//find tags
 	vitags := cache.FindTags(vcName, pem.Entity.Value)
 	if len(pem.Value) == 0 {
-    log.Printf("vcenter %s: bo values returned in query!", vcName)
+		log.Printf("vcenter %s: bo values returned in query!", vcName)
 	}
 	objType := strings.ToLower(pem.Entity.Type)
 	// replace point in vcname
