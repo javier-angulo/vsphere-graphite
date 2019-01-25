@@ -713,6 +713,12 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 			}
 		}
 		var value int64 = -1
+		if len(serie.Value) == 0 {
+			log.Printf("process: point %s for %s has no values", metricName, point.ObjectName)
+			point.Value = value
+			*channel <- point
+			return
+		}
 		switch {
 		case strings.HasSuffix(metricName, ".average"):
 			value = utils.Average(serie.Value...)
@@ -721,11 +727,7 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 		case strings.HasSuffix(metricName, ".minimum"):
 			value = utils.Min(serie.Value...)
 		case strings.HasSuffix(metricName, ".latest"):
-			if len(serie.Value) >= 1 {
-				value = serie.Value[len(serie.Value)-1]
-			} else {
-				value = 0
-			}
+			value = serie.Value[len(serie.Value)-1]
 		case strings.HasSuffix(metricName, ".summation"):
 			value = utils.Sum(serie.Value...)
 		}
