@@ -71,6 +71,7 @@ func (c *Cache) Add(vcenter, section, i string, v interface{}) {
 			c.add(vcenter, section, i, &(typed.GuestDiskInfo))
 		}
 	case types.VirtualMachineConnectionState:
+		log.Printf("cache %s/%s: adding connection state %s for %s", vcenter, section, i, typed)
 		c.add(vcenter, section, i, &typed)
 	case types.VirtualMachinePowerState:
 		c.add(vcenter, section, i, &typed)
