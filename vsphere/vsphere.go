@@ -721,7 +721,11 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 		case strings.HasSuffix(metricName, ".minimum"):
 			value = utils.Min(serie.Value...)
 		case strings.HasSuffix(metricName, ".latest"):
-			value = serie.Value[len(serie.Value)-1]
+			if len(serie.Value) >= 1 {
+				value = serie.Value[len(serie.Value)-1]
+			} else {
+				value = 0
+			}
 		case strings.HasSuffix(metricName, ".summation"):
 			value = utils.Sum(serie.Value...)
 		}
