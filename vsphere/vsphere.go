@@ -432,7 +432,6 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 				skipped++
 				continue
 			}
-			log.Printf("vcenter %s: vm %s is %s", vcName, mor.Value, *connectionState)
 		}
 		// check power state
 		powerState := cache.GetPowerState(vcName, "powers", mor.Value)
@@ -441,7 +440,6 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 				skipped++
 				continue
 			}
-			log.Printf("vcenter %s: vm %s is %s", vcName, mor.Value, *powerState)
 		}
 		metricIds := []types.PerfMetricId{}
 		for _, metricgroup := range vcenter.MetricGroups {
