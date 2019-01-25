@@ -71,7 +71,6 @@ func (c *Cache) Add(vcenter, section, i string, v interface{}) {
 			c.add(vcenter, section, i, &(typed.GuestDiskInfo))
 		}
 	case types.VirtualMachineConnectionState:
-		log.Printf("cache %s/%s: adding connection state %s for %s", vcenter, section, i, typed)
 		c.add(vcenter, section, i, &typed)
 	case types.VirtualMachinePowerState:
 		c.add(vcenter, section, i, &typed)
@@ -155,6 +154,80 @@ func (c *Cache) GetTags(vcenter, section, i string) *[]types.Tag {
 func (c *Cache) GetDiskInfos(vcenter, section, i string) *[]types.GuestDiskInfo {
 	if v, ok := c.get(vcenter, section, i).(*[]types.GuestDiskInfo); ok {
 		return v
+	}
+	return nil
+}
+
+// GetVirtualMahineConnectionState gets a virtual machine connection state from cache
+func (c *Cache) GetVirtualMahineConnectionState(vcenter, section, i string) *types.VirtualMachineConnectionState {
+	if v, ok := c.get(vcenter, section, i).(*types.VirtualMachineConnectionState); ok {
+		return v
+	}
+	return nil
+}
+
+// GetHostSystemConnectionState gets a host system connection state from cache
+func (c *Cache) GetHostSystemConnectionState(vcenter, section, i string) *types.HostSystemConnectionState {
+	if v, ok := c.get(vcenter, section, i).(*types.HostSystemConnectionState); ok {
+		return v
+	}
+	return nil
+}
+
+// GetVirtualMahinePowerState gets a virtual machine power state from cache
+func (c *Cache) GetVirtualMahinePowerState(vcenter, section, i string) *types.VirtualMachinePowerState {
+	if v, ok := c.get(vcenter, section, i).(*types.VirtualMachinePowerState); ok {
+		return v
+	}
+	return nil
+}
+
+// GetHostSystemPowerState gets a host system power state from cache
+func (c *Cache) GetHostSystemPowerState(vcenter, section, i string) *types.HostSystemPowerState {
+	if v, ok := c.get(vcenter, section, i).(*types.HostSystemPowerState); ok {
+		return v
+	}
+	return nil
+}
+
+// GetConnectionState gets the connection state of a host or a virtual machine
+func (c *Cache) GetConnectionState(vcenter, section, i string) *string {
+	value := ""
+	if strings.HasPrefix(i, "vm-") {
+		state := c.GetVirtualMahineConnectionState(vcenter, section, i)
+		if state == nil {
+			return nil
+		}
+		value = (string)(*state)
+		return &value
+	} else if strings.HasPrefix(i, "host-") {
+		state := c.GetHostSystemConnectionState(vcenter, section, i)
+		if state == nil {
+			return nil
+		}
+		value = (string)(*state)
+		return &value
+	}
+	return nil
+}
+
+// GetPowerState gets the power state of a host or a virtual machine
+func (c *Cache) GetPowerState(vcenter, section, i string) *string {
+	value := ""
+	if strings.HasPrefix(i, "vm-") {
+		state := c.GetVirtualMahinePowerState(vcenter, section, i)
+		if state == nil {
+			return nil
+		}
+		value = (string)(*state)
+		return &value
+	} else if strings.HasPrefix(i, "host-") {
+		state := c.GetHostSystemPowerState(vcenter, section, i)
+		if state == nil {
+			return nil
+		}
+		value = (string)(*state)
+		return &value
 	}
 	return nil
 }

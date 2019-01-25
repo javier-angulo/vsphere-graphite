@@ -426,7 +426,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	skipped := 0
 	for _, mor := range mors {
 		// check connection state
-		connectionState := cache.GetString(vcName, "connections", mor.Value)
+		connectionState := cache.GetConnectionState(vcName, "connections", mor.Value)
 		if connectionState != nil {
 			if *connectionState != "connected" {
 				skipped++
@@ -435,7 +435,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 			log.Printf("vcenter %s: vm %s is %s", vcName, mor.Value, *connectionState)
 		}
 		// check power state
-		powerState := cache.GetString(vcName, "powers", mor.Value)
+		powerState := cache.GetPowerState(vcName, "powers", mor.Value)
 		if powerState != nil {
 			if *powerState != "poweredOn" {
 				skipped++
