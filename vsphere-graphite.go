@@ -168,7 +168,7 @@ func (service *Service) Manage() (string, error) {
 		for _, confproperty := range conf.Properties {
 			found := false
 			for _, metricproperty := range vsphere.MetricProperties {
-				if strings.ToLower(confproperty) == strings.ToLower(metricproperty) {
+				if strings.EqualFold(confproperty, metricproperty) {
 					found = true
 					break
 				}
@@ -216,10 +216,14 @@ func (service *Service) Manage() (string, error) {
 	pointbuffer := make([]*backend.Point, conf.FlushSize)
 	bufferindex := 0
 
+	// wait group for non scheduled metric retrival
+	var wg sync.WaitGroup
+
 	for {
 		select {
 		case value := <-metrics:
-			// reset timer as a point has been revieved
+			// reset timer as a point has been recieved.
+			// do that in the main thread to avoid collisions
 			if !memtimer.Stop() {
 				select {
 				case <-memtimer.C:
@@ -230,59 +234,71 @@ func (service *Service) Manage() (string, error) {
 			pointbuffer[bufferindex] = &value
 			bufferindex++
 			if bufferindex == len(pointbuffer) {
-				conf.Backend.SendMetrics(pointbuffer)
-				log.Printf("Sent %d logs to backend", bufferindex)
+				t := make([]*backend.Point, bufferindex)
+				copy(t, pointbuffer)
 				ClearBuffer(pointbuffer)
 				bufferindex = 0
+				go conf.Backend.SendMetrics(t, false)
+				log.Printf("sent %d logs to backend\n", len(t))
 			}
 		case request := <-*queries:
-			log.Println("Adhoc metric retrieval")
-			var wg sync.WaitGroup
-			wg.Add(len(conf.VCenters))
-			for _, vcenter := range conf.VCenters {
-				go queryVCenter(*vcenter, conf, request.Request, &wg)
-			}
-			wg.Wait()
-			*request.Done <- true
-			cleanup <- true
+			go func() {
+				log.Println("adhoc metric retrieval")
+				wg.Add(len(conf.VCenters))
+				for _, vcenter := range conf.VCenters {
+					go queryVCenter(*vcenter, conf, request.Request, &wg)
+				}
+				wg.Wait()
+				*request.Done <- true
+				cleanup <- true
+			}()
 		case <-ticker.C:
-			log.Println("Scheduled metric retrieval")
+			// not doing go func as it will create threads itself
+			log.Println("scheduled metric retrieval")
 			for _, vcenter := range conf.VCenters {
 				go queryVCenter(*vcenter, conf, &metrics, nil)
 			}
 		case <-memtimer.C:
-			if conf.Backend.Scheduled() {
-				// sent remaining values
-				conf.Backend.SendMetrics(pointbuffer)
-				log.Printf("Sent %d logs to backend", bufferindex)
-				// empty point buffer
-				bufferindex = 0
-				ClearBuffer(pointbuffer)
-				cleanup <- true
+			if !conf.Backend.Scheduled() {
+				continue
 			}
+			// sent remaining values
+			// copy to send point to appart buffer
+			t := make([]*backend.Point, bufferindex)
+			copy(t, pointbuffer)
+			// clear main buffer
+			ClearBuffer(pointbuffer)
+			bufferindex = 0
+			// send sent buffer
+			go conf.Backend.SendMetrics(t, true)
+			log.Printf("sent last %d logs to backend\n", len(t))
+			// empty point buffer
+			cleanup <- true
 		case <-cleanup:
-			runtime.GC()
-			debug.FreeOSMemory()
-			runtime.ReadMemStats(&memstats)
-			log.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
-			if conf.MEMProfiling {
-				f, err := os.OpenFile("/tmp/vsphere-graphite-mem.pb.gz", os.O_RDWR|os.O_CREATE, 0600) // nolin.vetshaddow
-				if err != nil {
-					log.Fatal("could not create Mem profile: ", err)
+			go func() {
+				runtime.GC()
+				debug.FreeOSMemory()
+				runtime.ReadMemStats(&memstats)
+				log.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
+				if conf.MEMProfiling {
+					f, err := os.OpenFile("/tmp/vsphere-graphite-mem.pb.gz", os.O_RDWR|os.O_CREATE, 0600) // nolin.vetshaddow
+					if err != nil {
+						log.Fatal("could not create Mem profile: ", err)
+					}
+					defer f.Close()
+					log.Println("Will write mem profiling to: ", f.Name())
+					if err := pprof.WriteHeapProfile(f); err != nil {
+						log.Fatal("could not write Mem profile: ", err)
+					}
+					if err := f.Close(); err != nil {
+						log.Fatal("could close Mem profile: ", err)
+					}
 				}
-				defer f.Close()
-				log.Println("Will write mem profiling to: ", f.Name())
-				if err := pprof.WriteHeapProfile(f); err != nil {
-					log.Fatal("could not write Mem profile: ", err)
-				}
-				if err := f.Close(); err != nil {
-					log.Fatal("could close Mem profile: ", err)
-				}
-			}
+			}()
 		case killSignal := <-interrupt:
 			log.Println("Got signal:", killSignal)
 			if bufferindex > 0 {
-				conf.Backend.SendMetrics(pointbuffer[:bufferindex])
+				conf.Backend.SendMetrics(pointbuffer[:bufferindex], true)
 				log.Printf("Sent %d logs to backend", bufferindex)
 			}
 			if killSignal == os.Interrupt {
