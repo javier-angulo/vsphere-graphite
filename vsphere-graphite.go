@@ -104,6 +104,7 @@ func (service *Service) Manage() (string, error) {
 			conf.Properties = append(conf.Properties, propkey)
 		}
 	}
+	log.Printf("main: requested properties %s", strings.Join(conf.Properties, ", "))
 
 	// default flush size 1000
 	if conf.FlushSize == 0 {
@@ -177,6 +178,7 @@ func (service *Service) Manage() (string, error) {
 			}
 		}
 		conf.Properties = properties
+		log.Printf("main: properties filtered to %s (no metadata in backend)", strings.Join(conf.Properties, ", "))
 	}
 
 	// Set up channel on which to send signal notifications.
