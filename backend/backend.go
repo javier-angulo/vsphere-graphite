@@ -17,7 +17,7 @@ import (
 	"github.com/fluent/fluent-logger-golang/fluent"
 
 	influxclient "github.com/influxdata/influxdb1-client/v2"
-	"github.com/marpaia/graphite-golang"
+	graphite "github.com/marpaia/graphite-golang"
 	"github.com/olivere/elastic"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -149,7 +149,6 @@ func (backend *Config) Init() (*chan Channels, error) {
 			log.Printf("backend %s: error creating registry - %s\n", backendType, err)
 			return queries, err
 		}
-
 		http.Handle("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{ErrorHandling: promhttp.ContinueOnError}))
 		go func() error {
 			address := ""
@@ -161,13 +160,11 @@ func (backend *Config) Init() (*chan Channels, error) {
 			} else {
 				address += ":9155"
 			}
+			log.Printf("backend %s: starting listener on %s\n", backendType, address)
 			err := http.ListenAndServe(address, nil)
-			if err != nil {
-				log.Printf("backend %s: error creating listener - %s\n", backendType, err)
-				return err
-			}
-			log.Printf("backend %s: lisenting to http://%s/metrics\n", backendType, address)
-			return nil
+			// list and serve allways retruns non nil error
+			log.Printf("backend %s: listener result - %s\n", backendType, err)
+			return err
 		}()
 		return queries, nil
 	case Fluentd:

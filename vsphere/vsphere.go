@@ -274,6 +274,9 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	for _, objType := range objectTypes {
 		reqProps[objType] = []string{"name"}
 	}
+	//fill in the connection state and powerstate of virtualmachines
+	reqProps["VirtualMachine"] = []string{"runtime.connectionState", "runtime.powerState"}
+	reqProps["HostSystem"] = []string{"runtime.connectionState", "runtime.powerState"}
 	//complete with required properties
 	for _, property := range properties {
 		if typeProperties, ok := Properties[property]; ok {
@@ -420,7 +423,24 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	startTime := endTime.Add(time.Duration(-interval-1) * time.Second)
 
 	// Parse objects
+	skipped := 0
 	for _, mor := range mors {
+		// check connection state
+		connectionState := cache.GetConnectionState(vcName, "connections", mor.Value)
+		if connectionState != nil {
+			if *connectionState != "connected" {
+				skipped++
+				continue
+			}
+		}
+		// check power state
+		powerState := cache.GetPowerState(vcName, "powers", mor.Value)
+		if powerState != nil {
+			if *powerState != "poweredOn" {
+				skipped++
+				continue
+			}
+		}
 		metricIds := []types.PerfMetricId{}
 		for _, metricgroup := range vcenter.MetricGroups {
 			if metricgroup.ObjectType == mor.Type {
@@ -433,6 +453,9 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 			queries = append(queries, types.PerfQuerySpec{Entity: mor, StartTime: &startTime, EndTime: &endTime, MetricId: metricIds, IntervalId: intervalID})
 		}
 	}
+
+	// log skippped objects
+	log.Printf("vcenter %s: skipped %d objects because they are either not connected or not powered on", vcName, skipped)
 
 	// Check that there is something to query
 	querycount := len(queries)
@@ -491,7 +514,8 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cache, queryperf *types.QueryPerf, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
 
 	// Starting informations
-  log.Printf("vcenter %s thread %d: requesting %d metrics\n", vcName, id, len(queryperf.QuerySpec))
+	requestedcount := len(queryperf.QuerySpec)
+	log.Printf("vcenter %s thread %d: requesting %d metrics\n", vcName, id, requestedcount)
 
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
@@ -520,6 +544,34 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 	// no need to wait here because this is only processing (no connection to vcenter needed)
 	for _, base := range perfres.Returnval {
 		go ProcessMetric(cache, base.(*types.PerfEntityMetric), timeStamp, replacepoint, domain, vcName, channel)
+	}
+
+	// Check missing values in the aftermath
+	if requestedcount > returncount {
+		log.Printf("vcenter %s thread %d: returned count is lower that requested count", vcName, id)
+		// check requested entities
+		reqmorefs := make([]string, requestedcount)
+		for i := 0; i < requestedcount; i++ {
+			reqmorefs[i] = queryperf.QuerySpec[i].Entity.Value
+		}
+		// check missing entities
+		missmorefs := []string{}
+		for i := 0; i < requestedcount; i++ {
+			found := false
+			for j := 0; j < returncount; j++ {
+				if perfres.Returnval[j].(*types.PerfEntityMetric).Entity.Value == queryperf.QuerySpec[i].Entity.Value {
+					found = true
+					break
+				}
+			}
+			if !found {
+				missmorefs = append(missmorefs, queryperf.QuerySpec[i].Entity.Value)
+			}
+		}
+		// output missing metrics
+		for i := 0; i < len(missmorefs); i++ {
+			log.Printf("vcenter %s thread %d: missing metrics for %s", vcName, id, missmorefs[i])
+		}
 	}
 }
 
@@ -553,7 +605,7 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 			}
 			foldername := cache.GetString(vcName, "names", *current)
 			if foldername == nil {
-        log.Printf("vcenter %s: folder name not found for %s", vcName, *current)
+				log.Printf("vcenter %s: folder name not found for %s", vcName, *current)
 				break
 			}
 			if *foldername == "vm" {
@@ -659,6 +711,12 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 			}
 		}
 		var value int64 = -1
+		if len(serie.Value) == 0 {
+			log.Printf("process: point %s for %s has no values", metricName, point.ObjectName)
+			point.Value = value
+			*channel <- point
+			return
+		}
 		switch {
 		case strings.HasSuffix(metricName, ".average"):
 			value = utils.Average(serie.Value...)
