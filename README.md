@@ -6,13 +6,7 @@ Written in go to achieve fast sampling rates and high throughput sink. Successfu
 
 ## Build status
 
-Travis: [![Travis Build Status](https://travis-ci.org/cblomart/vsphere-graphite.svg?branch=master)](https://travis-ci.org/cblomart/vsphere-graphite)
-
 Drone: [![Drone Build Status](https://drone.blomart.net/api/badges/cblomart/vsphere-graphite/status.svg)](https://drone.blomart.net/cblomart/vsphere-graphite)
-
-Drone Cloud: [![Build Status](https://cloud.drone.io/api/badges/cblomart/vsphere-graphite/status.svg)](https://cloud.drone.io/cblomart/vsphere-graphite)
-
-Drone does the push to github.
 
 ## Code report
 
