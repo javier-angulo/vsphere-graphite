@@ -270,13 +270,14 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 
 	//properties specifications
 	reqProps := make(map[string][]string)
-	//first fill in name for each object type
+	//first fill in name for each object type and add connectionstate and powerstate
 	for _, objType := range objectTypes {
 		reqProps[objType] = []string{"name"}
+		if objType == "VirtualMachine" || objType == "HostSystem" {
+			reqProps[objType] = append(reqProps[objType], "runtime.connectionState")
+			reqProps[objType] = append(reqProps[objType], "runtime.powerState")
+		}
 	}
-	//fill in the connection state and powerstate of virtualmachines
-	reqProps["VirtualMachine"] = []string{"runtime.connectionState", "runtime.powerState"}
-	reqProps["HostSystem"] = []string{"runtime.connectionState", "runtime.powerState"}
 	//complete with required properties
 	for _, property := range properties {
 		if typeProperties, ok := Properties[property]; ok {
@@ -469,10 +470,10 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	}
 
 	expCounters := math.Ceil(float64(metriccount) * INSTANCERATIO)
-  log.Printf("vcenter %s: queries generated", vcName)
-  log.Printf("vcenter %s: %d queries\n", vcName, querycount)
-  log.Printf("vcenter %s: %d total metricIds\n", vcName, metriccount)
-  log.Printf("vcenter %s: %g total counter (accounting for %g instances ratio)\n", vcName, expCounters, INSTANCERATIO)
+	log.Printf("vcenter %s: queries generated", vcName)
+	log.Printf("vcenter %s: %d queries\n", vcName, querycount)
+	log.Printf("vcenter %s: %d total metricIds\n", vcName, metriccount)
+	log.Printf("vcenter %s: %g total counter (accounting for %g instances ratio)\n", vcName, expCounters, INSTANCERATIO)
 
 	// separate in batches of queries if to avoid 500000 returend perf limit
 	batches := math.Ceil(expCounters / VCENTERRESULTLIMIT)
@@ -620,7 +621,7 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 	//find tags
 	vitags := cache.FindTags(vcName, pem.Entity.Value)
 	if len(pem.Value) == 0 {
-    log.Printf("vcenter %s: bo values returned in query!", vcName)
+		log.Printf("vcenter %s: bo values returned in query!", vcName)
 	}
 	objType := strings.ToLower(pem.Entity.Type)
 	// replace point in vcname
