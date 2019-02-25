@@ -425,6 +425,8 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 
 	// Parse objects
 	skipped := 0
+	totalvms := 0
+	totalhosts := 0
 	for _, mor := range mors {
 		// check connection state
 		connectionState := cache.GetConnectionState(vcName, "connections", mor.Value)
@@ -442,6 +444,12 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 				continue
 			}
 		}
+		switch mor.Type {
+		case "HostSystem":
+			totalhosts++
+		case "VirtualMachine":
+			totalvms++
+		}
 		metricIds := []types.PerfMetricId{}
 		for _, metricgroup := range vcenter.MetricGroups {
 			if metricgroup.ObjectType == mor.Type {
@@ -457,7 +465,8 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 
 	// log skippped objects
 	log.Printf("vcenter %s: skipped %d objects because they are either not connected or not powered on", vcName, skipped)
-
+	// log total object refrenced
+	log.Printf("vcenter %s: %d objects (%d vm and %d hosts)", vcName, totalhosts+totalvms, totalvms, totalhosts)
 	// Check that there is something to query
 	querycount := len(queries)
 	if querycount == 0 {
@@ -543,10 +552,20 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 
 	// Parse results
 	// no need to wait here because this is only processing (no connection to vcenter needed)
+	totalvms := 0
+	totalhosts := 0
 	for _, base := range perfres.Returnval {
-		go ProcessMetric(cache, base.(*types.PerfEntityMetric), timeStamp, replacepoint, domain, vcName, channel)
+		pem := base.(*types.PerfEntityMetric)
+		switch pem.Entity.Type {
+		case "VirtualMachine":
+			totalvms++
+		case "HostSystem":
+			totalhosts++
+		}
+		go ProcessMetric(cache, pem, timeStamp, replacepoint, domain, vcName, channel)
 	}
-
+	// log total object refrenced
+	log.Printf("vcenter %s thread %d: %d objects (%d vm and %d hosts)", vcName, id, totalhosts+totalvms, totalvms, totalhosts)
 	// Check missing values in the aftermath
 	if requestedcount > returncount {
 		log.Printf("vcenter %s thread %d: returned count is lower that requested count", vcName, id)
@@ -621,7 +640,7 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 	//find tags
 	vitags := cache.FindTags(vcName, pem.Entity.Value)
 	if len(pem.Value) == 0 {
-		log.Printf("vcenter %s: bo values returned in query!", vcName)
+		log.Printf("vcenter %s: no values returned in query!", vcName)
 	}
 	objType := strings.ToLower(pem.Entity.Type)
 	// replace point in vcname
