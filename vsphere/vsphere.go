@@ -496,6 +496,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 			end = querieslen
 		}
 		batchqueries[batchnum] = types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries[i:end]}
+		log.Printf("vcenter %s: created batch %d from queries %d - %d", vcName, batchnum, i, end)
 		batchnum++
 	}
 	log.Printf("%d threads generated to execute queries", len(batchqueries))
@@ -566,6 +567,7 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 	}
 	// log total object refrenced
 	log.Printf("vcenter %s thread %d: %d objects (%d vm and %d hosts)", vcName, id, totalhosts+totalvms, totalvms, totalhosts)
+
 	// Check missing values in the aftermath
 	if requestedcount > returncount {
 		log.Printf("vcenter %s thread %d: returned count is lower that requested count", vcName, id)
