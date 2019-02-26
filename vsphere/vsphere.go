@@ -486,7 +486,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 
 	// separate in batches of queries if to avoid 500000 returend perf limit
 	batches := math.Ceil(expCounters / VCENTERRESULTLIMIT)
-	batchqueries := make([]types.QueryPerf, int(batches))
+	batchqueries := make([]*types.QueryPerf, int(batches))
 	querieslen := len(queries)
 	batchsize := int(math.Ceil(float64(querieslen) / batches))
 	batchnum := 0
@@ -495,13 +495,13 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 		if end > querieslen {
 			end = querieslen
 		}
-		batchqueries[batchnum] = types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries[i:end]}
-		log.Printf("vcenter %s: created batch %d from queries %d - %d", vcName, batchnum, i, end)
+		batchqueries[batchnum] = &types.QueryPerf{This: *client.ServiceContent.PerfManager, QuerySpec: queries[i:end]}
+		log.Printf("vcenter %s: created batch %d from queries %d - %d", vcName, batchnum, i+1, end)
 		batchnum++
 	}
-	log.Printf("%d threads generated to execute queries", len(batchqueries))
+	log.Printf("vcenter %s: %d threads generated to execute queries", vcName, len(batchqueries))
 	for i, query := range batchqueries {
-		log.Printf("Thread %d requests %d metrics", i+1, len(query.QuerySpec))
+		log.Printf("vcname %s: thread %d requests %d metrics", vcName, i+1, len(query.QuerySpec))
 	}
 
 	// make each queries in separate functions
@@ -513,7 +513,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 
 	// execute the threads
 	for i, query := range batchqueries {
-		go ExecuteQueries(ctx, i+1, client.RoundTripper, &cache, &query, endTime.Unix(), replacepoint, domain, vcName, channel, &querieswaitgroup)
+		go ExecuteQueries(ctx, i+1, client.RoundTripper, &cache, query, endTime.Unix(), replacepoint, domain, vcName, channel, &querieswaitgroup)
 	}
 
 	//wait fot the waitgroup
