@@ -501,7 +501,7 @@ func (vcenter *VCenter) Query(interval int, domain string, replacepoint bool, pr
 	}
 	log.Printf("vcenter %s: %d threads generated to execute queries", vcName, len(batchqueries))
 	for i, query := range batchqueries {
-		log.Printf("vcname %s: thread %d requests %d metrics", vcName, i+1, len(query.QuerySpec))
+		log.Printf("vcenter %s: thread %d requests %d metrics", vcName, i+1, len(query.QuerySpec))
 	}
 
 	// make each queries in separate functions
