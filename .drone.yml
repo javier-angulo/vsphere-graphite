@@ -40,10 +40,10 @@ steps:
     name: restore
     image: cblomart/gobasebuild
     environment:
-      MC_HOST_s3:
+      MC_HOSTS_s3:
         from_secret: s3_host
     commands:
-    - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf -C /go/
+    - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf - -C /go/
   - build:
     name: build
     image: cblomart/gobasebuild
@@ -113,7 +113,7 @@ steps:
     name: restore
     image: cblomart/gobasebuild
     environment:
-      MC_HOST_s3:
+      MC_HOSTS_s3:
         from_secret: s3_host
     commands:
     - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf -C /go/
@@ -189,7 +189,7 @@ steps:
     name: restore
     image: cblomart/gobasebuild
     environment:
-      MC_HOST_s3:
+      MC_HOSTS_s3:
         from_secret: s3_host
     commands:
     - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf -C /go/
@@ -249,7 +249,7 @@ steps:
     name: restore
     image: cblomart/gobasebuild
     environment:
-      MC_HOST_s3:
+      MC_HOSTS_s3:
         from_secret: s3_host
     commands:
     - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf -C /go/
