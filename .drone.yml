@@ -10,7 +10,7 @@ steps:
     name: dependancies
     image: cblomart/gobasebuild
     environment:
-      MC_HOST_s3:
+      MC_HOSTS_s3:
         from_secret: s3_host
     commands:
     - mc mb s3/vsphere-graphite
