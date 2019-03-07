@@ -60,11 +60,17 @@ deps:
 build-windows-amd64:
 	@$(MAKE) build GOOS=windows GOARCH=amd64 SUFFIX=.exe
 
+upx-windows-amd64:
+	@$(MAKE) upx GOOS=windows GOARCH=amd64 SUFFIX=.exe
+
 dist-windows-amd64:
 	@$(MAKE) dist GOOS=windows GOARCH=amd64 SUFFIX=.exe
 
 build-linux-amd64:
 	@$(MAKE) build GOOS=linux GOARCH=amd64
+
+upx-linux-amd64:
+	@$(MAKE) upx GOOS=linux GOARCH=amd64
 
 dist-linux-amd64:
 	@$(MAKE) dist GOOS=linux GOARCH=amd64
@@ -72,11 +78,17 @@ dist-linux-amd64:
 build-darwin-amd64:
 	@$(MAKE) build GOOS=darwin GOARCH=amd64
 
+upx-darwin-amd64:
+	@$(MAKE) upx GOOS=darwin GOARCH=amd64
+
 dist-darwin-amd64:
 	@$(MAKE) dist GOOS=darwin GOARCH=amd64
 
 build-linux-arm:
 	@$(MAKE) build GOOS=linux GOARCH=arm GOARM=5
+
+upx-linux-arm:
+	@$(MAKE) upx GOOS=linux GOARCH=arm
 
 dist-linux-arm:
 	@$(MAKE) dist GOOS=linux GOARCH=arm GOARM=5
@@ -132,13 +144,13 @@ $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX): $(SRC_FILES)
 	else\
 		go build $(BUILD_FLAGS) -o $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX) .;\
 	fi
-	if [ ! -z "$(TAG)"]; then\
-		upx -qq --best $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX);\
-	fi
 	cp vsphere-graphite-example.json $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite.json
 
 $(RELEASE_DIR)/vsphere-graphite_$(GOOS)_$(GOARCH).tgz: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX)
 	cd $(RELEASE_DIR)/$(GOOS)/$(GOARCH); tar czf /tmp/vsphere-graphite_$(GOOS)_$(GOARCH).tgz ./vsphere-graphite$(SUFFIX) ./vsphere-graphite.json
+
+upx: $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX)
+	upx -qq --best $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX)
 
 dist: $(RELEASE_DIR)/vsphere-graphite_$(GOOS)_$(GOARCH).tgz
 

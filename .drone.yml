@@ -1,5 +1,5 @@
 kind: pipeline
-name: default
+name: checkups
 workspace:
   base: /go
   path: src/github.com/cblomart/vsphere-graphite
@@ -19,41 +19,29 @@ steps:
     image: cblomart/gobasebuild
     commands:
     - make checks
-  # buils
-  - buildlin:
-    name: build linux amd64
-    group: build
+
+---
+kind: pipeline
+name: build-linux
+workspace:
+  base: /go
+  path: src/github.com/cblomart/vsphere-graphite
+
+steps:
+  - build:
+    name: build
     image: cblomart/gobasebuild
     commands:
     - make build-linux-amd64
-  - buildwin:
-    name: build win amd64
-    group: build
+  - upx:
+    name: upx
     image: cblomart/gobasebuild
     commands:
-    - make build-windows-amd64
+    - make upx-linux-amd64
     when:
       event: [ tag ]
-  - buildosx:
-    name: build osx amd64
-    group: build
-    image: cblomart/gobasebuild
-    commands:
-    - make build-darwin-amd64
-    when:
-      event: [ tag ]
-  - buildarm:
-    name: build linux arm
-    group: build
-    image: cblomart/gobasebuild
-    commands:
-    - make build-linux-arm
-    when:
-      event: [ tag ]
-  # push to docker
-  - pushlin:
-    group: push
-    name: push linux amd64
+  - push:
+    name: push
     image: cblomart/gobasebuild
     environment:
       DOCKER_PASSWORD:
@@ -65,9 +53,57 @@ steps:
     - make docker-linux-amd64
     - docker login -u cblomart -p $DOCKER_PASSWORD
     - make push-linux-amd64
-  - pusharm:
-    group: push
-    name: push linux arm
+  - pack:
+    name: pack
+    image: cblomart/gobasebuild
+    commands:
+    - make dist-linux-amd64
+    - cp /tmp/vsphere-graphite_*.tgz releases/
+    when:
+      event: [ tag ]
+  - release:
+    name: release
+    image: plugins/github-release
+    environment:
+      GIHUB_SECRET:
+        from_secret: github_secret
+    files:
+      - releases/*.tgz
+    checksum:
+      - sha256
+    when:
+      event: [ tag ]  
+
+volumes:
+  - name: docker
+    host:
+      path: /var/run/docker.sock
+
+depends_on:
+  - checkups
+
+---
+kind: pipeline
+name: build-arm
+workspace:
+  base: /go
+  path: src/github.com/cblomart/vsphere-graphite
+
+steps:
+  - build:
+    name: build
+    image: cblomart/gobasebuild
+    commands:
+    - make build-linux-arm
+  - upx:
+    name: upx
+    image: cblomart/gobasebuild
+    commands:
+    - make upx-linux-arm
+    when:
+      event: [ tag ]
+  - push:
+    name: push
     image: cblomart/gobasebuild
     environment:
       DOCKER_PASSWORD:
@@ -79,38 +115,8 @@ steps:
     - make docker-linux-arm
     - docker login -u cblomart -p $DOCKER_PASSWORD
     - make push-linux-arm
-    when:
-      event: [ tag ]
-  - packlin:
-    name: pack linux amd64
-    group: pack
-    image: cblomart/gobasebuild
-    commands:
-    - make dist-linux-amd64
-    - cp /tmp/vsphere-graphite_*.tgz releases/
-    when:
-      event: [ tag ]
-  - packwin:
-    name: pack windows amd64
-    group: pack
-    image: cblomart/gobasebuild
-    commands:
-    - make dist-windows-amd64
-    - cp /tmp/vsphere-graphite_*.tgz releases/
-    when:
-      event: [ tag ]
-  - packosx:
-    name: pack osx amd64
-    group: pack
-    image: cblomart/gobasebuild
-    commands:
-    - make dist-darwin-amd64
-    - cp /tmp/vsphere-graphite_*.tgz releases/
-    when:
-      event: [ tag ]
-  - packarm:
-    name: pack linux arm
-    group: pack
+  - pack:
+    name: pack
     image: cblomart/gobasebuild
     commands:
     - make dist-linux-arm
@@ -128,9 +134,103 @@ steps:
     checksum:
       - sha256
     when:
-      event: [ tag ]
+      event: [ tag ]  
 
 volumes:
   - name: docker
     host:
       path: /var/run/docker.sock
+
+depends_on:
+  - checkups
+---
+kind: pipeline
+name: build-windows
+workspace:
+  base: /go
+  path: src/github.com/cblomart/vsphere-graphite
+
+steps:
+  - build:
+    name: build
+    image: cblomart/gobasebuild
+    commands:
+    - make build-windows-amd64
+    when:
+      event: [ tag ]
+  - upx:
+    name: upx
+    image: cblomart/gobasebuild
+    commands:
+    - make upx-windows-amd64
+    when:
+      event: [ tag ]
+  - pack:
+    name: pack
+    image: cblomart/gobasebuild
+    commands:
+    - make dist-windows-amd64
+    - cp /tmp/vsphere-graphite_*.tgz releases/
+    when:
+      event: [ tag ]
+  - release:
+    name: release
+    image: plugins/github-release
+    environment:
+      GIHUB_SECRET:
+        from_secret: github_secret
+    files:
+      - releases/*.tgz
+    checksum:
+      - sha256
+    when:
+      event: [ tag ]  
+
+depends_on:
+  - checkups
+
+---
+kind: pipeline
+name: build-darwin
+workspace:
+  base: /go
+  path: src/github.com/cblomart/vsphere-graphite
+
+steps:
+  - build:
+    name: build
+    image: cblomart/gobasebuild
+    commands:
+    - make build-darwin-amd64
+    when:
+      event: [ tag ]
+  - upx:
+    name: upx
+    image: cblomart/gobasebuild
+    commands:
+    - make upx-darwin-amd64
+    when:
+      event: [ tag ]
+  - pack:
+    name: pack
+    image: cblomart/gobasebuild
+    commands:
+    - make dist-darwin-amd64
+    - cp /tmp/vsphere-graphite_*.tgz releases/
+    when:
+      event: [ tag ]
+  - release:
+    name: release
+    image: plugins/github-release
+    environment:
+      GIHUB_SECRET:
+        from_secret: github_secret
+    files:
+      - releases/*.tgz
+    checksum:
+      - sha256
+    when:
+      event: [ tag ]  
+
+depends_on:
+  - checkups
