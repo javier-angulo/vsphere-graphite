@@ -13,10 +13,10 @@ steps:
       MC_HOST_s3:
         from_secret: s3_host
     commands:
+    - mc mb s3/vsphere-graphite
     - go version
     - make godeps
     - go generate ./...
-    - mc bc s3/vsphere-graphite
     - tar czf - /go/* | mc pipe s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz
   # do the checkups
   - checkups:
