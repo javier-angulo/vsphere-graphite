@@ -9,10 +9,15 @@ steps:
   - dependancies:
     name: dependancies
     image: cblomart/gobasebuild
+    environment:
+      MC_HOST_s3:
+        from_secret: s3_host
     commands:
     - go version
     - make godeps
     - go generate ./...
+    - mc bc s3/vsphere-graphite
+    - tar czf - /go/* | mc pipe s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz
   # do the checkups
   - checkups:
     name: checks
@@ -27,7 +32,18 @@ workspace:
   base: /go
   path: src/github.com/cblomart/vsphere-graphite
 
+clone:
+  disable: true
+
 steps:
+  - restore:
+    name: restore
+    image: cblomart/gobasebuild
+    environment:
+      MC_HOST_s3:
+        from_secret: s3_host
+    commands:
+    - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf -C /go/
   - build:
     name: build
     image: cblomart/gobasebuild
@@ -89,7 +105,18 @@ workspace:
   base: /go
   path: src/github.com/cblomart/vsphere-graphite
 
+clone:
+  disable: true
+
 steps:
+  - restore:
+    name: restore
+    image: cblomart/gobasebuild
+    environment:
+      MC_HOST_s3:
+        from_secret: s3_host
+    commands:
+    - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf -C /go/
   - build:
     name: build
     image: cblomart/gobasebuild
@@ -141,8 +168,12 @@ volumes:
     host:
       path: /var/run/docker.sock
 
+trigger:
+  event: [ tag ]
+
 depends_on:
   - checkups
+
 ---
 kind: pipeline
 name: build-windows
@@ -150,7 +181,18 @@ workspace:
   base: /go
   path: src/github.com/cblomart/vsphere-graphite
 
+clone:
+  disable: true
+
 steps:
+  - restore:
+    name: restore
+    image: cblomart/gobasebuild
+    environment:
+      MC_HOST_s3:
+        from_secret: s3_host
+    commands:
+    - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf -C /go/
   - build:
     name: build
     image: cblomart/gobasebuild
@@ -186,6 +228,9 @@ steps:
     when:
       event: [ tag ]  
 
+trigger:
+  event: [ tag ]
+
 depends_on:
   - checkups
 
@@ -196,7 +241,18 @@ workspace:
   base: /go
   path: src/github.com/cblomart/vsphere-graphite
 
+clone:
+  disable: true
+
 steps:
+  - restore:
+    name: restore
+    image: cblomart/gobasebuild
+    environment:
+      MC_HOST_s3:
+        from_secret: s3_host
+    commands:
+    - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf -C /go/
   - build:
     name: build
     image: cblomart/gobasebuild
@@ -231,6 +287,9 @@ steps:
       - sha256
     when:
       event: [ tag ]  
+
+trigger:
+  event: [ tag ]
 
 depends_on:
   - checkups
