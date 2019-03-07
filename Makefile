@@ -135,7 +135,6 @@ checks:
 	golint ./...
 	ineffassign ./
 	gosec ./...
-	go tool vet ./..
 
 $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX): $(SRC_FILES)
 	if [ "$(GOOS)-$(GOARCH)" = "linux-amd64" ] && [ ! -f /etc/alpine-release ] && [ ! -f /etc/arch-release ]; then\
