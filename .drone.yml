@@ -104,12 +104,13 @@ steps:
   - release:
     name: release
     image: plugins/github-release
-    api_key:
-      from_secret: github_secret
-    files:
-      - releases/*.tgz
-    checksum:
-      - sha256
+    settings:
+      api_key:
+        from_secret: github_secret
+      files:
+        - releases/*.tgz
+      checksum:
+        - sha256
     when:
       event: [ tag ]  
 
@@ -172,12 +173,13 @@ steps:
   - release:
     name: release
     image: plugins/github-release
-    api_key:
-      from_secret: github_secret
-    files:
-      - releases/*.tgz
-    checksum:
-      - sha256
+    settings:
+      api_key:
+        from_secret: github_secret
+      files:
+        - releases/*.tgz
+      checksum:
+        - sha256
 
 volumes:
   - name: docker
@@ -228,12 +230,13 @@ steps:
   - release:
     name: release
     image: plugins/github-release
-    api_key:
-      from_secret: github_secret
-    files:
-      - releases/*.tgz
-    checksum:
-      - sha256
+    settings:
+      api_key:
+        from_secret: github_secret
+      files:
+        - releases/*.tgz
+      checksum:
+        - sha256
 
 trigger:
   event: [ tag ]
@@ -276,17 +279,16 @@ steps:
     commands:
     - make dist-darwin-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
-    when:
-      event: [ tag ]
   - release:
     name: release
     image: plugins/github-release
-    api_key:
-      from_secret: github_secret
-    files:
-      - releases/*.tgz
-    checksum:
-      - sha256
+    settings:
+      api_key:
+        from_secret: github_secret
+      files:
+        - releases/*.tgz
+      checksum:
+        - sha256
 
 trigger:
   event: [ tag ]
