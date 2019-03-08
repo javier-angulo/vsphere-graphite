@@ -312,6 +312,12 @@ steps:
     commands:
     - mc rm -r --force --older-than 3d s3/vsphere-graphite 
 
+depends_on:
+  - build-linux
+  - build-arm
+  - build-windows
+  - build-darwin
+
 trigger:
   status:
   - success
