@@ -291,3 +291,28 @@ trigger:
 
 depends_on:
   - checkups
+
+---
+kind: pipeline
+name: cleanup
+workspace:
+  base: /go
+  path: src/github.com/cblomart/vsphere-graphite
+
+clone:
+  disable: true
+
+steps:
+  - cleanup:
+    name: cleanup
+    image: cblomart/gobasebuild
+    environment:
+      MC_HOSTS_s3:
+        from_secret: s3_host
+    commands:
+    - mc rm -r --force --older-than 3d s3/vsphere-graphite 
+
+trigger:
+  status:
+  - success
+  - failure
