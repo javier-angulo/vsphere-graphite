@@ -5,7 +5,10 @@ endif
 ifdef TRAVIS_TAG
 	TAG=$(TRAVIS_TAG)
 endif
-ifndef TRAVIS_TAG
+ifdef DRONE_TAG
+	TAG=$(DRONE_TAG)
+endif
+ifndef TAG
 	TAG=$(shell git tag -l --points-at HEAD)
 endif
 GOOS=$(word 1,$(subst /, ,$(lastword $(GOVERSION))))

@@ -31,6 +31,9 @@ steps:
     - go version
     - make godeps
     - go generate ./...
+    - tags=$(git rev-parse --short HEAD)
+    - if [ ! -z "$DRONE_TAG" ]; then tags="$tags,$DRONE_TAG,latest"; fi
+    - echo $tags | tee .tags
   # do the checkups
   - checkups:
     name: checks
@@ -82,17 +85,15 @@ steps:
       event: [ tag ]
   - push:
     name: push
-    image: cblomart/gobasebuild
-    environment:
-      DOCKER_PASSWORD:
-        from_secret: docker_password
-    volumes:
-    - name: docker
-      path: /var/run/docker.sock
-    commands:
-    - make docker-linux-amd64
-    - docker login -u cblomart -p $DOCKER_PASSWORD
-    - make push-linux-amd64
+    image: plugins/docker
+    settings:
+      username: cblomart
+      password:
+        from_secred: docker_password
+      repo: cblomart/vsphere-graphite
+      build_args:
+        - os=linux
+        - arch=amd64
   - pack:
     name: pack
     image: cblomart/gobasebuild
@@ -114,11 +115,6 @@ steps:
         - releases/*.sha256
     when:
       event: [ tag ]  
-
-volumes:
-  - name: docker
-    host:
-      path: /var/run/docker.sock
 
 depends_on:
   - checkups
@@ -152,19 +148,18 @@ steps:
     image: cblomart/gobasebuild
     commands:
     - make upx-linux-arm
+
   - push:
     name: push
-    image: cblomart/gobasebuild
-    environment:
-      DOCKER_PASSWORD:
-        from_secret: docker_password
-    volumes:
-    - name: docker
-      path: /var/run/docker.sock
-    commands:
-    - make docker-linux-arm
-    - docker login -u cblomart -p $DOCKER_PASSWORD
-    - make push-linux-arm
+    image: plugins/docker
+    settings:
+      username: cblomart
+      password:
+        from_secred: docker_password
+      repo: cblomart/vsphere-graphite
+      build_args:
+        - os=linux
+        - arch=arm
   - pack:
     name: pack
     image: cblomart/gobasebuild
@@ -182,11 +177,6 @@ steps:
         - releases/*.tgz
         - releases/*.md5
         - releases/*.sha256
-
-volumes:
-  - name: docker
-    host:
-      path: /var/run/docker.sock
 
 trigger:
   event: [ tag ]
