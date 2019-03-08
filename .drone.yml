@@ -99,6 +99,7 @@ steps:
     commands:
     - make dist-linux-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
+    - for f in $(ls -1 releases/*.tgz); do md5sum $f | sed "s#/.*/##g" > "$f.md5"; sha256sum $f | sed "s#/.*/##g" > "$f.sha256"; done
     when:
       event: [ tag ]
   - release:
@@ -109,8 +110,8 @@ steps:
         from_secret: github_secret
       files:
         - releases/*.tgz
-      checksum:
-        - sha256
+        - releases/*.md5
+        - releases/*.sha256
     when:
       event: [ tag ]  
 
@@ -170,6 +171,7 @@ steps:
     commands:
     - make dist-linux-arm
     - cp /tmp/vsphere-graphite_*.tgz releases/
+    - for f in $(ls -1 releases/*.tgz); do md5sum $f | sed "s#/.*/##g" > "$f.md5"; sha256sum $f | sed "s#/.*/##g" > "$f.sha256"; done
   - release:
     name: release
     image: plugins/github-release
@@ -178,8 +180,8 @@ steps:
         from_secret: github_secret
       files:
         - releases/*.tgz
-      checksum:
-        - sha256
+        - releases/*.md5
+        - releases/*.sha256
 
 volumes:
   - name: docker
@@ -227,6 +229,7 @@ steps:
     commands:
     - make dist-windows-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
+    - for f in $(ls -1 releases/*.tgz); do md5sum $f | sed "s#/.*/##g" > "$f.md5"; sha256sum $f | sed "s#/.*/##g" > "$f.sha256"; done
   - release:
     name: release
     image: plugins/github-release
@@ -235,8 +238,8 @@ steps:
         from_secret: github_secret
       files:
         - releases/*.tgz
-      checksum:
-        - sha256
+        - releases/*.md5
+        - releases/*.sha256
 
 trigger:
   event: [ tag ]
@@ -279,6 +282,7 @@ steps:
     commands:
     - make dist-darwin-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
+    - for f in $(ls -1 releases/*.tgz); do md5sum $f | sed "s#/.*/##g" > "$f.md5"; sha256sum $f | sed "s#/.*/##g" > "$f.sha256"; done
   - release:
     name: release
     image: plugins/github-release
@@ -287,8 +291,8 @@ steps:
         from_secret: github_secret
       files:
         - releases/*.tgz
-      checksum:
-        - sha256
+        - releases/*.md5
+        - releases/*.sha256
 
 trigger:
   event: [ tag ]
