@@ -27,9 +27,6 @@ steps:
   - dependancies:
     name: dependancies
     image: cblomart/gobasebuild
-    environment:
-      MC_HOSTS_s3:
-        from_secret: s3_host
     commands:
     - go version
     - make godeps
