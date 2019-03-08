@@ -1,17 +1,10 @@
 # vSphere Graphite
 
+[![Build Status](https://cloud.drone.io/api/badges/cblomart/vsphere-graphite/status.svg)](https://cloud.drone.io/cblomart/vsphere-graphite) [![Go Report Card](https://goreportcard.com/badge/github.com/cblomart/vsphere-graphite)](https://goreportcard.com/report/github.com/cblomart/vsphere-graphite) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite?ref=badge_shield)
+
 Monitors VMware vSphere stats using govmomi. Sinks metrics to one of many time series backends.
 
 Written in go to achieve fast sampling rates and high throughput sink. Successfuly benchmarked against 3000 VM's, logging 150,000 metrics per minute to an ElasticSearch backend.
-
-## Build status
-
-Drone: [![Drone Build Status](https://drone.blomart.net/api/badges/cblomart/vsphere-graphite/status.svg)](https://drone.blomart.net/cblomart/vsphere-graphite)
-
-## Code report
-
-[![Go Report Card](https://goreportcard.com/badge/github.com/cblomart/vsphere-graphite)](https://goreportcard.com/report/github.com/cblomart/vsphere-graphite)
-[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite?ref=badge_shield)
 
 ## Example dashboard
 
