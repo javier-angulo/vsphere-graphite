@@ -16,7 +16,7 @@ steps:
       MC_HOSTS_s3:
         from_secret: s3_host
     commands:
-    - last=$(find s3/vsphere-graphite --regex "[0-9]+/workspace.tgz" --newer-than 3d | tail -1)
+    - last=$(mc find s3/vsphere-graphite --regex "[0-9]+/workspace.tgz" --newer-than 3d | tail -1)
     - if [ ! -z $last]; then $last | tar xzf - -C /; fi
   # clone from git
   - clone:
