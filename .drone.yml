@@ -32,16 +32,25 @@ steps:
         from_secret: s3_host
     commands:
     - go version
-    - mc mb -p s3/vsphere-graphite
     - make godeps
     - go generate ./...
-    - tar czf - /go | mc pipe s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz
   # do the checkups
   - checkups:
     name: checks
     image: cblomart/gobasebuild
     commands:
     - make checks
+  # save workspace for further runs
+  - save:
+    name: save
+    image: cblomart/gobasebuild
+    environment:
+      MC_HOSTS_s3:
+        from_secret: s3_host
+    commands:
+    - mc mb -p s3/vsphere-graphite
+    - tar czf - /go | mc pipe s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz
+
 
 ---
 kind: pipeline
