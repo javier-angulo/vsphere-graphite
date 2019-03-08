@@ -17,7 +17,7 @@ COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certifi
 # copy vsphere-graphite
 COPY ./releases/$os/$arch/vsphere-graphite /vsphere-graphite
 # copy config
-COPY ./vsphere-graphite.json /etc/vsphere-graphite.json
+COPY ./vsphere-graphite-example.json /etc/vsphere-graphite.json
 # run as vpshere-graphite-user
 USER vsphere-graphite-user
 # use /etc as volume for configuration
