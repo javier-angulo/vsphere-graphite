@@ -89,7 +89,7 @@ steps:
     settings:
       username: cblomart
       password:
-        from_secred: docker_password
+        from_secret: docker_password
       repo: cblomart/vsphere-graphite
       build_args:
         - os=linux
@@ -155,7 +155,7 @@ steps:
     settings:
       username: cblomart
       password:
-        from_secred: docker_password
+        from_secret: docker_password
       repo: cblomart/vsphere-graphite
       build_args:
         - os=linux
