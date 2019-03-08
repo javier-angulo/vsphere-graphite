@@ -4,7 +4,25 @@ workspace:
   base: /go
   path: src/github.com/cblomart/vsphere-graphite
 
+clone:
+  disable: true
+
 steps:
+  # restore from latest build
+  - restore:
+    name: restore
+    image: cblomart/gobasebuild
+    environment:
+      MC_HOSTS_s3:
+        from_secret: s3_host
+    commands:
+    - last=$(find s3/vsphere-graphite --regex "[0-9]+/workspace.tgz" --newer-than 3d | tail -1)
+    - if [ ! -z $last]; then $last | tar xzf - -C /; fi
+  # clone from git
+  - clone:
+    name: clone
+    image: plugins/git
+    tags: true
   # check dependencies
   - dependancies:
     name: dependancies
@@ -127,8 +145,6 @@ steps:
     image: cblomart/gobasebuild
     commands:
     - make upx-linux-arm
-    when:
-      event: [ tag ]
   - push:
     name: push
     image: cblomart/gobasebuild
@@ -148,8 +164,6 @@ steps:
     commands:
     - make dist-linux-arm
     - cp /tmp/vsphere-graphite_*.tgz releases/
-    when:
-      event: [ tag ]
   - release:
     name: release
     image: plugins/github-release
@@ -160,8 +174,6 @@ steps:
       - releases/*.tgz
     checksum:
       - sha256
-    when:
-      event: [ tag ]  
 
 volumes:
   - name: docker
@@ -198,23 +210,17 @@ steps:
     image: cblomart/gobasebuild
     commands:
     - make build-windows-amd64
-    when:
-      event: [ tag ]
   - upx:
     name: upx
     image: cblomart/gobasebuild
     commands:
     - make upx-windows-amd64
-    when:
-      event: [ tag ]
   - pack:
     name: pack
     image: cblomart/gobasebuild
     commands:
     - make dist-windows-amd64
     - cp /tmp/vsphere-graphite_*.tgz releases/
-    when:
-      event: [ tag ]
   - release:
     name: release
     image: plugins/github-release
@@ -225,8 +231,6 @@ steps:
       - releases/*.tgz
     checksum:
       - sha256
-    when:
-      event: [ tag ]  
 
 trigger:
   event: [ tag ]
@@ -258,15 +262,11 @@ steps:
     image: cblomart/gobasebuild
     commands:
     - make build-darwin-amd64
-    when:
-      event: [ tag ]
   - upx:
     name: upx
     image: cblomart/gobasebuild
     commands:
     - make upx-darwin-amd64
-    when:
-      event: [ tag ]
   - pack:
     name: pack
     image: cblomart/gobasebuild
@@ -285,8 +285,6 @@ steps:
       - releases/*.tgz
     checksum:
       - sha256
-    when:
-      event: [ tag ]  
 
 trigger:
   event: [ tag ]
