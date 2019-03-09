@@ -12,6 +12,7 @@ steps:
   - restore:
     name: restore
     image: cblomart/gobasebuild
+    pull: always
     environment:
       MC_HOSTS_s3:
         from_secret: s3_host
@@ -66,6 +67,7 @@ steps:
   - restore:
     name: restore
     image: cblomart/gobasebuild
+    pull: always
     environment:
       MC_HOSTS_s3:
         from_secret: s3_host
@@ -133,6 +135,7 @@ steps:
   - restore:
     name: restore
     image: cblomart/gobasebuild
+    pull: always
     environment:
       MC_HOSTS_s3:
         from_secret: s3_host
@@ -198,6 +201,7 @@ steps:
   - restore:
     name: restore
     image: cblomart/gobasebuild
+    pull: always
     environment:
       MC_HOSTS_s3:
         from_secret: s3_host
@@ -251,6 +255,7 @@ steps:
   - restore:
     name: restore
     image: cblomart/gobasebuild
+    pull: always
     environment:
       MC_HOSTS_s3:
         from_secret: s3_host
@@ -301,15 +306,23 @@ clone:
   disable: true
 
 steps:
-  - cleanup:
-    name: cleanup
+  - cleanup-s3:
+    name: cleanup s3
     image: cblomart/gobasebuild
+    pull: always
     environment:
       MC_HOSTS_s3:
         from_secret: s3_host
     commands:
     - mc rm -r --force --older-than 3d s3/vsphere-graphite 
-
+  - cleanup-docker:
+    name: cleanup docker
+    image: cblomart/registry-cleanup
+    settings:
+      password:
+        from_secret: docker_password
+      dryrun: true
+      
 depends_on:
   - build-linux
   - build-arm
