@@ -327,7 +327,7 @@ steps:
     settings:
       password:
         from_secret: docker_password
-      repo: cblomart-rpi-vsphere-graphite
+      repo: cblomart/rpi-vsphere-graphite
       
 depends_on:
   - build-linux
