@@ -321,7 +321,6 @@ steps:
     settings:
       password:
         from_secret: docker_password
-      dryrun: true
       
 depends_on:
   - build-linux
