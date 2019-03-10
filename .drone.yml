@@ -159,7 +159,7 @@ steps:
       username: cblomart
       password:
         from_secret: docker_password
-      repo: cblomart/vsphere-graphite
+      repo: cblomart/rpi-vsphere-graphite
       build_args:
         - os=linux
         - arch=arm
@@ -315,12 +315,19 @@ steps:
         from_secret: s3_host
     commands:
     - mc rm -r --force --older-than 3d s3/vsphere-graphite 
-  - cleanup-docker:
-    name: cleanup docker
+  - cleanup-docker-amd64:
+    name: cleanup docker amd64
     image: cblomart/registry-cleanup
     settings:
       password:
         from_secret: docker_password
+  - cleanup-docker-arm:
+    name: cleanup docker arm
+    image: cblomart/registry-cleanup
+    settings:
+      password:
+        from_secret: docker_password
+      repo: cblomart-rpi-vsphere-graphite
       
 depends_on:
   - build-linux
