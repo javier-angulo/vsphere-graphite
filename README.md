@@ -1,10 +1,18 @@
-# vSphere Graphite
+# vSphere Graphite [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](Open+up++your+%20vmware+%20vsphere+statistics+with+https://github.com/cblomart/vsphere-graphite)
 
 [![Build Status](https://cloud.drone.io/api/badges/cblomart/vsphere-graphite/status.svg)](https://cloud.drone.io/cblomart/vsphere-graphite) [![Go Report Card](https://goreportcard.com/badge/github.com/cblomart/vsphere-graphite)](https://goreportcard.com/report/github.com/cblomart/vsphere-graphite) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite?ref=badge_shield)
 
 Monitors VMware vSphere stats using govmomi. Sinks metrics to one of many time series backends.
 
 Written in go to achieve fast sampling rates and high throughput sink. Successfuly benchmarked against 3000 VM's, logging 150,000 metrics per minute to an ElasticSearch backend.
+
+Compatible backends:
+
+* [prometheus](https://prometheus.io/)
+* [influxdb](https://www.influxdata.com/)
+* [fluentd](https://www.fluentd.org/)
+* [elasticsearch](https://www.elastic.co/)
+* [graphite](https://graphiteapp.org/)
 
 ## Example dashboard
 
