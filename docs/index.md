@@ -2,10 +2,11 @@
 
 Altought it started out as a simple tool to pump vsphere statistics to graphite it was extended to support different backends:
 
-* [graphite](https://graphiteapp.org/)
+* [prometheus](https://prometheus.io/)
 * [influxdb](https://www.influxdata.com/)
-* [elasticsearch](https://www.elastic.co/)
 * [fluentd](https://www.fluentd.org/)
+* [elasticsearch](https://www.elastic.co/)
+* [graphite](https://graphiteapp.org/)
 
 It will basically get the requested statistics for each virtual machine or host and send them to the backend every minuts.
 
