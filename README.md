@@ -52,15 +52,65 @@ You can select the extra data collected by using the "Properties" property:
 
 ### Backend parameters
 
-* Type (BACKEND_TYPE): Type of backend to use. Currently "graphite", "influxdb", "thinfluxdb" (embeded influx client), "elastic", and "fluentd"
-* Hostname (BACKEND_HOSTNAME): hostname were the backend is running
-* Port (BACKEND_PORT): port to connect to for the backend
-* Encrypted (BACKEND_ENCRYPTED): enable or disable TLS to backend (true, false)
-* Username (BACKEND_USERNAME): username to connect to the backend (influxdb and optionally for thinfluxdb & elasticsearch)
-* Password (BACKEND_PASSWORD): password to connect to the backend (influxdb and optionally for thinfluxdb & elasticsearch)
-* Database (BACKEND_DATABASE): database to use in the backend (influxdb, thinfluxdb, elasticsearch)
-* NoArray (BACKEND_NOARRAY): don't use csv 'array' as tags, only the first element is used (influxdb, thinfluxdb)
-* Tag (BACKEND_TAG): tag to use in the backend (fluent)
+Backend parameters can be set in the config and will allways be overriden by environment variables.
+This allows to use a generic config in a container image and set the backend by environement variables.
+
+* Type (BACKEND_TYPE): 
+
+  Type of backend to use.
+
+  Currently "graphite", "influxdb", "thinfluxdb" (embeded influx client), "elastic", "prometheus", "thinprometheus" (embeded prometheus) and "fluentd"
+
+* Hostname (BACKEND_HOSTNAME): 
+
+  Hostname were the backend is running.
+
+  Prometheus will use this information to choose which interface (ip address) it listens to. An empty value means all interfaces. 
+  
+  i.e: 127.0.0.1 would limit to localhost.
+
+* Port (BACKEND_PORT): 
+
+  Port to connect to for the backend.
+
+  Prometheus will use this to choose which port to listen to. By default it listens to port 9155.
+ 
+* Encrypted (BACKEND_ENCRYPTED): 
+
+  Enable or disable TLS to the backend (true, false).
+
+  Only supported by "influx", "thininflux" and "elastic" backends.
+
+>
+> Prometheus suppport for this would require certificate management.
+>
+
+* Username (BACKEND_USERNAME): 
+
+  Username to connect to the backend.
+
+  Only supported by "influx" and "thininflux" backends.
+  
+* Password (BACKEND_PASSWORD): 
+
+  Password to connect to the backend.
+
+  Only supported by "influx" and "thininflux" backends.
+
+* Database (BACKEND_DATABASE):
+
+  Database to use in the backend.
+
+  Only supported by "influx", "thininflux" and "elastic".
+
+* NoArray (BACKEND_NOARRAY): 
+
+  Multiple values metadata will be send as csv 'array' by default (NoArray is true by default).
+  If set to false, only the first element is sent.
+
+* Prefix (BACKEND_PREFIX): 
+
+  Prefix to use in the backend.
 
 ## Execute vsphere-graphite as a container
 
