@@ -73,9 +73,18 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	log.Println("Starting daemon:", path.Base(os.Args[0]))
-
+	
+	// find file location
+	location := "/etc/" + path.Base(os.Args[0]) + ".json"
+	if _, err = os.Stat(location); err!=nil {
+		location = "./" + path.Base(os.Args[0]) + ".json"
+		if _, err = os.Stat(location); err!=nil {
+			return "Could not find config location in ./ or /etc", err
+		}
+	}
+	
 	// read the configuration
-	file, err := os.Open("/etc/" + path.Base(os.Args[0]) + ".json")
+	file, err := os.Open(location)
 	if err != nil {
 		return "Could not open configuration file", err
 	}
