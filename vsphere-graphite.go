@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"path"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"runtime/debug"
@@ -73,9 +74,11 @@ func (service *Service) Manage() (string, error) {
 	log.Println("Starting daemon:", path.Base(os.Args[0]))
 	
 	// find file location
-	location := "/etc/" + path.Base(os.Args[0]) + ".json"
+	basename := path.Base(os.Args[0])
+	configname := strings.TrimSuffix(basename, filepath.Ext(basename))
+	location := "/etc/" + configname + ".json"
 	if _, err := os.Stat(location); err!=nil {
-		location = "./" + path.Base(os.Args[0]) + ".json"
+		location = "./" + configname + ".json"
 		if _, err := os.Stat(location); err!=nil {
 			return "Could not find config location in './' or '/etc'", err
 		}
