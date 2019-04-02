@@ -78,9 +78,9 @@ func (service *Service) Manage() (string, error) {
 	configname := strings.TrimSuffix(basename, filepath.Ext(basename))
 	location := "/etc/" + configname + ".json"
 	if _, err := os.Stat(location); err!=nil {
-		location = "./" + configname + ".json"
+		location = configname + ".json"
 		if _, err := os.Stat(location); err!=nil {
-			return "Could not find config location in './' or '/etc'", err
+			return "Could not find config location in '.' or '/etc'", err
 		}
 	}
 	
