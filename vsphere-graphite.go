@@ -82,7 +82,7 @@ func (service *Service) Manage() (string, error) {
 	}
 	
 	// read the configuration
-	file, err := os.Open(location)
+	file, err := os.Open(location) // #nosec
 	if err != nil {
 		return "Could not open configuration file", err
 	}
