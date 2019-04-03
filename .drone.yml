@@ -96,6 +96,10 @@ steps:
       build_args:
         - os=linux
         - arch=amd64
+    when:
+      event:
+       exclude:
+         - pull_request
   - pack:
     name: pack
     image: cblomart/gobasebuild
@@ -151,7 +155,6 @@ steps:
     image: cblomart/gobasebuild
     commands:
     - make upx-linux-arm
-
   - push:
     name: push
     image: plugins/docker
