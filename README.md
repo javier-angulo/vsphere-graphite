@@ -24,8 +24,13 @@ The dashboard example below is using the grafana UI. The backend is using Elasti
 
 Define vSphere credentials and collection metrics in the JSON config file. An example configuration for the Contoso domain is found [here](./vsphere-graphite-example.json).
 
-Copy this config file to /etc/*binaryname*.json and modify as needed. Example:
-  > cp vsphere-graphite-example.json /etc/vsphere-graphite.json
+Copy this config file to /etc/*binaryname*.json and modify as needed. 
+As in windows "/etc" doesn't exist, the configuration file should be placed in the same directory as the vsphere-graphite binary.
+
+Example:
+> cp vsphere-graphite-example.json /etc/vsphere-graphite.json
+
+
 
 <!-- provide link to vcenter roles and permissions -->
 
