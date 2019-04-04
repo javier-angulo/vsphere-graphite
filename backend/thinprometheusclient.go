@@ -88,7 +88,6 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			if recdone {
 				timeout.Stop()
 				log.Println("Thin Prometheus was signaled a timeout")
-				break
 			}
 		}
 		if recdone {
