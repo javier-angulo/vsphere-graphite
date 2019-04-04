@@ -65,31 +65,34 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	// start a timeout
-	timeout := time.NewTimer(10 * time.Second)
-	// wait for the results
-	wait := true
+	timeout := time.NewTimer(300 * time.Millisecond)
+	// recieve done
+	recdone := false
 	log.Println("Thin Prometheus is waiting for query results")
-	for wait {
+	for {
 		select {
 		case point := <-*channels.Request:
 			// reset timer
 			if !timeout.Stop() {
 				<-timeout.C
 			}
-			timeout.Reset(10 * time.Second)
+			timeout.Reset(300 * time.Millisecond)
 			// add point to the buffer
 			addToThinPrometheusBuffer(buffer, &point)
 		case <-*channels.Done:
 			// finish consuming metrics and break loop
 			log.Println("Thin Prometheus was signaled the end of the collection")
-			wait = false
+			recdone = true
 		case <-timeout.C:
 			// stop timer
-			timeout.Stop()
-			log.Println("Thin Prometheus was signaled a timeout")
-			wait = false
-			ctx.Error("Timeout while gathering data", fasthttp.StatusRequestTimeout)
-			return
+			if recdone {
+				timeout.Stop()
+				log.Println("Thin Prometheus was signaled a timeout")
+				break
+			}
+		}
+		if recdone {
+			break
 		}
 	}
 	ctx.SetContentType("text/plain; charset=utf8")
