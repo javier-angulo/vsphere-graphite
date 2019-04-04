@@ -34,7 +34,7 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 	// points recieved
 	points := 0
 	// handle timeout between point reception
-	rectimer := time.NewTimer(time.Second * time.Duration(5))
+	rectimer := time.NewTimer(time.Millisecond * time.Duration(100))
 	// check that the collection threads have finished
 	recdone := false
 	for {
@@ -47,7 +47,7 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 				default:
 				}
 			}
-			rectimer.Reset(time.Second * time.Duration(1))
+			rectimer.Reset(time.Millisecond * time.Duration(100))
 			// increase points
 			points++
 			// send point to prometheus
