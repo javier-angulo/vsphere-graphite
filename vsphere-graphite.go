@@ -72,18 +72,18 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	log.Println("Starting daemon:", path.Base(os.Args[0]))
-	
+
 	// find file location
 	basename := path.Base(os.Args[0])
 	configname := strings.TrimSuffix(basename, filepath.Ext(basename))
 	location := "/etc/" + configname + ".json"
-	if _, err := os.Stat(location); err!=nil {
+	if _, err := os.Stat(location); err != nil {
 		location = configname + ".json"
-		if _, err := os.Stat(location); err!=nil {
+		if _, err := os.Stat(location); err != nil {
 			return "Could not find config location in '.' or '/etc'", err
 		}
 	}
-	
+
 	// read the configuration
 	file, err := os.Open(location) // #nosec
 	if err != nil {
@@ -261,6 +261,7 @@ func (service *Service) Manage() (string, error) {
 					go queryVCenter(*vcenter, conf, request.Request, &wg)
 				}
 				wg.Wait()
+				time.Sleep(5 * time.Second)
 				*request.Done <- true
 				cleanup <- true
 			}()
