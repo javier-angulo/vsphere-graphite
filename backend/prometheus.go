@@ -36,9 +36,9 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 		case point := <-*channels.Request:
 			points++
 			backend.PrometheusSend(ch, point)
-		case <-*channels.Done:
-			log.Printf("prometheus: sent %d points", points)
-			return
+			//case <-*channels.Done:
+			//	log.Printf("prometheus: sent %d points", points)
+			//	return
 		}
 	}
 }
