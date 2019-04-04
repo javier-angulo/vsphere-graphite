@@ -4,6 +4,7 @@ package backend
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -30,19 +31,36 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	//points := 0
-	//for {
-	//	select {
-	//	case point := <-*channels.Request:
-	//		points++
-	//		backend.PrometheusSend(ch, point)
-	//  //case <-*channels.Done:
-	//    //log.Printf("prometheus: sent %d points", points)
-	//	  //return
-	//	}
-	//}
-	for p := range *channels.Request {
-		backend.PrometheusSend(ch, p)
+	// points recieved
+	points := 0
+	// handle timeout between point reception
+	rectimer := time.NewTimer(time.Second * time.Duration(5))
+	// check that the collection threads have finished
+	recdone := false
+	for {
+		select {
+		case point := <-*channels.Request:
+			// reset timer
+			if !rectimer.Stop() {
+				select {
+				case <-rectimer.C:
+				default:
+				}
+			}
+			rectimer.Reset(time.Second * time.Duration(1))
+			// increase points
+			points++
+			// send point to prometheus
+			backend.PrometheusSend(ch, point)
+		case <-*channels.Done:
+			recdone = true
+		case <-rectimer.C:
+			// only exit when done and timeout
+			if recdone {
+				log.Printf("prometheus: sent %d points", points)
+				return
+			}
+		}
 	}
 }
 
