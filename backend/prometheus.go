@@ -30,16 +30,19 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 		return
 	}
 
-	points := 0
-	for {
-		select {
-		case point := <-*channels.Request:
-			points++
-			backend.PrometheusSend(ch, point)
-			//case <-*channels.Done:
-			//	log.Printf("prometheus: sent %d points", points)
-			//	return
-		}
+	//points := 0
+	//for {
+	//	select {
+	//	case point := <-*channels.Request:
+	//		points++
+	//		backend.PrometheusSend(ch, point)
+	//  //case <-*channels.Done:
+	//    //log.Printf("prometheus: sent %d points", points)
+	//	  //return
+	//	}
+	//}
+	for p := range *channels.Request {
+		backend.PrometheusSend(ch, p)
 	}
 }
 
