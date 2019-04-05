@@ -69,12 +69,16 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	// recieve done
 	recdone := false
 	log.Println("Thin Prometheus is waiting for query results")
+L:
 	for {
 		select {
 		case point := <-*channels.Request:
 			// reset timer
 			if !timeout.Stop() {
-				<-timeout.C
+				select {
+				case <-timeout.C:
+				default:
+				}
 			}
 			timeout.Reset(300 * time.Millisecond)
 			// add point to the buffer
@@ -88,10 +92,8 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 			if recdone {
 				timeout.Stop()
 				log.Println("Thin Prometheus was signaled a timeout")
+				break L
 			}
-		}
-		if recdone {
-			break
 		}
 	}
 	ctx.SetContentType("text/plain; charset=utf8")
