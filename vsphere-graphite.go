@@ -11,6 +11,7 @@ import (
 	"path"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"runtime/debug"
 	"runtime/pprof"
@@ -31,8 +32,9 @@ import (
 
 const (
 	// name of the service
-	name        = "vsphere-graphite"
-	description = "send vsphere stats to graphite"
+	name          = "vsphere-graphite"
+	description   = "send vsphere stats to graphite"
+	vcenterdefreg = "^.+=.+:.+@.+$"
 )
 
 var dependencies = []string{}
@@ -72,18 +74,18 @@ func (service *Service) Manage() (string, error) {
 	}
 
 	log.Println("Starting daemon:", path.Base(os.Args[0]))
-	
+
 	// find file location
 	basename := path.Base(os.Args[0])
 	configname := strings.TrimSuffix(basename, filepath.Ext(basename))
 	location := "/etc/" + configname + ".json"
-	if _, err := os.Stat(location); err!=nil {
+	if _, err := os.Stat(location); err != nil {
 		location = configname + ".json"
-		if _, err := os.Stat(location); err!=nil {
+		if _, err := os.Stat(location); err != nil {
 			return "Could not find config location in '.' or '/etc'", err
 		}
 	}
-	
+
 	// read the configuration
 	file, err := os.Open(location) // #nosec
 	if err != nil {
@@ -162,6 +164,41 @@ func (service *Service) Manage() (string, error) {
 				}
 			}
 		}
+	}
+
+	//force vcenter values to environment variables if present
+	envvcenters := []*vsphere.VCenter{}
+	for _, e := range os.Environ() {
+		// check if a vcenter definition
+		if strings.HasPrefix(e, "VCENTER_") {
+			m, err := regexp.MatchString(vcenterdefreg, e)
+			if err != nil || !m {
+				log.Printf("cannot parse vcenter: %s\n", e)
+				continue
+			}
+			// slitp key values
+			kv := strings.Split(e, "=")
+			vcenterdef := strings.Join(kv[1:len(kv)], "=")
+			// split authentication and server
+			authserver := strings.Split(vcenterdef, "@")
+			auth := strings.Join(authserver[:len(authserver)-1], "@")
+			server := authserver[len(authserver)-1]
+			// split username and password
+			userpass := strings.Split(auth, ":")
+			username := userpass[0]
+			password := strings.Join(userpass[1:len(userpass)], ":")
+			vcenter := vsphere.VCenter{
+				Username: username,
+				Password: password,
+				Hostname: server,
+			}
+			log.Printf("adding vcenter from env: %s", vcenter.ToString())
+			envvcenters = append(envvcenters, &vcenter)
+		}
+	}
+	if len(envvcenters) > 0 {
+		conf.VCenters = envvcenters
+		log.Println("config vcenter have been replaced by those in env")
 	}
 
 	for _, vcenter := range conf.VCenters {
