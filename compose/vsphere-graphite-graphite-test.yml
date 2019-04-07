@@ -1,0 +1,18 @@
+version: 3
+
+services:
+  vcenter:
+    image: cblomart/vcsim
+
+  vsphere-graphite:
+    image: cblomart/vsphere-graphite:16a6c7a 
+    environment:
+      - VCENTER_VCSIM=user:pass@vcenter:8989
+      - BACKEND_TYPE=graphite
+      - BACKEND_HOSTNAME=graphite
+      - BACKEND_PORT=2003
+
+  graphite:
+    image: graphiteapp/graphite-statsd
+    expose:
+      - 80
