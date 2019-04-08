@@ -34,7 +34,7 @@ const (
 	// name of the service
 	name          = "vsphere-graphite"
 	description   = "send vsphere stats to graphite"
-	vcenterdefreg = "^VCENTER_.+=.+:.+@.+$"
+	vcenterdefreg = "^VCENTER_.+=(?P<username>.+):(?P<password>.+)@(?P<hostname>.+)$"
 )
 
 var dependencies = []string{}
@@ -176,21 +176,40 @@ func (service *Service) Manage() (string, error) {
 				log.Printf("cannot parse vcenter: %s\n", e)
 				continue
 			}
-			// slitp key values
-			kv := strings.Split(e, "=")
-			vcenterdef := strings.Join(kv[1:], "=")
-			// split authentication and server
-			authserver := strings.Split(vcenterdef, "@")
-			auth := strings.Join(authserver[:len(authserver)-1], "@")
-			server := authserver[len(authserver)-1]
-			// split username and password
-			userpass := strings.Split(auth, ":")
-			username := userpass[0]
-			password := strings.Join(userpass[1:], ":")
+			matches := validvcenter.FindStringSubmatch(e)
+			names := validvcenter.SubexpNames()
+			username := ""
+			password := ""
+			hostname := ""
+			for i, match := range matches {
+				if i == 0 {
+					continue
+				}
+				switch names[i] {
+				case "username":
+					username = match
+				case "password":
+					password = match
+				case "hostname":
+					hostname = match
+				}
+			}
+			if len(username) == 0 {
+				log.Printf("cannot find username in vcenter: %s", e)
+				continue
+			}
+			if len(password) == 0 {
+				log.Printf("cannot find password in vcenter: %s", e)
+				continue
+			}
+			if len(hostname) == 0 {
+				log.Printf("cannot find hostname in vcenter: %s", e)
+				continue
+			}
 			vcenter := vsphere.VCenter{
 				Username: username,
 				Password: password,
-				Hostname: server,
+				Hostname: hostname,
 			}
 			log.Printf("adding vcenter from env: %s", vcenter.ToString())
 			envvcenters = append(envvcenters, &vcenter)
