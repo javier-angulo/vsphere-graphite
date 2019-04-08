@@ -55,18 +55,39 @@ You can select the extra data collected by using the "Properties" property:
 * disks: reports the logical disks capacity inside the virtua machine
 * **all**: reports all the information
 
+### vCenter parameters
+
+vCenter parameters can be set in the configuration file or via environement variable.
+
+The configuration file needs the username, password and hostname of the vCenter (from [sample config](./vsphere-graphite-example.json)):
+
+```json
+"VCenters": [
+    { "Username": "CONTOSO\\Administrator", "Password": "$P@ssw0rd", "Hostname": "vc1.contoso.com" },
+    { "Username": "CONTOSO\\Administrator", "Password": "$P@ssw0rd", "Hostname": "vc2.contoso.com" }
+]
+```
+
+If set via environement variable you can set multiple vcenters via ```VCENTER_*=<username>:<password>@<hostname>```
+
+To follow the example given in the sample file:
+```
+VCENTER_VC1=CONTOSO\\Administrator:$P@ssw0rd@vc1.consoso.com
+VCENTER_VC2=CONTOSO\\Administrator:$P@ssw0rd@vc2.consoso.com
+```
+
 ### Backend parameters
 
 Backend parameters can be set in the config and will allways be overriden by environment variables.
 This allows to use a generic config in a container image and set the backend by environement variables.
 
-* Type (BACKEND_TYPE): 
+* Type (CONFIG_TYPE): 
 
   Type of backend to use.
 
   Currently "graphite", "influxdb", "thinfluxdb" (embeded influx client), "elastic", "prometheus", "thinprometheus" (embeded prometheus) and "fluentd"
 
-* Hostname (BACKEND_HOSTNAME): 
+* Hostname (CONFIG_HOSTNAME):
 
   Hostname were the backend is running.
 
@@ -74,13 +95,13 @@ This allows to use a generic config in a container image and set the backend by 
   
   i.e: 127.0.0.1 would limit to localhost.
 
-* Port (BACKEND_PORT): 
+* Port (CONFIG_PORT):
 
   Port to connect to for the backend.
 
   Prometheus will use this to choose which port to listen to. By default it listens to port 9155.
- 
-* Encrypted (BACKEND_ENCRYPTED): 
+
+* Encrypted (CONFIG_ENCRYPTED):
 
   Enable or disable TLS to the backend (true, false).
 
@@ -90,30 +111,30 @@ This allows to use a generic config in a container image and set the backend by 
 > Prometheus suppport for this would require certificate management.
 >
 
-* Username (BACKEND_USERNAME): 
+* Username (CONFIG_USERNAME):
 
   Username to connect to the backend.
 
   Only supported by "influx" and "thininflux" backends.
   
-* Password (BACKEND_PASSWORD): 
+* Password (CONFIG_PASSWORD):
 
   Password to connect to the backend.
 
   Only supported by "influx" and "thininflux" backends.
 
-* Database (BACKEND_DATABASE):
+* Database (CONFIG_DATABASE):
 
   Database to use in the backend.
 
   Only supported by "influx", "thininflux" and "elastic".
 
-* NoArray (BACKEND_NOARRAY): 
+* NoArray (CONFIG_NOARRAY):
 
   Multiple values metadata will be send as csv 'array' by default (NoArray is true by default).
   If set to false, only the first element is sent.
 
-* Prefix (BACKEND_PREFIX): 
+* Prefix (CONFIG_PREFIX):
 
   Prefix to use in the backend.
 

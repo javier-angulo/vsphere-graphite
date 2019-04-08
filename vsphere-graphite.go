@@ -150,18 +150,17 @@ func (service *Service) Manage() (string, error) {
 		if f.CanSet() {
 			//exported field
 			envname := strings.ToUpper(s.Type().Name() + "_" + s.Type().Field(i).Name)
-			log.Printf("looking for %s in environement variables", envname)
 			envval := os.Getenv(envname)
 			if len(envval) > 0 {
 				//environment variable set with name
 				switch ftype := f.Type().Name(); ftype {
 				case "string":
-					log.Printf("setting backend value %s to '%s'", s.Type().Field(i).Name, envval)
+					log.Printf("setting config value %s from env. '%s'", s.Type().Field(i).Name, envval)
 					f.SetString(envval)
 				case "int":
 					val, err := strconv.ParseInt(envval, 10, 64) // nolint: vetshadow
 					if err == nil {
-						log.Printf("setting backend value %s to %d", s.Type().Field(i).Name, val)
+						log.Printf("setting config value %s from env. %d", s.Type().Field(i).Name, val)
 						f.SetInt(val)
 					}
 				}
