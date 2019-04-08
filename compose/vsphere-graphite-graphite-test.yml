@@ -20,12 +20,12 @@ services:
         window: 30s
 
   vsphere-graphite:
-    image: cblomart/vsphere-graphite:16a6c7a 
+    image: cblomart/vsphere-graphite:6172f6d
     environment:
       - VCENTER_VCSIM=user:pass@vcenter:8989
-      - BACKEND_TYPE=graphite
-      - BACKEND_HOSTNAME=graphite
-      - BACKEND_PORT=2003
+      - CONFIG_TYPE=graphite
+      - CONFIG_HOSTNAME=graphite
+      - CONFIG_PORT=2003
     depends_on:
       - vcenter
       - graphite
