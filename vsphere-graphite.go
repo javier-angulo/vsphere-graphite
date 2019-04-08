@@ -150,6 +150,7 @@ func (service *Service) Manage() (string, error) {
 		if f.CanSet() {
 			//exported field
 			envname := strings.ToUpper(s.Type().Name() + "_" + s.Type().Field(i).Name)
+			log.Printf("looking for %s in environement variables", envname)
 			envval := os.Getenv(envname)
 			if len(envval) > 0 {
 				//environment variable set with name
