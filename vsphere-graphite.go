@@ -170,13 +170,15 @@ func (service *Service) Manage() (string, error) {
 	envvcenters := []*vsphere.VCenter{}
 	validvcenter := regexp.MustCompile(vcenterdefreg)
 	for _, e := range os.Environ() {
+		// trim e
+		kv := strings.Trim(e, " \r\n")
 		// check if a vcenter definition
-		if strings.HasPrefix(e, "VCENTER_") {
-			if validvcenter.MatchString(e) {
-				log.Printf("cannot parse vcenter: %s\n", e)
+		if strings.HasPrefix(kv, "VCENTER_") {
+			if validvcenter.MatchString(kv) {
+				log.Printf("cannot parse vcenter: '%s'\n", kv)
 				continue
 			}
-			matches := validvcenter.FindStringSubmatch(e)
+			matches := validvcenter.FindStringSubmatch(kv)
 			names := validvcenter.SubexpNames()
 			username := ""
 			password := ""
@@ -195,15 +197,15 @@ func (service *Service) Manage() (string, error) {
 				}
 			}
 			if len(username) == 0 {
-				log.Printf("cannot find username in vcenter: %s", e)
+				log.Printf("cannot find username in vcenter: '%s'", kv)
 				continue
 			}
 			if len(password) == 0 {
-				log.Printf("cannot find password in vcenter: %s", e)
+				log.Printf("cannot find password in vcenter: '%s'", kv)
 				continue
 			}
 			if len(hostname) == 0 {
-				log.Printf("cannot find hostname in vcenter: %s", e)
+				log.Printf("cannot find hostname in vcenter: '%s'", kv)
 				continue
 			}
 			vcenter := vsphere.VCenter{
