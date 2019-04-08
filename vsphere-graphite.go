@@ -171,8 +171,8 @@ func (service *Service) Manage() (string, error) {
 	validvcenter := regexp.MustCompile(vcenterdefreg)
 	for _, e := range os.Environ() {
 		// check if a vcenter definition
-		if strings.HasPrefix(kv, "VCENTER_") {
-			if !validvcenter.MatchString(kv) {
+		if strings.HasPrefix(e, "VCENTER_") {
+			if !validvcenter.MatchString(e) {
 				log.Printf("cannot parse vcenter: '%s'\n", e)
 				continue
 			}
