@@ -28,11 +28,13 @@
               <a class="zip_download_link" href="{{ site.github.zip_url }}">Download this project as a .zip file</a>
               <a class="tar_download_link" href="{{ site.github.tar_url }}">Download this project as a tar.gz file</a>
               -->
-              {% for release in site.github.releases %}
+              {% assign release = site.github.releases | first %}
+              {% if release %}
+              <span>{{release.name}}</span>
               {%   for asset in release.assets  %}
               <a class="zip_download_link" href="{{ asset.browser_download_url }}">{{ asset.label }}</a>
               {%   endfor %}
-              {% endfor %}
+              {% endif %}
             </section>
           {% endif %}
         </header>
