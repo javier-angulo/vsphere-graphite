@@ -31,7 +31,7 @@
               {% assign release = site.github.releases | first %}
               {% if release %}
               <span>{{ release.name }}</span>
-              {% assign assets = release.assets | where "content_type", "application/gzip" %}
+              {% assign assets = release.assets | where: "content_type", "application/gzip" %}
               {%   for asset in assets  %}
               <a class="tar_download_link" href="{{ asset.browser_download_url }}">{{ asset.label }}</a>
               {%   endfor %}
