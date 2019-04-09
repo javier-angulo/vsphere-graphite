@@ -41,6 +41,11 @@ type VCenter struct {
 	MetricGroups []*MetricGroup
 }
 
+// ToString : represents the vcenter as a string
+func (vcenter *VCenter) ToString() string {
+	return fmt.Sprintf("%s:*@%s", vcenter.Username, vcenter.Hostname)
+}
+
 // AddMetric : add a metric definition to a metric group
 func (vcenter *VCenter) AddMetric(metric *MetricDef, mtype string) {
 	// find the metric group for the type
