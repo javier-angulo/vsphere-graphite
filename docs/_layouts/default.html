@@ -31,10 +31,20 @@
               -->
               {% assign release = site.github.releases | first %}
               {% if release %}
-              <span>{{ release.tag }}</span>
+              <span>{{ release.tag_name }}</span>
               {% assign assets = release.assets | where: "content_type", "application/gzip" %}
               {%   for asset in assets  %}
-              <a href="{{ asset.browser_download_url }}"><i class="fas fa-file-archive"></i></a>
+              {%     if asset.name contains "windows" %}
+              <a href="{{ asset.browser_download_url }}"><i class="fab fa-windows fa-3x"></i></a>
+              {%     elsif asset.name contains "darwin" %}
+              <a href="{{ asset.browser_download_url }}"><i class="fab fa-apple fa-3x"></i></a>
+              {%     elsif asset.name contains "arm" %}
+              <a href="{{ asset.browser_download_url }}"><i class="fab fa-raspberry-pi fa-3x"></i></a>
+              {%     elsif asset.name contains "linux" %}
+              <a href="{{ asset.browser_download_url }}"><i class="fab fa-linux fa-3x"></i></a>
+              {%     else %}
+              <a href="{{ asset.browser_download_url }}"><i class="fas fa-file-archive fa-3x"></i></a>
+              {%     endif %}
               {%   endfor %}
               {% endif %}
             </section>
