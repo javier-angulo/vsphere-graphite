@@ -1,6 +1,6 @@
 # vSphere Graphite [![Tweet](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](Open+up++your+%20vmware+%20vsphere+statistics+with+https://github.com/cblomart/vsphere-graphite)
 
-[![Build Status](https://cloud.drone.io/api/badges/cblomart/vsphere-graphite/status.svg)](https://cloud.drone.io/cblomart/vsphere-graphite) [![Go Report Card](https://goreportcard.com/badge/github.com/cblomart/vsphere-graphite)](https://goreportcard.com/report/github.com/cblomart/vsphere-graphite) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite?ref=badge_shield)
+[![Build Status](https://cloud.drone.io/api/badges/cblomart/vsphere-graphite/status.svg)](https://cloud.drone.io/cblomart/vsphere-graphite) [![Go Report Card](https://goreportcard.com/badge/github.com/cblomart/vsphere-graphite)](https://goreportcard.com/report/github.com/cblomart/vsphere-graphite) [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcblomart%2Fvsphere-graphite?ref=badge_shield) [![Donate with Bitcoin](https://en.cryptobadges.io/badge/micro/1BQqpYfQc9NqykaK4rEH5bFsik1VffKHmQ)](https://en.cryptobadges.io/donate/1BQqpYfQc9NqykaK4rEH5bFsik1VffKHmQ)
 
 Monitors VMware vSphere stats using govmomi. Sinks metrics to one of many time series backends.
 
@@ -217,9 +217,7 @@ So don't hesitate and tell us what doesn't work or what you miss.
 
 ## Donations
 
-This project is largely alive because of the forementioned contributors. Our time is precious bet it is even more precious to us when we can spend it on our beloved projects. So don't hesitate to make a donation:
-
-Bitcoin address: 1BQqpYfQc9NqykaK4rEH5bFsik1VffKHmQ
+This project is largely alive because of the forementioned contributors. Our time is precious bet it is even more precious to us when we can spend it on our beloved projects. So don't hesitate to make a donation (see badge)
 
 ## License
 
