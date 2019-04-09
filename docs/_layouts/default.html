@@ -24,26 +24,26 @@
           <h2 id="project_tagline">{{ site.description | default: site.github.project_tagline }}</h2>
 
           {% if site.show_downloads %}
-            <section id="downloads">
+            <section id="releases">
               <!--
               <a class="zip_download_link" href="{{ site.github.zip_url }}">Download this project as a .zip file</a>
               <a class="tar_download_link" href="{{ site.github.tar_url }}">Download this project as a tar.gz file</a>
               -->
               {% assign release = site.github.releases | first %}
               {% if release %}
-              <span>{{ release.tag_name }}</span>
+              <span>{{ release.tag_name }} </span>
               {% assign assets = release.assets | where: "content_type", "application/gzip" %}
               {%   for asset in assets  %}
               {%     if asset.name contains "windows" %}
-              <a href="{{ asset.browser_download_url }}"><i class="fab fa-windows fa-3x"></i></a>
+              <a href="{{ asset.browser_download_url }}"><i class="fab fa-windows fa-2x"></i></a>
               {%     elsif asset.name contains "darwin" %}
-              <a href="{{ asset.browser_download_url }}"><i class="fab fa-apple fa-3x"></i></a>
+              <a href="{{ asset.browser_download_url }}"><i class="fab fa-apple fa-2x"></i></a>
               {%     elsif asset.name contains "arm" %}
-              <a href="{{ asset.browser_download_url }}"><i class="fab fa-raspberry-pi fa-3x"></i></a>
+              <a href="{{ asset.browser_download_url }}"><i class="fab fa-raspberry-pi fa-2x"></i></a>
               {%     elsif asset.name contains "linux" %}
-              <a href="{{ asset.browser_download_url }}"><i class="fab fa-linux fa-3x"></i></a>
+              <a href="{{ asset.browser_download_url }}"><i class="fab fa-linux fa-2x"></i></a>
               {%     else %}
-              <a href="{{ asset.browser_download_url }}"><i class="fas fa-file-archive fa-3x"></i></a>
+              <a href="{{ asset.browser_download_url }}"><i class="fas fa-file-archive fa-2x"></i></a>
               {%     endif %}
               {%   endfor %}
               {% endif %}
