@@ -157,6 +157,27 @@ The JSON configration file can be passed by mounting to /etc. Edit the configura
 
 Backend parameters can be set via environment variables to make docker user easier (having graphite or influx as another container).
 
+## Execute vsphere-graphite in swarm (docker-compose)
+
+A sample [docker compose file](./compose/vsphere-graphite-graphite-test.yml) is provided in the project.
+this sample will start:
+
+* vcsim ([vCenter simulator by govmomi](https://github.com/vmware/govmomi/tree/master/vcsim))
+* graphite (["Offical" Graphite docker image](https://hub.docker.com/r/graphiteapp/graphite-statsd/)) the port 80 will be published to access the web interface.
+* vsphere-graphite with the necessary environement parameters to address the started backend and vcenter
+
+To start this with swarm:
+
+```bash
+> docker stack deploy -v vsphere-graphite-graphite-test.yml vsphere-graphite
+```
+
+> Did you know that you can run docker stack on a standalone host... so no need for docker-compose. Just:
+>
+> ```bash
+> > docker swarm init
+> ```
+
 ## Execute vsphere-graphite in shell
 
 Heavilly based on [govmomi](https://github.com/vmware/govmomi) but also on [daemon](github.com/takama/daemon) which provides simple daemon/service integration.
