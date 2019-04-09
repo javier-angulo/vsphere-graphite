@@ -24,8 +24,15 @@
 
           {% if site.show_downloads %}
             <section id="downloads">
+              <!--
               <a class="zip_download_link" href="{{ site.github.zip_url }}">Download this project as a .zip file</a>
               <a class="tar_download_link" href="{{ site.github.tar_url }}">Download this project as a tar.gz file</a>
+              -->
+              {% for release in site.github.releases %}
+              {%   for asset in release.assets  %}
+              <a class="zip_download_link" href="{{ asset.browser_download_url }}">{{ asset.label }}</a>
+              {%   endfor %}
+              {% endfor %}
             </section>
           {% endif %}
         </header>
