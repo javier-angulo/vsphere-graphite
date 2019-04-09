@@ -17,7 +17,7 @@ func (backend *Config) Describe(ch chan<- *prometheus.Desc) {
 // Collect : Implementation of Prometheus Collector.Collect
 func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 
-	log.Println("Prometheus is requesting metrics")
+	log.Println("prometheus: requesting metrics")
 
 	request := make(chan Point, 100)
 	done := make(chan bool)
@@ -25,16 +25,16 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 
 	select {
 	case *queries <- channels:
-		log.Println("Prometheus requested metrics")
+		log.Println("prometheus: requested metrics")
 	default:
-		log.Println("Query buffer full. Discarding request")
+		log.Println("prometheus: query buffer full. discarding request")
 		return
 	}
 
 	// points recieved
 	points := 0
 	// handle timeout between point reception
-	rectimer := time.NewTimer(time.Millisecond * time.Duration(100))
+	rectimer := time.NewTimer(100 * time.Millisecond)
 	// check that the collection threads have finished
 	recdone := false
 	for {
@@ -47,7 +47,7 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 				default:
 				}
 			}
-			rectimer.Reset(time.Millisecond * time.Duration(100))
+			rectimer.Reset(100 * time.Millisecond)
 			// increase points
 			points++
 			// send point to prometheus
