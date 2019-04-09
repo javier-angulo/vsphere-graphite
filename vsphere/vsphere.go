@@ -555,6 +555,8 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 	// no need to wait here because this is only processing (no connection to vcenter needed)
 	totalvms := 0
 	totalhosts := 0
+	var metricProcessWaitGroup sync.WaitGroup
+	metricProcessWaitGroup.Add(len(perfres.Returnval))
 	for _, base := range perfres.Returnval {
 		pem := base.(*types.PerfEntityMetric)
 		switch pem.Entity.Type {
@@ -563,7 +565,7 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 		case "HostSystem":
 			totalhosts++
 		}
-		go ProcessMetric(cache, pem, timeStamp, replacepoint, domain, vcName, channel)
+		go ProcessMetric(cache, pem, timeStamp, replacepoint, domain, vcName, channel, &metricProcessWaitGroup)
 	}
 	// log total object refrenced
 	log.Printf("vcenter %s thread %d: %d objects (%d vm and %d hosts)", vcName, id, totalhosts+totalvms, totalvms, totalhosts)
@@ -595,10 +597,13 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 			log.Printf("vcenter %s thread %d: missing metrics for %s", vcName, id, missmorefs[i])
 		}
 	}
+
+	// wait for metric processing
+	metricProcessWaitGroup.Wait()
 }
 
 // ProcessMetric : Process Metric to metric queue
-func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point) {
+func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
 	// name checks the name of the object
 	name := cache.FindString(vcName, "names", pem.Entity.Value)
 	name = strings.ToLower(strings.Replace(name, domain, "", -1))
@@ -754,4 +759,5 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 		point.Value = value
 		*channel <- point
 	}
+	wg.Done()
 }

@@ -376,7 +376,7 @@ func (backend *Config) SendMetrics(metrics []*Point, cleanup bool) {
 			}
 			err := backend.fluent.Post(backend.Prefix, *point)
 			if err != nil {
-				log.Printf("bakcend %s: failed to post point - %s\n", backendType, err)
+				log.Printf("backend %s: failed to post point - %s\n", backendType, err)
 			}
 		}
 	case ThinPrometheus:
