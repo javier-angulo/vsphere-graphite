@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/olivere/elastic"
+	elastic "gopkg.in/olivere/elastic.v5"
 )
 
 // CreateIndexIfNotExists not exists creates Elasticsearch Index if Not Exists

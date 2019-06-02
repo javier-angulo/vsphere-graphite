@@ -533,11 +533,15 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 	requestedcount := len(queryperf.QuerySpec)
 	log.Printf("vcenter %s thread %d: requesting %d metrics\n", vcName, id, requestedcount)
 
+	// tell the waitgroup we are done when exiting
+	defer func() {
+		if wg != nil {
+			wg.Done()
+		}
+	}()
+
 	// Query the performances
 	perfres, err := methods.QueryPerf(ctx, r, queryperf)
-
-	// Tell the waitgroup that we are done
-	wg.Done()
 
 	// Check the result
 	if err != nil {
@@ -609,6 +613,12 @@ func ExecuteQueries(ctx context.Context, id int, r soap.RoundTripper, cache *Cac
 
 // ProcessMetric : Process Metric to metric queue
 func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, replacepoint bool, domain string, vcName string, channel *chan backend.Point, wg *sync.WaitGroup) {
+	// tell the wait group that we are finished at exit
+	defer func() {
+		if wg != nil {
+			wg.Done()
+		}
+	}()
 	// name checks the name of the object
 	name := cache.FindString(vcName, "names", pem.Entity.Value)
 	name = strings.ToLower(strings.Replace(name, domain, "", -1))
@@ -764,5 +774,4 @@ func ProcessMetric(cache *Cache, pem *types.PerfEntityMetric, timeStamp int64, r
 		point.Value = value
 		*channel <- point
 	}
-	wg.Done()
 }
