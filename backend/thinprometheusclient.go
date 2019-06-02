@@ -32,7 +32,9 @@ func NewThinPrometheusClient(server string, port int) (ThinPrometheusClient, err
 	}
 	address := ""
 	if len(server) > 0 {
-		address = server
+		if server != "*" {
+			address = server
+		}
 	}
 	address = fmt.Sprintf("%s:%d", address, port)
 	return ThinPrometheusClient{Hostname: server, Port: port, address: address}, nil

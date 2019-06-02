@@ -153,7 +153,9 @@ func (backend *Config) Init() (*chan Channels, error) {
 		go func() error {
 			address := ""
 			if len(backend.Hostname) > 0 {
-				address = backend.Hostname
+				if backend.Hostname != "*" {
+					address = backend.Hostname
+				}
 			}
 			if backend.Port > 0 {
 				address += ":" + utils.ValToString(backend.Port, "", false)
