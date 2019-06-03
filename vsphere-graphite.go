@@ -350,7 +350,8 @@ func (service *Service) Manage() (string, error) {
 				runtime.GC()
 				debug.FreeOSMemory()
 				runtime.ReadMemStats(&memstats)
-				log.Printf("Memory usage : sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
+				log.Printf("memory usage: sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
+				log.Printf("go routines: %d", runtime.NumGoroutine())
 				if conf.MEMProfiling {
 					f, err := os.OpenFile("/tmp/vsphere-graphite-mem.pb.gz", os.O_RDWR|os.O_CREATE, 0600) // nolin.vetshaddow
 					if err != nil {
