@@ -10,7 +10,7 @@ services:
         window: 30s
 
   vsphere-graphite:
-    image: cblomart/vsphere-graphite:81aede8
+    image: cblomart/vsphere-graphite:9ebd547
     environment:
       - VCENTER_VCSIM=user:pass@vcenter:8989
       - CONFIG_TYPE=thinprometheus
