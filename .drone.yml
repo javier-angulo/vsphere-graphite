@@ -14,7 +14,7 @@ steps:
     image: cblomart/gobasebuild
     pull: always
     environment:
-      MC_HOSTS_s3:
+      MC_HOST_s3:
         from_secret: s3_host
     commands:
     - last=$(mc find s3/vsphere-graphite --regex "[0-9]+/workspace.tgz" --newer-than 3d | tail -1)
@@ -46,7 +46,7 @@ steps:
     name: save
     image: cblomart/gobasebuild
     environment:
-      MC_HOSTS_s3:
+      MC_HOST_s3:
         from_secret: s3_host
     commands:
     - mc mb -p s3/vsphere-graphite
@@ -69,7 +69,7 @@ steps:
     image: cblomart/gobasebuild
     pull: always
     environment:
-      MC_HOSTS_s3:
+      MC_HOST_s3:
         from_secret: s3_host
     commands:
     - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf - -C /
@@ -141,7 +141,7 @@ steps:
     image: cblomart/gobasebuild
     pull: always
     environment:
-      MC_HOSTS_s3:
+      MC_HOST_s3:
         from_secret: s3_host
     commands:
     - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf - -C /
@@ -206,7 +206,7 @@ steps:
     image: cblomart/gobasebuild
     pull: always
     environment:
-      MC_HOSTS_s3:
+      MC_HOST_s3:
         from_secret: s3_host
     commands:
     - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf - -C /
@@ -260,7 +260,7 @@ steps:
     image: cblomart/gobasebuild
     pull: always
     environment:
-      MC_HOSTS_s3:
+      MC_HOST_s3:
         from_secret: s3_host
     commands:
     - mc cat s3/vsphere-graphite/$DRONE_BUILD_NUMBER/workspace.tgz | tar xzf - -C /
@@ -314,7 +314,7 @@ steps:
     image: cblomart/gobasebuild
     pull: always
     environment:
-      MC_HOSTS_s3:
+      MC_HOST_s3:
         from_secret: s3_host
     commands:
     - mc rm -r --force --older-than 3d s3/vsphere-graphite 

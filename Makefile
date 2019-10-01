@@ -33,9 +33,9 @@ endif
 ifndef GOLINT
 	go get -u golang.org/x/lint/golint
 endif
-ifndef INEFFASSIGN
-	go get -u github.com/gordonklaus/ineffassign
-endif
+#ifndef INEFFASSIGN
+#	go get -u github.com/gordonklaus/ineffassign
+#endif
 ifndef GOSEC
 	go get -u github.com/securego/gosec/cmd/gosec/...
 endif
@@ -136,7 +136,7 @@ checks:
 	gofmt -s -d .
 	go vet ./...
 	golint ./...
-	ineffassign ./
+	#ineffassign ./
 	gosec ./...
 
 $(RELEASE_DIR)/$(GOOS)/$(GOARCH)/vsphere-graphite$(SUFFIX): $(SRC_FILES)
