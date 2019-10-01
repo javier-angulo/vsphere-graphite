@@ -356,7 +356,7 @@ func (service *Service) Manage() (string, error) {
 				// debug go routines
 				stack := debug.Stack()
 				log.Print("current stack:")
-				log.Print(stack)
+				log.Print(string(stack))
 				log.Print("go routines stacks:")
 				profile := pprof.Lookup("goroutine")
 				buf := new(bytes.Buffer)
