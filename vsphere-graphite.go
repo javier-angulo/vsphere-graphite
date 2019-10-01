@@ -3,6 +3,7 @@ package main
 //go:generate git-version
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -352,6 +353,16 @@ func (service *Service) Manage() (string, error) {
 				runtime.ReadMemStats(&memstats)
 				log.Printf("memory usage: sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
 				log.Printf("go routines: %d", runtime.NumGoroutine())
+				// debug go routines
+				stack := debug.Stack()
+				log.Print("current stack:")
+				log.Print(stack)
+				log.Print("go routines stacks:")
+				profile := pprof.Lookup("goroutine")
+				buf := new(bytes.Buffer)
+				profile.WriteTo(buf, 2)
+				log.Print(buf.String())
+				// check mem profiling
 				if conf.MEMProfiling {
 					f, err := os.OpenFile("/tmp/vsphere-graphite-mem.pb.gz", os.O_RDWR|os.O_CREATE, 0600) // nolin.vetshaddow
 					if err != nil {
