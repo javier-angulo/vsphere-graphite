@@ -360,7 +360,10 @@ func (service *Service) Manage() (string, error) {
 				log.Print("go routines stacks:")
 				profile := pprof.Lookup("goroutine")
 				buf := new(bytes.Buffer)
-				profile.WriteTo(buf, 2)
+				err = profile.WriteTo(buf, 2)
+				if err != nil {
+					log.Print("couldn't write goroutines profile")
+				}
 				log.Print(buf.String())
 				// check mem profiling
 				if conf.MEMProfiling {
