@@ -80,7 +80,7 @@ L:
 			// reset timer
 			if !recTimeout.Stop() {
 				select {
-				case <-timeout.C:
+				case <-recTimeout.C:
 				default:
 				}
 			}
