@@ -66,8 +66,8 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		ctx.Error("Query buffer full", fasthttp.StatusConflict)
 		return
 	}
-	// start a timeout
-	recTimeout := time.NewTimer(100 * time.Millisecond)
+	// set a large timeout for the first collection
+	recTimeout := time.NewTimer(1000 * time.Millisecond)
 	// collected points
 	points := 0
 	// recieve done
@@ -84,7 +84,7 @@ L:
 				default:
 				}
 			}
-			recTimeout.Reset(100 * time.Millisecond)
+			recTimeout.Reset(200 * time.Millisecond)
 			// increased recieved points
 			points++
 			// add point to the buffer
