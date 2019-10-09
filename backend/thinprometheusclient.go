@@ -83,7 +83,7 @@ L:
 			// get some info on timings
 			lastpoint := startloop - time.Now().Unix()
 			if firstpoint == 0 {
-				firstpoint := lastpoint
+				firstpoint = lastpoint
 			}
 			// reset timer
 			if !recTimeout.Stop() {
