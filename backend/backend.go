@@ -56,6 +56,8 @@ const (
 	Fluentd = "fluentd"
 	// ThinPrometheus name of the thin prometheus backend
 	ThinPrometheus = "thinprometheus"
+	//PrometheusTimeout (ms)
+	PrometheusTimeout = 200
 )
 
 var (

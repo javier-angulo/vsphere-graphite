@@ -67,7 +67,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	// set a large timeout for the first collection
-	recTimeout := time.NewTimer(1000 * time.Millisecond)
+	recTimeout := time.NewTimer(PrometheusTimeout * 3 * time.Millisecond)
 	// collected points
 	points := 0
 	// recieve done
@@ -84,7 +84,7 @@ L:
 				default:
 				}
 			}
-			recTimeout.Reset(200 * time.Millisecond)
+			recTimeout.Reset(PrometheusTimeout * time.Millisecond)
 			// increased recieved points
 			points++
 			// add point to the buffer
