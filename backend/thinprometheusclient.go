@@ -67,24 +67,24 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	// start a timeout
-	timeout := time.NewTimer(100 * time.Millisecond)
+	recTimeout := time.NewTimer(100 * time.Millisecond)
 	// collected points
 	points := 0
 	// recieve done
 	recdone := false
-	log.Println("Tthinprom: waiting for query results")
+	log.Println("thinprom: waiting for query results")
 L:
 	for {
 		select {
 		case point := <-*channels.Request:
 			// reset timer
-			if !timeout.Stop() {
+			if !recTimeout.Stop() {
 				select {
 				case <-timeout.C:
 				default:
 				}
 			}
-			timeout.Reset(100 * time.Millisecond)
+			recTimeout.Reset(100 * time.Millisecond)
 			// increased recieved points
 			points++
 			// add point to the buffer
@@ -93,12 +93,16 @@ L:
 			// finish consuming metrics and break loop
 			log.Println("thinprom: signaled the end of the collection")
 			recdone = true
-		case <-timeout.C:
+		case <-recTimeout.C:
+			log.Printf("thinprom: sent %d points", points)
 			// stop timer
 			if recdone {
-				log.Printf("thinprom: sent %d points", points)
-				break L
+				log.Println("thinprom: recieve done")
+			} else {
+				log.Println("thinprom: recieve incomplete")
 			}
+			// break the recieve loop as we timeouted
+			break L
 		}
 	}
 	ctx.SetContentType("text/plain; charset=utf8")

@@ -53,13 +53,18 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 			// send point to prometheus
 			backend.PrometheusSend(ch, point)
 		case <-*channels.Done:
+			log.Println("prometheus: signaled the end of the collection")
 			recdone = true
 		case <-rectimer.C:
-			// only exit when done and timeout
+			log.Printf("prometheus: sent %d points", points)
+			// indicate current status
 			if recdone {
-				log.Printf("prometheus: sent %d points", points)
-				return
+				log.Println("prometheus: recieve done")
+			} else {
+				log.Println("prometheus: recieve incomplete")
 			}
+			// return
+			return
 		}
 	}
 }
