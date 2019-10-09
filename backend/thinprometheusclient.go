@@ -73,8 +73,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	// recieve done
 	recdone := false
 	log.Println("thinprom: waiting for query results")
-	startloop := time.Now().Unix()
-	firstpoint := int64(0)
+	startloop := time.Now().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 	lastpoint := int64(0)
 	stoploop := int64(0)
 L:
@@ -82,7 +81,7 @@ L:
 		select {
 		case point := <-*channels.Request:
 			// get some info on timings
-			lastpoint = time.Now().Unix() - startloop
+			lastpoint = (time.Now().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))) - startloop
 			if firstpoint == 0 {
 				firstpoint = lastpoint
 			}
@@ -103,7 +102,7 @@ L:
 			log.Println("thinprom: signaled the end of the collection")
 			recdone = true
 		case <-recTimeout.C:
-			stoploop = time.Now().Unix() - startloop
+			stoploop = (time.Now().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))) - startloop
 			log.Printf("thinprom: sent %d points", points)
 			log.Printf("thinprom: recieve delay %d", firstpoint)
 			log.Printf("thinprom: last recieved delay %d", lastpoint)
