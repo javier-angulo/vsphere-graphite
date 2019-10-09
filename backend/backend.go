@@ -58,6 +58,8 @@ const (
 	ThinPrometheus = "thinprometheus"
 	//PrometheusTimeout (ms)
 	PrometheusTimeout = 200
+	//PrometheusInitialTimeout (ms)
+	PrometheusInitialTimeout = 30000
 )
 
 var (

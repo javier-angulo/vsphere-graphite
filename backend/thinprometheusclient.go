@@ -67,15 +67,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	// set a large timeout for the first collection
-	recTimeout := time.NewTimer(PrometheusTimeout * 10 * time.Millisecond)
-	// reset timer
-	if !recTimeout.Stop() {
-		select {
-		case <-recTimeout.C:
-		default:
-		}
-	}
-	recTimeout.Reset(PrometheusTimeout * 10 * time.Millisecond)
+	recTimeout := time.NewTimer(PrometheusInitialTimeout * time.Millisecond)
 	// collected points
 	points := 0
 	// recieve done
@@ -90,7 +82,7 @@ L:
 		select {
 		case point := <-*channels.Request:
 			// get some info on timings
-			lastpoint = startloop - time.Now().Unix()
+			lastpoint = time.Now().Unix() - startloop
 			if firstpoint == 0 {
 				firstpoint = lastpoint
 			}
@@ -111,7 +103,7 @@ L:
 			log.Println("thinprom: signaled the end of the collection")
 			recdone = true
 		case <-recTimeout.C:
-			stoploop = startloop - time.Now().Unix()
+			stoploop = time.Now().Unix() - startloop
 			log.Printf("thinprom: sent %d points", points)
 			log.Printf("thinprom: recieve delay %d", firstpoint)
 			log.Printf("thinprom: last recieved delay %d", lastpoint)
