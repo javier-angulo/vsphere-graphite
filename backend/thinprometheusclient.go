@@ -67,7 +67,6 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 		return
 	}
 	// set a large timeout for the first collection
-	time.NewTimer(
 	recTimeout := time.NewTimer(PrometheusTimeout * 10 * time.Millisecond)
 	// reset timer
 	if !recTimeout.Stop() {
