@@ -76,12 +76,13 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	startloop := time.Now().Unix()
 	firstpoint := int64(0)
 	lastpoint := int64(0)
+	stoploop := int64(0)
 L:
 	for {
 		select {
 		case point := <-*channels.Request:
 			// get some info on timings
-			lastpoint := startloop - time.Now().Unix()
+			lastpoint = startloop - time.Now().Unix()
 			if firstpoint == 0 {
 				firstpoint = lastpoint
 			}
@@ -102,9 +103,11 @@ L:
 			log.Println("thinprom: signaled the end of the collection")
 			recdone = true
 		case <-recTimeout.C:
+			stoploop = startloop - time.Now().Unix()
 			log.Printf("thinprom: sent %d points", points)
 			log.Printf("thinprom: recieve delay %d", firstpoint)
 			log.Printf("thinprom: last recieved delay %d", lastpoint)
+			log.Printf("thinprom: stop loop %d", stoploop)
 			// stop timer
 			if recdone {
 				log.Println("thinprom: recieve done")
