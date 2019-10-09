@@ -74,6 +74,7 @@ func requestHandler(ctx *fasthttp.RequestCtx) {
 	recdone := false
 	log.Println("thinprom: waiting for query results")
 	startloop := time.Now().UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+	firstpoint := int64(0)
 	lastpoint := int64(0)
 	stoploop := int64(0)
 L:
