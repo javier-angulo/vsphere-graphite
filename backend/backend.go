@@ -57,7 +57,7 @@ const (
 	// ThinPrometheus name of the thin prometheus backend
 	ThinPrometheus = "thinprometheus"
 	//PrometheusTimeout (ms)
-	PrometheusTimeout = 200
+	PrometheusTimeout = 500
 	//PrometheusInitialTimeout (ms)
 	PrometheusInitialTimeout = 30000
 )
