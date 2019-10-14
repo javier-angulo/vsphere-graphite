@@ -114,6 +114,11 @@ L:
 			} else {
 				log.Println("thinprom: recieve incomplete")
 			}
+			// empty the done channel
+			select {
+			case <-*channels.Done:
+			default:
+			}
 			// break the recieve loop as we timeouted
 			break L
 		}

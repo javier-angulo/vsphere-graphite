@@ -63,6 +63,11 @@ func (backend *Config) Collect(ch chan<- prometheus.Metric) {
 			} else {
 				log.Println("prometheus: recieve incomplete")
 			}
+			// empty the done channel
+			select {
+			case <-*channels.Done:
+			default:
+			}
 			// return
 			return
 		}

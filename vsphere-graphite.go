@@ -352,20 +352,6 @@ func (service *Service) Manage() (string, error) {
 				runtime.ReadMemStats(&memstats)
 				log.Printf("memory usage: sys=%s alloc=%s\n", bytefmt.ByteSize(memstats.Sys), bytefmt.ByteSize(memstats.Alloc))
 				log.Printf("go routines: %d", runtime.NumGoroutine())
-				// debug go routines
-				/*
-					stack := debug.Stack()
-					log.Print("current stack:")
-					log.Print(string(stack))
-					log.Print("go routines stacks:")
-					profile := pprof.Lookup("goroutine")
-					buf := new(bytes.Buffer)
-					err = profile.WriteTo(buf, 2)
-					if err != nil {
-						log.Print("couldn't write goroutines profile")
-					}
-					log.Print(buf.String())
-				*/
 				// check mem profiling
 				if conf.MEMProfiling {
 					f, err := os.OpenFile("/tmp/vsphere-graphite-mem.pb.gz", os.O_RDWR|os.O_CREATE, 0600) // nolin.vetshaddow
